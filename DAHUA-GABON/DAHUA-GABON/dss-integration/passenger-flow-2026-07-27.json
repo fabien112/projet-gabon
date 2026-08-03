@@ -1,0 +1,749 @@
+{
+    "source":  "POST /iams/api/v1.1/intelligence-analyse/passenger-flow/channel/history/record/fetch/page",
+    "countDate":  "2026-07-27",
+    "channels":  [
+                     {
+                         "channelId":  "1000004$1$0$0",
+                         "camera":  "Cam_Compteuse_Entree_Akanda"
+                     },
+                     {
+                         "channelId":  "1000004$3$1$0",
+                         "camera":  "Cam_Compteuse_Entree_Akanda_1"
+                     },
+                     {
+                         "channelId":  "1000005$1$0$1",
+                         "camera":  "Cam_Compteuse_Sortie_Oloumi"
+                     },
+                     {
+                         "channelId":  "1000005$3$1$0",
+                         "camera":  "Cam_Compteuse_Entree_Oloumi_1"
+                     },
+                     {
+                         "channelId":  "1000005$1$0$0",
+                         "camera":  "Cam_Compteuse_Entree_Oloumi"
+                     }
+                 ],
+    "count":  72,
+    "data":  [
+                 {
+                     "camera":  "Cam_Compteuse_Entree_Akanda",
+                     "channelId":  "1000004$1$0$0",
+                     "startTime":  "2026-07-27 00:00:00",
+                     "endTime":  "2026-07-27 01:00:00",
+                     "total":  0,
+                     "in":  0,
+                     "out":  0,
+                     "occupancy":  0
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Entree_Oloumi",
+                     "channelId":  "1000005$1$0$0",
+                     "startTime":  "2026-07-27 00:00:00",
+                     "endTime":  "2026-07-27 01:00:00",
+                     "total":  0,
+                     "in":  0,
+                     "out":  0,
+                     "occupancy":  0
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Sortie_Oloumi",
+                     "channelId":  "1000005$1$0$1",
+                     "startTime":  "2026-07-27 00:00:00",
+                     "endTime":  "2026-07-27 01:00:00",
+                     "total":  0,
+                     "in":  0,
+                     "out":  0,
+                     "occupancy":  0
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Entree_Akanda",
+                     "channelId":  "1000004$1$0$0",
+                     "startTime":  "2026-07-27 01:00:00",
+                     "endTime":  "2026-07-27 02:00:00",
+                     "total":  0,
+                     "in":  0,
+                     "out":  0,
+                     "occupancy":  0
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Entree_Oloumi",
+                     "channelId":  "1000005$1$0$0",
+                     "startTime":  "2026-07-27 01:00:00",
+                     "endTime":  "2026-07-27 02:00:00",
+                     "total":  0,
+                     "in":  0,
+                     "out":  0,
+                     "occupancy":  0
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Sortie_Oloumi",
+                     "channelId":  "1000005$1$0$1",
+                     "startTime":  "2026-07-27 01:00:00",
+                     "endTime":  "2026-07-27 02:00:00",
+                     "total":  0,
+                     "in":  0,
+                     "out":  0,
+                     "occupancy":  0
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Entree_Akanda",
+                     "channelId":  "1000004$1$0$0",
+                     "startTime":  "2026-07-27 02:00:00",
+                     "endTime":  "2026-07-27 03:00:00",
+                     "total":  0,
+                     "in":  0,
+                     "out":  0,
+                     "occupancy":  0
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Entree_Oloumi",
+                     "channelId":  "1000005$1$0$0",
+                     "startTime":  "2026-07-27 02:00:00",
+                     "endTime":  "2026-07-27 03:00:00",
+                     "total":  0,
+                     "in":  0,
+                     "out":  0,
+                     "occupancy":  0
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Sortie_Oloumi",
+                     "channelId":  "1000005$1$0$1",
+                     "startTime":  "2026-07-27 02:00:00",
+                     "endTime":  "2026-07-27 03:00:00",
+                     "total":  0,
+                     "in":  0,
+                     "out":  0,
+                     "occupancy":  0
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Entree_Akanda",
+                     "channelId":  "1000004$1$0$0",
+                     "startTime":  "2026-07-27 03:00:00",
+                     "endTime":  "2026-07-27 04:00:00",
+                     "total":  0,
+                     "in":  0,
+                     "out":  0,
+                     "occupancy":  0
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Entree_Oloumi",
+                     "channelId":  "1000005$1$0$0",
+                     "startTime":  "2026-07-27 03:00:00",
+                     "endTime":  "2026-07-27 04:00:00",
+                     "total":  0,
+                     "in":  0,
+                     "out":  0,
+                     "occupancy":  0
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Sortie_Oloumi",
+                     "channelId":  "1000005$1$0$1",
+                     "startTime":  "2026-07-27 03:00:00",
+                     "endTime":  "2026-07-27 04:00:00",
+                     "total":  0,
+                     "in":  0,
+                     "out":  0,
+                     "occupancy":  0
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Entree_Akanda",
+                     "channelId":  "1000004$1$0$0",
+                     "startTime":  "2026-07-27 04:00:00",
+                     "endTime":  "2026-07-27 05:00:00",
+                     "total":  0,
+                     "in":  0,
+                     "out":  0,
+                     "occupancy":  0
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Entree_Oloumi",
+                     "channelId":  "1000005$1$0$0",
+                     "startTime":  "2026-07-27 04:00:00",
+                     "endTime":  "2026-07-27 05:00:00",
+                     "total":  0,
+                     "in":  0,
+                     "out":  0,
+                     "occupancy":  0
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Sortie_Oloumi",
+                     "channelId":  "1000005$1$0$1",
+                     "startTime":  "2026-07-27 04:00:00",
+                     "endTime":  "2026-07-27 05:00:00",
+                     "total":  0,
+                     "in":  0,
+                     "out":  0,
+                     "occupancy":  0
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Entree_Akanda",
+                     "channelId":  "1000004$1$0$0",
+                     "startTime":  "2026-07-27 05:00:00",
+                     "endTime":  "2026-07-27 06:00:00",
+                     "total":  0,
+                     "in":  0,
+                     "out":  0,
+                     "occupancy":  0
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Entree_Oloumi",
+                     "channelId":  "1000005$1$0$0",
+                     "startTime":  "2026-07-27 05:00:00",
+                     "endTime":  "2026-07-27 06:00:00",
+                     "total":  0,
+                     "in":  0,
+                     "out":  0,
+                     "occupancy":  0
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Sortie_Oloumi",
+                     "channelId":  "1000005$1$0$1",
+                     "startTime":  "2026-07-27 05:00:00",
+                     "endTime":  "2026-07-27 06:00:00",
+                     "total":  0,
+                     "in":  0,
+                     "out":  0,
+                     "occupancy":  0
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Entree_Akanda",
+                     "channelId":  "1000004$1$0$0",
+                     "startTime":  "2026-07-27 06:00:00",
+                     "endTime":  "2026-07-27 07:00:00",
+                     "total":  0,
+                     "in":  0,
+                     "out":  0,
+                     "occupancy":  0
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Entree_Oloumi",
+                     "channelId":  "1000005$1$0$0",
+                     "startTime":  "2026-07-27 06:00:00",
+                     "endTime":  "2026-07-27 07:00:00",
+                     "total":  23,
+                     "in":  16,
+                     "out":  7,
+                     "occupancy":  9
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Sortie_Oloumi",
+                     "channelId":  "1000005$1$0$1",
+                     "startTime":  "2026-07-27 06:00:00",
+                     "endTime":  "2026-07-27 07:00:00",
+                     "total":  0,
+                     "in":  0,
+                     "out":  0,
+                     "occupancy":  0
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Entree_Akanda",
+                     "channelId":  "1000004$1$0$0",
+                     "startTime":  "2026-07-27 07:00:00",
+                     "endTime":  "2026-07-27 08:00:00",
+                     "total":  16,
+                     "in":  14,
+                     "out":  2,
+                     "occupancy":  12
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Entree_Oloumi",
+                     "channelId":  "1000005$1$0$0",
+                     "startTime":  "2026-07-27 07:00:00",
+                     "endTime":  "2026-07-27 08:00:00",
+                     "total":  98,
+                     "in":  73,
+                     "out":  25,
+                     "occupancy":  48
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Sortie_Oloumi",
+                     "channelId":  "1000005$1$0$1",
+                     "startTime":  "2026-07-27 07:00:00",
+                     "endTime":  "2026-07-27 08:00:00",
+                     "total":  70,
+                     "in":  64,
+                     "out":  6,
+                     "occupancy":  58
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Entree_Akanda",
+                     "channelId":  "1000004$1$0$0",
+                     "startTime":  "2026-07-27 08:00:00",
+                     "endTime":  "2026-07-27 09:00:00",
+                     "total":  136,
+                     "in":  126,
+                     "out":  10,
+                     "occupancy":  116
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Entree_Oloumi",
+                     "channelId":  "1000005$1$0$0",
+                     "startTime":  "2026-07-27 08:00:00",
+                     "endTime":  "2026-07-27 09:00:00",
+                     "total":  193,
+                     "in":  135,
+                     "out":  58,
+                     "occupancy":  77
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Sortie_Oloumi",
+                     "channelId":  "1000005$1$0$1",
+                     "startTime":  "2026-07-27 08:00:00",
+                     "endTime":  "2026-07-27 09:00:00",
+                     "total":  335,
+                     "in":  196,
+                     "out":  139,
+                     "occupancy":  57
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Entree_Akanda",
+                     "channelId":  "1000004$1$0$0",
+                     "startTime":  "2026-07-27 09:00:00",
+                     "endTime":  "2026-07-27 10:00:00",
+                     "total":  153,
+                     "in":  140,
+                     "out":  13,
+                     "occupancy":  127
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Entree_Oloumi",
+                     "channelId":  "1000005$1$0$0",
+                     "startTime":  "2026-07-27 09:00:00",
+                     "endTime":  "2026-07-27 10:00:00",
+                     "total":  251,
+                     "in":  126,
+                     "out":  125,
+                     "occupancy":  1
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Sortie_Oloumi",
+                     "channelId":  "1000005$1$0$1",
+                     "startTime":  "2026-07-27 09:00:00",
+                     "endTime":  "2026-07-27 10:00:00",
+                     "total":  356,
+                     "in":  178,
+                     "out":  178,
+                     "occupancy":  0
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Entree_Akanda",
+                     "channelId":  "1000004$1$0$0",
+                     "startTime":  "2026-07-27 10:00:00",
+                     "endTime":  "2026-07-27 11:00:00",
+                     "total":  171,
+                     "in":  157,
+                     "out":  14,
+                     "occupancy":  143
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Entree_Oloumi",
+                     "channelId":  "1000005$1$0$0",
+                     "startTime":  "2026-07-27 10:00:00",
+                     "endTime":  "2026-07-27 11:00:00",
+                     "total":  292,
+                     "in":  166,
+                     "out":  126,
+                     "occupancy":  40
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Sortie_Oloumi",
+                     "channelId":  "1000005$1$0$1",
+                     "startTime":  "2026-07-27 10:00:00",
+                     "endTime":  "2026-07-27 11:00:00",
+                     "total":  396,
+                     "in":  177,
+                     "out":  219,
+                     "occupancy":  0
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Entree_Akanda",
+                     "channelId":  "1000004$1$0$0",
+                     "startTime":  "2026-07-27 11:00:00",
+                     "endTime":  "2026-07-27 12:00:00",
+                     "total":  224,
+                     "in":  192,
+                     "out":  32,
+                     "occupancy":  160
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Entree_Oloumi",
+                     "channelId":  "1000005$1$0$0",
+                     "startTime":  "2026-07-27 11:00:00",
+                     "endTime":  "2026-07-27 12:00:00",
+                     "total":  300,
+                     "in":  193,
+                     "out":  107,
+                     "occupancy":  86
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Sortie_Oloumi",
+                     "channelId":  "1000005$1$0$1",
+                     "startTime":  "2026-07-27 11:00:00",
+                     "endTime":  "2026-07-27 12:00:00",
+                     "total":  450,
+                     "in":  204,
+                     "out":  246,
+                     "occupancy":  0
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Entree_Akanda",
+                     "channelId":  "1000004$1$0$0",
+                     "startTime":  "2026-07-27 12:00:00",
+                     "endTime":  "2026-07-27 13:00:00",
+                     "total":  153,
+                     "in":  145,
+                     "out":  8,
+                     "occupancy":  137
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Entree_Oloumi",
+                     "channelId":  "1000005$1$0$0",
+                     "startTime":  "2026-07-27 12:00:00",
+                     "endTime":  "2026-07-27 13:00:00",
+                     "total":  286,
+                     "in":  161,
+                     "out":  125,
+                     "occupancy":  36
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Sortie_Oloumi",
+                     "channelId":  "1000005$1$0$1",
+                     "startTime":  "2026-07-27 12:00:00",
+                     "endTime":  "2026-07-27 13:00:00",
+                     "total":  509,
+                     "in":  214,
+                     "out":  295,
+                     "occupancy":  0
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Entree_Akanda",
+                     "channelId":  "1000004$1$0$0",
+                     "startTime":  "2026-07-27 13:00:00",
+                     "endTime":  "2026-07-27 14:00:00",
+                     "total":  147,
+                     "in":  132,
+                     "out":  15,
+                     "occupancy":  117
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Entree_Oloumi",
+                     "channelId":  "1000005$1$0$0",
+                     "startTime":  "2026-07-27 13:00:00",
+                     "endTime":  "2026-07-27 14:00:00",
+                     "total":  245,
+                     "in":  138,
+                     "out":  107,
+                     "occupancy":  31
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Sortie_Oloumi",
+                     "channelId":  "1000005$1$0$1",
+                     "startTime":  "2026-07-27 13:00:00",
+                     "endTime":  "2026-07-27 14:00:00",
+                     "total":  421,
+                     "in":  198,
+                     "out":  223,
+                     "occupancy":  0
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Entree_Akanda",
+                     "channelId":  "1000004$1$0$0",
+                     "startTime":  "2026-07-27 14:00:00",
+                     "endTime":  "2026-07-27 15:00:00",
+                     "total":  153,
+                     "in":  136,
+                     "out":  17,
+                     "occupancy":  119
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Entree_Oloumi",
+                     "channelId":  "1000005$1$0$0",
+                     "startTime":  "2026-07-27 14:00:00",
+                     "endTime":  "2026-07-27 15:00:00",
+                     "total":  261,
+                     "in":  149,
+                     "out":  112,
+                     "occupancy":  37
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Sortie_Oloumi",
+                     "channelId":  "1000005$1$0$1",
+                     "startTime":  "2026-07-27 14:00:00",
+                     "endTime":  "2026-07-27 15:00:00",
+                     "total":  456,
+                     "in":  207,
+                     "out":  249,
+                     "occupancy":  0
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Entree_Akanda",
+                     "channelId":  "1000004$1$0$0",
+                     "startTime":  "2026-07-27 15:00:00",
+                     "endTime":  "2026-07-27 16:00:00",
+                     "total":  132,
+                     "in":  121,
+                     "out":  11,
+                     "occupancy":  110
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Entree_Oloumi",
+                     "channelId":  "1000005$1$0$0",
+                     "startTime":  "2026-07-27 15:00:00",
+                     "endTime":  "2026-07-27 16:00:00",
+                     "total":  229,
+                     "in":  134,
+                     "out":  95,
+                     "occupancy":  39
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Sortie_Oloumi",
+                     "channelId":  "1000005$1$0$1",
+                     "startTime":  "2026-07-27 15:00:00",
+                     "endTime":  "2026-07-27 16:00:00",
+                     "total":  367,
+                     "in":  154,
+                     "out":  213,
+                     "occupancy":  0
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Entree_Akanda",
+                     "channelId":  "1000004$1$0$0",
+                     "startTime":  "2026-07-27 16:00:00",
+                     "endTime":  "2026-07-27 17:00:00",
+                     "total":  145,
+                     "in":  131,
+                     "out":  14,
+                     "occupancy":  117
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Entree_Oloumi",
+                     "channelId":  "1000005$1$0$0",
+                     "startTime":  "2026-07-27 16:00:00",
+                     "endTime":  "2026-07-27 17:00:00",
+                     "total":  165,
+                     "in":  79,
+                     "out":  86,
+                     "occupancy":  0
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Sortie_Oloumi",
+                     "channelId":  "1000005$1$0$1",
+                     "startTime":  "2026-07-27 16:00:00",
+                     "endTime":  "2026-07-27 17:00:00",
+                     "total":  343,
+                     "in":  139,
+                     "out":  204,
+                     "occupancy":  0
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Entree_Akanda",
+                     "channelId":  "1000004$1$0$0",
+                     "startTime":  "2026-07-27 17:00:00",
+                     "endTime":  "2026-07-27 18:00:00",
+                     "total":  125,
+                     "in":  106,
+                     "out":  19,
+                     "occupancy":  87
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Entree_Oloumi",
+                     "channelId":  "1000005$1$0$0",
+                     "startTime":  "2026-07-27 17:00:00",
+                     "endTime":  "2026-07-27 18:00:00",
+                     "total":  4,
+                     "in":  2,
+                     "out":  2,
+                     "occupancy":  0
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Sortie_Oloumi",
+                     "channelId":  "1000005$1$0$1",
+                     "startTime":  "2026-07-27 17:00:00",
+                     "endTime":  "2026-07-27 18:00:00",
+                     "total":  211,
+                     "in":  39,
+                     "out":  172,
+                     "occupancy":  0
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Entree_Akanda",
+                     "channelId":  "1000004$1$0$0",
+                     "startTime":  "2026-07-27 18:00:00",
+                     "endTime":  "2026-07-27 19:00:00",
+                     "total":  50,
+                     "in":  41,
+                     "out":  9,
+                     "occupancy":  32
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Entree_Oloumi",
+                     "channelId":  "1000005$1$0$0",
+                     "startTime":  "2026-07-27 18:00:00",
+                     "endTime":  "2026-07-27 19:00:00",
+                     "total":  0,
+                     "in":  0,
+                     "out":  0,
+                     "occupancy":  0
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Sortie_Oloumi",
+                     "channelId":  "1000005$1$0$1",
+                     "startTime":  "2026-07-27 18:00:00",
+                     "endTime":  "2026-07-27 19:00:00",
+                     "total":  0,
+                     "in":  0,
+                     "out":  0,
+                     "occupancy":  0
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Entree_Akanda",
+                     "channelId":  "1000004$1$0$0",
+                     "startTime":  "2026-07-27 19:00:00",
+                     "endTime":  "2026-07-27 20:00:00",
+                     "total":  0,
+                     "in":  0,
+                     "out":  0,
+                     "occupancy":  0
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Entree_Oloumi",
+                     "channelId":  "1000005$1$0$0",
+                     "startTime":  "2026-07-27 19:00:00",
+                     "endTime":  "2026-07-27 20:00:00",
+                     "total":  0,
+                     "in":  0,
+                     "out":  0,
+                     "occupancy":  0
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Sortie_Oloumi",
+                     "channelId":  "1000005$1$0$1",
+                     "startTime":  "2026-07-27 19:00:00",
+                     "endTime":  "2026-07-27 20:00:00",
+                     "total":  0,
+                     "in":  0,
+                     "out":  0,
+                     "occupancy":  0
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Entree_Akanda",
+                     "channelId":  "1000004$1$0$0",
+                     "startTime":  "2026-07-27 20:00:00",
+                     "endTime":  "2026-07-27 21:00:00",
+                     "total":  0,
+                     "in":  0,
+                     "out":  0,
+                     "occupancy":  0
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Entree_Oloumi",
+                     "channelId":  "1000005$1$0$0",
+                     "startTime":  "2026-07-27 20:00:00",
+                     "endTime":  "2026-07-27 21:00:00",
+                     "total":  0,
+                     "in":  0,
+                     "out":  0,
+                     "occupancy":  0
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Sortie_Oloumi",
+                     "channelId":  "1000005$1$0$1",
+                     "startTime":  "2026-07-27 20:00:00",
+                     "endTime":  "2026-07-27 21:00:00",
+                     "total":  0,
+                     "in":  0,
+                     "out":  0,
+                     "occupancy":  0
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Entree_Akanda",
+                     "channelId":  "1000004$1$0$0",
+                     "startTime":  "2026-07-27 21:00:00",
+                     "endTime":  "2026-07-27 22:00:00",
+                     "total":  0,
+                     "in":  0,
+                     "out":  0,
+                     "occupancy":  0
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Entree_Oloumi",
+                     "channelId":  "1000005$1$0$0",
+                     "startTime":  "2026-07-27 21:00:00",
+                     "endTime":  "2026-07-27 22:00:00",
+                     "total":  0,
+                     "in":  0,
+                     "out":  0,
+                     "occupancy":  0
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Sortie_Oloumi",
+                     "channelId":  "1000005$1$0$1",
+                     "startTime":  "2026-07-27 21:00:00",
+                     "endTime":  "2026-07-27 22:00:00",
+                     "total":  0,
+                     "in":  0,
+                     "out":  0,
+                     "occupancy":  0
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Entree_Akanda",
+                     "channelId":  "1000004$1$0$0",
+                     "startTime":  "2026-07-27 22:00:00",
+                     "endTime":  "2026-07-27 23:00:00",
+                     "total":  0,
+                     "in":  0,
+                     "out":  0,
+                     "occupancy":  0
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Entree_Oloumi",
+                     "channelId":  "1000005$1$0$0",
+                     "startTime":  "2026-07-27 22:00:00",
+                     "endTime":  "2026-07-27 23:00:00",
+                     "total":  0,
+                     "in":  0,
+                     "out":  0,
+                     "occupancy":  0
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Sortie_Oloumi",
+                     "channelId":  "1000005$1$0$1",
+                     "startTime":  "2026-07-27 22:00:00",
+                     "endTime":  "2026-07-27 23:00:00",
+                     "total":  0,
+                     "in":  0,
+                     "out":  0,
+                     "occupancy":  0
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Entree_Akanda",
+                     "channelId":  "1000004$1$0$0",
+                     "startTime":  "2026-07-27 23:00:00",
+                     "endTime":  "2026-07-28 00:00:00",
+                     "total":  0,
+                     "in":  0,
+                     "out":  0,
+                     "occupancy":  0
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Entree_Oloumi",
+                     "channelId":  "1000005$1$0$0",
+                     "startTime":  "2026-07-27 23:00:00",
+                     "endTime":  "2026-07-28 00:00:00",
+                     "total":  0,
+                     "in":  0,
+                     "out":  0,
+                     "occupancy":  0
+                 },
+                 {
+                     "camera":  "Cam_Compteuse_Sortie_Oloumi",
+                     "channelId":  "1000005$1$0$1",
+                     "startTime":  "2026-07-27 23:00:00",
+                     "endTime":  "2026-07-28 00:00:00",
+                     "total":  0,
+                     "in":  0,
+                     "out":  0,
+                     "occupancy":  0
+                 }
+             ]
+}

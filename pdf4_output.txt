@@ -1,0 +1,1250 @@
+PDF4 HTTP API V3.87: 1058 pages
+--- PAGE 1 ---
+ 
+ 
+ 
+ 
+  
+  
+   
+  API of HTTP Protocol Specification  
+ 
+ 
+ 
+V3.87 
+2025-04- 10 DAHUA_HTTP_API-V3.87 for HOTEL_BUDING
+--- PAGE 2 ---
+ 
+Cybersecurity Recommendations   I 
+ 
+  CyďerseĐurity ReĐoŵŵeŶdatioŶs  
+Mandatory actions to be taken towards cybersecurity  
+1. Change Passwords and Use Strong Passwords:  
+The number one reason systems get "hacked " is due to having weak or default passwords. It is 
+recommended to change default passwords immediately and choose a strong password whenever 
+possible. A strong password should be made up of at least 8 characters and a combination of special 
+characters, numbers, and upper and lower case letters.  
+2. Update Firmware  
+As is standard procedure in the tech-industry, we recommend keeping NVR, DVR, and IP ca mera 
+firmware up- to-date to ensure the system is current with the latest security patches and fixes.  
+"Nice to have " recommendations to improve your network security  
+1. Change Passwords Regularly  
+Regularly change the credentials to your devices to help ensure that only authorized users are able to 
+access the system.  
+2. Change Default HTTP and TCP Ports:  
+● Change default HTTP and TCP ports for systems. These are the two ports used to communicate and 
+to view video feeds remotely.  
+● These ports can be changed to any set of numbers between 1025-65535. Avoiding the default ports 
+reduces the risk of outsiders being able to guess which ports you are using.  
+3. Enable HTTPS/SSL:  
+Set up an SSL Certificate to enable HTTPS. This will encrypt all communicati on between your devices 
+and recorder.  
+4. Enable IP Filter:  
+Enabling your IP filter will prevent everyone, except those with specified IP addresses, from access ing 
+the system.  
+5. Change ONVIF Password:  
+On older IP Camera firmware, the ONVIF password does not change when you change the system's 
+credentials. You will need to either update the camera's firmware to the latest revisi on or manually 
+change the ONVIF password.  
+6. Forward Only Ports You Need:  
+● Only forward the HTTP and TCP ports that you need to use. Do not forward a huge range of numbers 
+to the device. Do not DMZ the device's IP address.  
+● You do not need to forward any ports for individual cameras if they are all connected to a recorder on 
+site; just the NVR is needed.  
+7. Limit Features of Guest Accounts:  
+If your system is set up for multiple users, ensure that each user only has rights to features and 
+functions they need to use to perform their job.  
+8. UPnP:  DAHUA_HTTP_API-V3.87 for HOTEL_BUDING
+--- PAGE 3 ---
+ 
+Cybersecurity Recommendations   II ● UPnP will automatically try to forward ports in your router or modem. Normally this would be a good 
+thing. However, if your system automatically forwards the ports and you leave the credential s defaulted, 
+you may end up with unwanted visitors.  
+● If you manually forwarded the HTTP and TCP ports in your router/modem, this feature shoul d be 
+turned off regardless. Disabling UPnP is recommended when the function is not used in real 
+applications.  
+9. SNMP:  
+Disable SNMP if you are not using it. If you are using SNMP, you should do so only temporarily, for 
+tracing and testing purposes only.  
+10. Multicast:  
+Multicast is used to share video streams between two recorders. Currently there are no known issues 
+involving Multicast, but if you are not using this feature, deactivation can enhance your networ k security.  
+11. Check the Log:  
+If you think that someone has gained unauthorized access to your system, you can check the syst em 
+log. The system log will show you which IP addresses were used to login to your system and what was 
+accessed.  
+12. Physically Lock Down the Device:  
+Ideally, you want to prevent any unauthorized physical access to your system. The best way to achieve 
+this is to install the recorder in a lockbox, locking server rack, or in a room t hat is behind a lock and key.  
+13. Connect IP Cameras to the PoE Ports on the Back of an NVR:  
+Cameras connected to the PoE ports on the back of an NVR are isolated from the outside world and 
+cannot be accessed directly.  
+14. Isolate NVR and IP Camera Network  
+The network your NVR and IP camera resides on should not be the same network as your public 
+computer network. This will prevent any visitors or unwanted guests from getting access to t he same 
+network the security system needs in order to function properly.  
+ DAHUA_HTTP_API-V3.87 for HOTEL_BUDING
+--- PAGE 4 ---
+ 
+Foreword   III 
+ 
+  Foreword  
+Purpose  
+Welcome to use API of HTTP protocol specification.  
+Reader  
+ API software development engineers  
+ Project managers  
+ Product managers  
+Safety Instructions  
+The following categorized signal words with defined meaning might appear in the Manual.  
+Signal Words  Meaning  
+ DANGER  Indicates a high potential hazard which, if not avoided, will result in 
+death or serious injury.  
+ WARNING  Indicates a medium or low potential hazard which, if not avoided, could 
+result in slight or moderate injury.  
+ CAUTION  Indicates a potential risk which, if not avoided, could result in property 
+damage, data loss, lower performance, or unpredictable result.  
+ TIPS  Provides methods to help you solve a problem or save you time.  
+ NOTE  Provides additional information as the emphasis and supplement to the 
+text. 
+Revision History  
+No. Version  Revision Content  Release Time  
+1 V2.40  Based on the old version.  August 8, 2018  
+2 V2.60  Add find media file with TrafficCar info.  September 12, 2018  
+3 V2.61  Add the "16 AI APIs" chapter.  October 24, 2018  
+4 V2.62  Add find media files with NonMotor info  November 06, 2018  
+5 V2.63  Add close door and access control custom password  November 27, 2018  
+6 V2.64  Add access control and video talk settings.  December 12, 2018  
+DAHUA_HTTP_API-V3.87 for HOTEL_BUDING
+--- PAGE 5 ---
+ 
+Foreword   IV No. Version  Revision Content  Release Time  
+7 V2.65  Add intelligent caps and resource usage info  January 17, 2019  
+8 V2.66  Add people heat map, realtime trace, history trace info  February 13, 2019  
+9 V2.67  Add subscribe heat map raw data  April 18, 2019  
+10 V2.68  Add get traffic snap event info record  May 15, 2019  
+11 V2.69  Add export traffic blacklist/redlist record  May 20, 2019  
+12 V2.70 Add privacy masking  May 29, 2019  
+13 V2.71  Add get the max and min temperature values  June 3, 2019  
+14 V2.72  Add smart motion detection config  June 27, 2019  
+15 V2.73  Add ecrypted download media file  July 16, 2019  
+16 V2.74  Adjust Camera Image, Exposure, Backlight, White 
+Balance, Day-Night, Zoom and Focus, Lighting, Video in 
+Options config.  July 25, 2019  
+17 V2.75  Add adjust angle and depth field  August 13, 2019  
+18 V2.76  Add subscribe vehicles distribution data.  September 10, 2019  
+19 V2.77  Add Seek Find Logs  October 18, 2019  
+20 V2.78  Add face recognition event handler config  October 30, 2019  
+21 V2.79  Add Remove Ex Traffic BlackList/RedList record.  December 9, 2019  
+22 V2.80  Add Get GPS Status  December 12, 2019  
+23 V2.81  Add Get Last Event Info  February 28, 2020  
+24 V2.82  Add Radar Adaptor  March 23, 2020  
+25 V2.83  Add Radar Adaptor getCapsEx  
+Delete Radar Adaptor getCaps  May 20, 2020  
+26 V2.84  Add AccessControl getLockStatus  June 12, 2020  
+27 V2.85  Add GlobalDeviceParam SupportGlobalDeviceParam  July 2, 2020  
+28 V2.86  Add ObjectPlacementDetection ObjectRemovalDetection  November 5,2020  
+29 V2.87  Add Radar Adaptor addRadarLinkSD, delRadarLinkSD  
+Add VideoInAnalyse getTemplateRule  November 6,2020  
+30 V2.88  Add LensManager , resetAngle  November 26,2020  
+31 V2.89  Add config to Radar Adaptor  December 3, 2020  
+32 V2.90  Add Get Heat Map Info  January 7, 2021  
+33 V2.91  Add export Encryped Log January 12, 2021  
+34 V2.92  Add controller related  February 23, 2021  DAHUA_HTTP_API-V3.87 for HOTEL_BUDING
+--- PAGE 6 ---
+ 
+Foreword   V No. Version  Revision Content  Release Time  
+35 V2.93  Add config to objectdetect DirectionStats  March 1,2021  
+36 V2.94  Add Camera to a Specific NVR Channel  March 11, 2021  
+37 V2.95  Add add and remove configure  March 26, 2021  
+38 V2.96  Add Add WorkSuitCompareServer  April 22,2021  
+39 V2.97  Add VideoAnalyseRule head . Type add 
+ObjectPlacement and ObjectRemoval  April 25,2021  
+40 V2.98  Modify WorkSuitCompareServer  May 11,2021  
+41 V2.99  Modify WorkSuitCompareServer doFind  May 11,2021  
+42 V3.00  Add trafficFlowStat stopFind , trafficFlowStat doFind and 
+trafficFlowStat startFind  May 27,2021  
+43 V3.01  Add configManager setConfig IntelliSchemeTour.Enable  June 3,2021  
+44 V3.02  Add configManager getConfig IntelliSchemeTour  June 11,2021  
+45 V3.03  Add method cancel upgrade  June 21, 2021  
+46 V3.04  doFindHistoryByPic Add Time  Sept 29, 2021  
+47 V3.05  Add Cloud Upgrade, add find smd data  December 22, 2021  
+48 V3.06  Add OpenAI  January 11,2022  
+49 V3.07  Add correctScene api  January 21, 2022  
+50 V3.08  Add SSHD config  February 16, 2022  
+51 V3.09  Add Water Data Analyse  February 17, 2022  
+52 V3.10 Add Http Uploading api  April 20, 2022  
+53 V3.11  Add PassedNumber , EnteredDupNumber, … to People 
+Count Information.  June 1, 2022  
+54 V3.12  Add method export account file  June 29, 2022  
+55 V3.13  Add method query data flux  August 3, 2022  
+56 V3.14  Add method about SCADA  August 23, 2022  
+57 V3.15  Add method get gyroscope info  September 6, 2022  
+58 V3.16  Add Vehicle Manager  October 11, 2022  
+59 V3.17  Add method getCompleteMachineVersion  October 17, 2022  
+60 V3.18  Add Tcp Test  November 1, 2022  
+61 V3.19  Modify method WorkSuitCompareServer.doFind , 
+getFlux , queryHistoryFlux and SCADA.doFind  December 7,20 22 DAHUA_HTTP_API-V3.87 for HOTEL_BUDING
+--- PAGE 7 ---
+ 
+Foreword   VI No. Version  Revision Content  Release Time  
+62 V3.20  Add method AudioAnalyseManager .setClassConfig, 
+AudioAnalyseManager .getClassConfig, 
+AudioAnalyseManager .setConfig and 
+AudioAnalyseManager .getConfig.  December 8,20 22 
+63 V3.21  Add method getViewRangeStatus  December 19, 2022  
+64 V3.22  Add method Get Device Info,  
+Add method Get Camera States  
+Add method Get Camera Recording State  January 3, 2023  
+65 V3.23 Add FaceAnalysis Report Data Upload  January 5,2023  
+66 V3.24  Add Play the Specified Audio File  February 6, 2023  
+67 V3.25  Modify State of Getting the Analysis Configurations of 
+the Specified Audio Channel  February 21, 2023  
+68 V3.26  Add devVideoAnalyse.disableScene, 
+devVideoAnalyse.enableScene, 
+devVideoAnalyse.getSceneList  February 28, 2023  
+69 V3.27  Add getChannelAlgVersion  March 10, 2023  
+70 V3.28  Add Config VideoInDayNight ǃLightingScheme ǃ
+Lighting_V2 ǃLighting and  RTMP_NVR  March 13, 2023  
+71 V3.29  Add SceneModeManager  March 30, 2023  
+72 V3.30  Add set parking space light plan  April 10, 2023  
+73 V3.31  Modify FishEye Setting ，Add field  April 20, 2023  
+74 V3.32  Document Format Adjusted  May 24, 2023  
+75 V3.33  Add ExperienceRegistry  June 28, 2023  
+76 V3.34  Add Remote Delete Person  July 4, 2023  
+77 V3.35  Add findDownload  July 21, 2023  
+78 V3.36  Add devVideoInput s etFocus  August 8, 2023  
+79 V3.37  RoadFlowStat ，ObjectDetect add Direction ǃ
+RoadwayDirection ǃLocalTime field  September 4, 2023  
+80 V3.38  Add Digital Certificate Import and Export  December 22, 2023  
+81 V3.39  Add get Intrinsics params  January 24, 2024  
+82 V3.40 Modify ExperienceRegistry , videoStatServer add 
+accurate passenger flow field  February 27, 2024  
+83 V3.41  videoStatServer.GetSummary add RuleName ，AreaID  March 5, 2024  
+84 V3.42  add CoaxialWhiteLightSpeaker.setLightMode  March 12, 2024  
+85 V3.43  add Event Control Manager  March 21, 2024  DAHUA_HTTP_API-V3.87 for HOTEL_BUDING
+--- PAGE 8 ---
+ 
+Foreword   VII No. Version  Revision Content  Release Time  
+86 V3.44  videoStatServer.attachStatistics add channel  April 1, 2024  
+87 V3.45  add getSpeedLimit and setSpeedLimit  April 2, 2024  
+88 V3.46  startFindDetail add StaffType  April 22, 2024  
+89 V3.47  Add setActiveServerCert ，getCertsInfo  May 6, 2 024 
+90 V3.48  Add FireDetection ，SmokeDetection  May 6, 2 024 
+91 V3.49  Add SDlogStore Configuration  May 8, 2 024 
+92 V3.50  Add enableUnderSpeed  May 10, 2024 
+93 V3.51  mediaFileFind Add AnimalDetection  May 22, 2024 
+94 V3.52  Add HttpPushGeneral Setting  June 19, 2024 
+95 V3.53  Add resumeLastTask ，pausePtzAction  July 10,2024  
+96 V3.54  Add videoStatisticsService.attach and 
+VideoStatSummary  July 17,2024  
+97 V3.55  Add BurnerSession fileUpload , fileUploadStart, 
+fileUploadStop  July 18,2024  
+98 V3.56  Add IotboxComm attach, findAll  July 19,2024  
+99 V3.57 Add BurnerSession start, stop, mark, change disk, 
+attach, attachBurnDevState, etc.  July 19,2024  
+100 V3.58  Add CourseRecordManager manualControlRecord  July 19,2024  
+101 V3.59  Add DigitalCertificate.deleteCert  July 22,2024  
+102 V3.60  Add Record config SaveAudio, Add LightGlobal config  July29,2024  
+103 V3.61  Add  devAudioDecode.empty  August 13,2024  
+104 V3.62  Add ParkingSpaceStatus ，CarDrivingInOut  August 16,2024  
+105 V3.63  Add download traffic picture by time  August 21,2024  
+106 V3.64  Add Acupick Mode configuration  August 27,2024  
+107 V3.65  Modify storage.getCaps field  September 9, 2024  
+108 V3.66  Add traffic strobe configuration  September 11, 2024  
+109 V3.67 Add ObjectAppearDetection ǃ
+ObjectDisappearDetection ǃObjectStateDetection ǃ
+ChangeDetection  October 17, 2024  
+110 V3.68  Add SetPresetByName , RemovePresetByName , 
+GotoPresetByName  October 28, 2024  
+111 V3.69  Add setRuleConfig  October 29, 2024  
+112 V3.70  Add videoStatServer getCount  November 5, 2024  DAHUA_HTTP_API-V3.87 for HOTEL_BUDING
+--- PAGE 9 ---
+ 
+Foreword   VIII No. Version  Revision Content  Release Time  
+113 V3.71  Add getWholeState  November 11, 2024  
+114 V3.72  Add Event OpenCloseDoorDetection ǃ
+TrappedInLiftDetection ǃElevatorWorkInfo ǃ
+DoorStateDetection  November 28,2024  
+115 v3.73  Add IotboxComm getHistoryData ǃwriteSensorValue ǃ
+attachByCond  December 04,2024  
+116 v3.74  add Auto Registration  December 20,2024  
+117 v3.75  add Traffic Network Snapshot  December 24,2024  
+118 V3.76 eventManager.getCaps add SupportEventLinkMulti  December 27,2024  
+119 V3.77 Add VideoUnFocus Event  January 14, 2025 
+120 V3.78 SmartMotionDetect Add DetectRegions  January 16, 2025 
+121 V3.79  faceRecognitionServer.addPerson ǃmodifyPerson ǃ
+startFind Add className ，academe,Add 
+FaceAttendance.startFind, getCount, doFind, stopFind  January 16, 2025 
+122 V3.80  Network add wlan  January 21, 2025 
+123 V3.81  snapManager add get upload report api March 03, 2025  
+124 V3.82  BurnerSession/attach Modify BurnSession R  March 10, 2025  
+125 V3.83  Network add wlan0  March 13, 2025  
+126 V3.84  devVideoAnalyse.getcaps add Normal  March 21, 2025  
+127 V3.85  UserManager add addGroup, modifyGroup, deleteGroup 
+api  March 21, 2025  
+128 V3.86  Add moveToFixedAngle  March 25, 2025  
+129 V3.87  Add manual upload picture  April 10, 2025  
+130 V3.88  UserInfo add NeedModPwdForce  April 27, 2025  
+131 V3.89  Add IntelliHelper getRegionInfos  May 27,2025 
+Privacy Protection Notice  
+As the device user or data controller, you might collect personal data of other such as face, 
+fingerprints, car plate number, Email address, phone number, GPS and so on. You need to be in 
+compliance with the local privacy protection laws and regulations to protect the legitimate rights and 
+interests of other people by implementing measures include but not limited to: providi ng clear and 
+visible identification to inform data subject the existence of surveillance area and prov iding related 
+contact.  
+About  the Manual  DAHUA_HTTP_API-V3.87 for HOTEL_BUDING
+--- PAGE 10 ---
+ 
+Foreword   IX  The Manual is for reference only. If there is inconsistency between the Manual and the actual 
+product, the actual product shall prevail.  
+ We are not liable for any loss caused by the operations that do not comply with the Manual.  
+ The Manual would be updated according to the latest laws and regulations of related regions. 
+For detailed information, see the paper manual, CD-ROM, QR code or our official w ebsite. If 
+there is inconsistency between paper manual and the electronic version, the electronic version 
+shall prevail.  
+ All the designs and software are subject to change without prior written notice. The product 
+updates might cause some differences between the actual product and the Manual. Please 
+contact the customer service for the latest program and supplementary documentation.  
+ There still might be deviation in technical data, functions and operations description, or errors 
+in print. If there is any doubt or dispute, please refer to our final explanation.  
+ Upgrade the reader software or try other mainstream reader software if the Manual (in PDF 
+format) cannot be opened.  
+ All trademarks, registered trademarks and the company names in the Manual are the 
+properties of their respective owners.  
+ Please visit our website, contact the supplier or customer service if there is any problem 
+occurred when using the device.  
+ If there is any uncertainty or controversy, please refer to our final explanati on. DAHUA_HTTP_API-V3.87 for HOTEL_BUDING
+--- PAGE 11 ---
+ 
+Table of Contents   X 
+ 
+  Taďle of CoŶteŶts  
+Cybersecurity Recommendations  ...........................................................................................................  I 
+Foreword  ..................................................................................................................................................  III 
+Table of Contents  .....................................................................................................................................  X 
+1  Overview  ..............................................................................................................................................  1 
+2  References ...........................................................................................................................................  2 
+3  Definitions  ...........................................................................................................................................  3 
+3.1 Abbreviations  ................................................................................................................................ . 3 
+3.2 Syntax Convention  ........................................................................................................................  3 
+3.3 HTTP API Protocol Format  ...........................................................................................................  3 
+3.3.1 key=value format  ................................................................................................................  4 
+3.3.2 JSON format  .......................................................................................................................  5 
+3.4 Authentication  ................................................................................................................................  8 
+3.5 Conventions  ..................................................................................................................................  9 
+3.5.1 Channels  .............................................................................................................................  9 
+4  General APIs  ......................................................................................................................................  10 
+4.1 APIs of RTSP  ..............................................................................................................................  10 
+4.1.1 Get Real-Time Stream  ......................................................................................................  10 
+4.1.2 Get Playback Stream  ........................................................................................................  12 
+4.1.3 Get File Stream  .................................................................................................................  12 
+4.1.4 Get MJPG Stream  ............................................................................................................  13 
+4.1.5 Create RTSP Pull and Authentication Token  ....................................................................  13 
+4.1.6 Get Stream Info  ................................................................................................................  14 
+4.2 Configure Manager  .....................................................................................................................  14 
+4.2.1 Get and Set Configure  ......................................................................................................  14 
+4.2.2 Add and Remove Configure  .............................................................................................  15 
+4.2.3 Restore the Config  ............................................................................................................  16 
+4.2.4 Restore except the Config  ................................................................................................  17 
+4.3 Audio  ...........................................................................................................................................  17 
+4.3.1 Get Audio Input Channel Numbers  ...................................................................................  17 
+4.3.2 Get Audio Output Channel Numbers  ................................................................................  18 
+4.3.3 Post Audio Stream  ............................................................................................................  18 
+4.3.4 Get Audio Stream  .............................................................................................................  19 
+4.3.5 [Config] Volume Control  ....................................................................................................  20 
+4.3.6 Getting the Analysis Configurations of the Specified Audio Channel  ..............................  21 
+4.3.7 Setting the Analysis Configuration of the Specified Audio Channel  ................................ . 28 
+4.3.8 Getting the Related Business Configuration of the Specified Audio Channel  .................  29 
+4.3.9 Configuring the Related Business Configuration of the Specified Audio Channel  ..........  36 
+4.3.10 [DataStruct]AudioAnalyseRule(SmartSoundDetect)  ......................................................  38 
+4.3.11 [DataStruct]AudioAnalyseModule(SmartSoundDetect)  ..................................................  38 
+4.3.12 Play the Specified Audio in the Device  ...........................................................................  38 
+4.3.13 Check Audio Decoding Buffer Empty  .............................................................................  39 
+4.4 Snapshot  .....................................................................................................................................  40 DAHUA_HTTP_API-V3.87 for HOTEL_BUDING
+--- PAGE 12 ---
+ 
+Table of Contents   XI 4.4.1 [Config] Snap  ....................................................................................................................  40 
+4.4.2 Get a Snapshot  .................................................................................................................  41 
+4.4.3 Subscribe to Snapshot  .....................................................................................................  41 
+4.5 Video Attributes  ...........................................................................................................................  44 
+4.5.1 Get M ax Extra Stream Numbers  ......................................................................................  44 
+4.5.2 Get Encode Capability  ......................................................................................................  44 
+4.5.3 Get Encode Config Capability  ..........................................................................................  46 
+4.5.4 [Config] Encode of Media  ................................................................................................ . 50 
+4.5.5 [Config] Encode of Region Interested  ..............................................................................  55 
+4.5.6 [Config] Channel Title  .......................................................................................................  56 
+4.5.7 Get Video Input Channels Device Supported  ..................................................................  56 
+4.5.8 Get Video Output Channels Device Supported  ................................................................  57 
+4.5.9 Get M ax Remote Input Channels  .....................................................................................  57 
+4.5.10 [Config] Video Standard  ................................................................................................ . 57 
+4.5.11 [Config] Video Widget  .....................................................................................................  58 
+4.5.12 Get Video Input Capability  ..............................................................................................  61 
+4.5.13 Get Coordinates of Current Window  ..............................................................................  65 
+4.5.14 Set Coordinates of Current Window  ...............................................................................  66 
+4.5.15 [Config] Video Out  ..........................................................................................................  66 
+4.5.16 [Config] Smart Encode  ...................................................................................................  68 
+4.5.17 Get Decoder Caps  ..........................................................................................................  68 
+4.5.18 [Config] PrivacyMasking  ................................................................................................ . 69 
+4.5.19 G et Privacy Masking  .......................................................................................................  70 
+4.5.20 S et Privacy Masking  .......................................................................................................  72 
+4.5.21 Goto Privacy Masking  .....................................................................................................  73 
+4.5.22 Delete Privacy Masking  ..................................................................................................  73 
+4.5.23 Clear Privacy Masking  ....................................................................................................  74 
+4.5.24 Get Privacy Masking Rect  ..............................................................................................  74 
+4.5.25 [Config] Motion Detection Settings  .................................................................................  74 
+4.5.26 [Config] LAEConfig  .........................................................................................................  80 
+4.5.27 Enable/Disable all privacy masking covers  ....................................................................  82 
+4.5.28 Get enable/disable state of all privacy masking covers  .................................................  82 
+4.5.29 Get Intrinsics  ...................................................................................................................  82 
+4.5.30 Get Whole Encode State  ................................................................................................  83 
+4.6 System  ........................................................................................................................................  84 
+4.6.1 [Config] General  ................................................................................................................  84 
+4.6.2 Get Current Time  ..............................................................................................................  85 
+4.6.3 Set Current Time  ...............................................................................................................  86 
+4.6.4 [Config] Locales  ................................................................................................................  86 
+4.6.5 [Config] Holiday Management  ..........................................................................................  88 
+4.6.6 Get Language Capability  ..................................................................................................  89 
+4.6.7 [Config] Language  ............................................................................................................  89 
+4.6.8 Get Device Type  ...............................................................................................................  90 
+4.6.9 Get Hardware Version  ......................................................................................................  90 
+4.6.10 Get Serial Number of Device  ..........................................................................................  91 
+4.6.11 Get Machine Name  .........................................................................................................  91 
+4.6.12 Get System Information  ..................................................................................................  91 DAHUA_HTTP_API-V3.87 for HOTEL_BUDING
+--- PAGE 13 ---
+ 
+Table of Contents   XII 4.6.13 Get Vendor Information  ..................................................................................................  92 
+4.6.14 Get Software Information  ................................................................................................  93 
+4.6.15 Get Version of Onvif  .......................................................................................................  93 
+4.6.16 Get Version of HTTP API  ................................................................................................  94 
+4.6.17 Get Device Class  ............................................................................................................  94 
+4.6.18 [Config] Auto Maintain  ....................................................................................................  94 
+4.6.19 Reboot  ............................................................................................................................  95 
+4.6.20 Shutdown  ........................................................................................................................  96 
+4.6.21 Factory Reset  .................................................................................................................  96 
+4.6.22 Get Tracing Code of Device  ...........................................................................................  97 
+4.6.23 Add Camera to Specified Channel  .................................................................................  97 
+4.6.24 Delete Camera by Group  ................................................................................................  98 
+4.6.25 Acquiring All Available Resources  ..................................................................................  99 
+4.6.26 Subscribing for Device Online/Offline Status  ...............................................................  105 
+4.6.27  Get Complete Machine Version  ....................................................................................  107 
+4.6.28 Connection test  .............................................................................................................  107 
+4.6.29 Getting Online Status of the Channel  ...........................................................................  108 
+4.6.30 Getting the Recording Status of the Channel  ...............................................................  109 
+4.6.31 Export Cert  ..................................................................................................................... 110 
+4.6.32 Import Cert  .....................................................................................................................  111 
+4.6.33 Obtain existing certificate information within the device  ............................................... 113 
+4.6.34 Activate the corresponding server certificate internally  ................................................. 116 
+4.6.35  Delete Certificate  ......................................................................................................... 116 
+4.6.36 Get CPU Usage  ............................................................................................................. 117 
+4.6.37 Get Memory Info  ............................................................................................................ 117 
+4.6.38 Get Temperature  ............................................................................................................ 118 
+4.6.39 Get System Info1  ........................................................................................................... 118 
+4.6.40 Export Custom Log  ........................................................................................................ 119 
+4.6.41 Open Debug Server  ....................................................................................................... 119 
+4.6.42 Close Debug Server  .....................................................................................................  120 
+4.6.43 DDNS Resolution  ..........................................................................................................  120 
+4.6.44 Get CGI Version  ............................................................................................................  121 
+4.7 User management  ....................................................................................................................  121 
+4.7.1 Get Information of a Particular User  ...............................................................................  121 
+4.7.2 Get Information of All Users  ............................................................................................  122 
+4.7.3 Get Information of All Active Users  .................................................................................  123 
+4.7.4 Get Information of a Particular Group  ............................................................................  124 
+4.7.5 Get Information of all Groups  .........................................................................................  125 
+4.7.6 Add a New User  ..............................................................................................................  125 
+4.7.7 Delete a User  ..................................................................................................................  126 
+4.7.8 Modify User Information  ................................................................................................ . 126 
+4.7.9 Modify User's Password  ................................................................................................ . 127 
+4.7.10 Manager Modify Common User's Password  ................................................................  127 
+4.7.11 [Config] User Login Authentication Policy .....................................................................  128 
+4.7.12 Add a New Group  .........................................................................................................  128 
+4.7.13 Modify Group Information  .............................................................................................  129 DAHUA_HTTP_API-V3.87 for HOTEL_BUDING
+--- PAGE 14 ---
+ 
+Table of Contents   XIII 4.7.14 Delete a Group  .............................................................................................................  129 
+4.8 Network  .....................................................................................................................................  130 
+4.8.1 Get Network Interfaces  ...................................................................................................  130 
+4.8.2 [Config] Client Access Filter  ............................................................................................  131 
+4.8.3 [Config] Network Basic Config  ........................................................................................  132 
+4.8.4 [Config] PPPoE  ...............................................................................................................  134 
+4.8.5 [Config] DDNS  ................................................................................................................  135 
+4.8.6 [Config] Email  .................................................................................................................  137 
+4.8.7 [Config] WLan  .................................................................................................................  139 
+4.8.8 Scan Wlan Devices .........................................................................................................  140 
+4.8.9 [Config] UPnP  .................................................................................................................  142 
+4.8.10 Get UPnP Status  ..........................................................................................................  143 
+4.8.11 [Config] NTP ..................................................................................................................  143 
+4.8.12 [Config] RTSP  ...............................................................................................................  145 
+4.8.13 [Config] Alarm Server  ...................................................................................................  146 
+4.8.14 [Config] Onvif Service Authorization  .............................................................................  147 
+4.8.15 [Config] SSHD Config  ...................................................................................................  147 
+4.8.16 [Config] Cellular Network Traffic Packages  ..................................................................  148 
+4.8.17 Obtaining the Traffic Information of Current Month  ......................................................  149 
+4.8.18 Searching for History Traffic Statistics According to Specified Conditions  ..................  150 
+4.8.19 [Config]Configuring General Settings of RTMP  ...........................................................  152 
+4.9 Event  .........................................................................................................................................  154 
+4.9.1 [DataStruct] Event Handler  .............................................................................................  154 
+4.9.2 [Config] Alarm Event  .......................................................................................................  160 
+4.9.3 [Config] Alarm Out  ..........................................................................................................  161 
+4.9.4 Get Alarm Input Channels  ..............................................................................................  161 
+4.9.5 Get Alarm Output Channels  ............................................................................................  162 
+4.9.6 Get States of Alarm Input Channels  ...............................................................................  162 
+4.9.7 Get States of Alarm Output Channels  ............................................................................  162 
+4.9.8 [Config] Video Blind Event  ..............................................................................................  163 
+4.9.9 [Config] Video Loss Event  ..............................................................................................  163 
+4.9.10 [Config] Login Failure Event  .........................................................................................  164 
+4.9.11 [Config] Storage Not Exist Event  ..................................................................................  164 
+4.9.12 [Config] Storage Access Failure Event  .........................................................................  165 
+4.9.13 [Config] Storage Low Space Event  ..............................................................................  165 
+4.9.14 [Config] Net Abort Event  ...............................................................................................  166 
+4.9.15 [Config] IP Conflict Event  ..............................................................................................  166 
+4.9.16 Get Channels Event Happened  ....................................................................................  167 
+4.9.17 Subscribe to Event Message  ........................................................................................  168 
+4.9.18 Get Capability of Event Management  ...........................................................................  171 
+4.9.19 [Config] Net Alarm Event  ..............................................................................................  174 
+4.9.20 Set Net Alarm State  ......................................................................................................  175 
+4.9.21 Get Supported Events  ..................................................................................................  176 
+4.9.22 [Config] Triger Http User List  ........................................................................................  176 
+4.10 Record  .....................................................................................................................................  177 
+4.10.1 Get Capability of Recording ..........................................................................................  177 
+4.10.2 [Config] Record Config  ................................................................................................ . 178 DAHUA_HTTP_API-V3.87 for HOTEL_BUDING
+--- PAGE 15 ---
+ 
+Table of Contents   XIV 4.10.3 [Config] Record Mode  ...................................................................................................  179 
+4.10.4 [Config] Media Global  ...................................................................................................  180 
+4.10.5 Find Media Files  ...........................................................................................................  180 
+4.10.6 Find Media Files with FaceDetection info  ....................................................................  184 
+4.10.7 Find Media Files with FaceRecognition info  ................................................................ . 187 
+4.10.8 Find Media Files with HumanTrait info  .........................................................................  192 
+4.10.9 Find Media Files with TrafficCar info  ............................................................................  196 
+4.10.10 Find Media Files with IVS info  ....................................................................................  199 
+4.10.11 Find Media Files with NonMotor info  ..........................................................................  201 
+4.10.12 Find Media Files with WorkClothesDetection info  ......................................................  204 
+4.10.13 Find Media Files with AnimalDetection info  ................................................................  210 
+4.10.14 Get Total File Number of Find Media Files  ............................................................  213 
+4.10.15  Query Recording Time Range  .................................................................................  213 
+4.10.16 Download Media File with the File Name  ...................................................................  214 
+4.10.17 Download Media File between Times .........................................................................  214 
+4.10.18 Encrypted Download Media File with the File Name  .................................................  215 
+4.10.19 Download Traffic Snap Picture File by Time Range  ...................................................  216 
+4.11 Log  ...........................................................................................................................................  218 
+4.11.1 Find Logs  ......................................................................................................................  218 
+4.11.2 Clear All the Logs  ..........................................................................................................  220 
+4.11.3 Backup Logs  .................................................................................................................  220 
+4.11.4 Seek Find Logs  .............................................................................................................  221 
+4.11.5 Export Encryped Log  ....................................................................................................  222 
+4.11.6 [Config] Serial Port Log Redirection  .............................................................................  222 
+4.11.7 [Config] Serial Port Log on SD Card Storage  ...............................................................  223 
+4.12 Upgrader  ................................................................................................................................ . 224 
+4.12.1 Strat to Upgrade  ...........................................................................................................  224 
+4.12.2 Get Upgrade State  ........................................................................................................  224 
+4.12.3 Set upgrader url  ............................................................................................................  225 
+4.12.4 Cancel Upgrade  ............................................................................................................  225 
+4.12.5 Checking Cloud Update Version  ..................................................................................  226 
+4.12.6 Performing Online Update  ............................................................................................  228 
+4.12.7 Canceling Online Update  ..............................................................................................  229 
+4.13 Http Uploading  ........................................................................................................................  229 
+4.13.1 [Config] Active Image and Event Uploading  ................................................................ . 229 
+4.13.2 Active Image and Event Uploading  ..............................................................................  231 
+4.13.3 [Config] Active Event Uploading  ...................................................................................  232 
+4.13.4 Active Event Uploading  ................................................................................................ . 234 
+4.13.5 [Config] Active Report Data Uploading  .........................................................................  234 
+4.13.6 People Counting Report Data Uploading  .....................................................................  236 
+4.13.7 Video Structuring Report Data Upload  .........................................................................  238 
+4.13.8 People Flow Heat Map Report Data Upload  ................................................................  240 
+4.13.9 ANPR Report Data Upload  ...........................................................................................  241 
+4.13.10 Crowd Distribution Report Data upload  ......................................................................  242 
+4.13.11 Vehicle Density Report Data Upload  ..........................................................................  243 DAHUA_HTTP_API-V3.87 for HOTEL_BUDING
+--- PAGE 16 ---
+ 
+Table of Contents   XV 4.13.12 FaceAnalysis Report Data Upload  .............................................................................  245 
+4.14 Auto Registration  .....................................................................................................................  246 
+4.14.1 Login  .............................................................................................................................  246 
+4.14.2 Connect .........................................................................................................................  247 
+4.14.3 Keep Alive  .....................................................................................................................  248 
+5 Camera APIs  ......................................................................................................................................  249 
+5.1 Image  ........................................................................................................................................  249 
+5.1.1 [Config] Brightness, Contrast and Saturation  ................................................................ . 249 
+5.1.2 [Config] Sharpness  .........................................................................................................  250 
+5.1.3 [Config] Flip, Mirror and Rotate90  ..................................................................................  250 
+5.2 Exposure  ...................................................................................................................................  251 
+5.2.1 [Config] Exposure Config  ................................................................................................  251 
+5.3 Backlight  ....................................................................................................................................  253 
+5.3.1 [Config] Backlight Config  ................................................................................................  253 
+5.4 White Balance  ...........................................................................................................................  254 
+5.4.1 [Config] White Balance Config  .......................................................................................  254 
+5.5 Day-Night  ..................................................................................................................................  255 
+5.5.1 [Config] Day-Night Config  ...............................................................................................  255 
+5.6 Zoom and Focus  .......................................................................................................................  256 
+5.6.1 Adjust Focus  ...................................................................................................................  256 
+5.6.2 Adjust Focus Continuously  .............................................................................................  256 
+5.6.3 Auto Focus  ......................................................................................................................  257 
+5.6.4 Get Focus Status  ............................................................................................................  257 
+5.6.5 setFocus  .........................................................................................................................  258 
+5.6.6 [Config] Zoom Config  ......................................................................................................  259 
+5.6.7 [Config] Focus Config  .....................................................................................................  259 
+5.6.8 [Event] VideoUnFocus  ....................................................................................................  261 
+5.7 Lighting  ......................................................................................................................................  262 
+5.7.1 Set Light Mode  ................................................................................................................  262 
+5.7.2 [Config] Status light control configuration (direct connection device configuration)  ...... 262 
+5.8 Video in Options  ........................................................................................................................  263 
+5.8.1 Change binocular camera's splice mode  .......................................................................  263 
+5.8.2 [Config] Video in Options Config  ....................................................................................  263 
+6 Storage APIs  ....................................................................................................................................  270 
+6.1 Storage Devices  ........................................................................................................................  270 
+6.1.1 Get Hard Disk Information  ..............................................................................................  270 
+6.1.2 Get the Name of All Storage Devices  .............................................................................  271 
+6.1.3 Get Storage Device Information  .....................................................................................  271 
+6.1.4 Get Storage Capability  ...................................................................................................  272 
+6.1.5 Format Camera SD-Card  ...............................................................................................  276 
+6.1.6 [Config] Hard Disk Recording Type  ................................................................................  277 
+6.1.7 Getting Disk Information  ................................................................................................ . 277 
+6.2 NAS  ...........................................................................................................................................  285 
+6.2.1 [Config] NAS Information  ................................................................................................  285 
+6.3 Storage Point  ............................................................................................................................  286 
+6.3.1 [Config] Record Storage Point  ........................................................................................  286 
+6.3.2 [Config] Storage Group  ...................................................................................................  288 DAHUA_HTTP_API-V3.87 for HOTEL_BUDING
+--- PAGE 17 ---
+ 
+Table of Contents   XVI 6.4 SDEncrypt  ................................................................................................................................ . 289 
+6.4.1 Encrypt SD Card  .............................................................................................................  289 
+6.4.2 Decrypt SD Card  .............................................................................................................  289 
+6.4.3 Clear SD Card Password  ...............................................................................................  290 
+6.4.4 Modify SD Card Password  .............................................................................................  290 
+6.4.5 Get SD Card Operate Error Policy  .................................................................................  291 
+6.4.6 [Config] Storage Health Alarm Settings  ..........................................................................  291 
+6.5 AcuPick ......................................................................................................................................  292 
+6.5.1  Upload Map Picture  ........................................................................................................  292 
+6.5.2 Load Map Picture  ............................................................................................................  293 
+6.5.3 Get Map Picture MarkList  ...............................................................................................  294 
+6.5.4 Marke Channel Location Information On Map  ...............................................................  295 
+6.5.5 Cancel Channel Map Mark  .............................................................................................  296 
+6.5.6 Reset Map Picture  ..........................................................................................................  297 
+6.5.7  Check Mark Status  .........................................................................................................  297 
+6.5.8 Get Favorite Data  ...........................................................................................................  298 
+6.5.9 Mark Favorite Data  .........................................................................................................  302 
+6.5.10 Unmark Favorite Data  ..................................................................................................  303 
+6.5.11 Interest Area- Search Video Record And Event  ...........................................................  304 
+6.6 Burner Session  ..........................................................................................................................  309 
+6.6.1 Get Burn Device List  .......................................................................................................  309 
+6.6.2 Get Burn Session Number  ..............................................................................................  310 
+6.6.3 Start Burn Session  ........................................................................................................... 311 
+6.6.4 Stop Burn Session  ..........................................................................................................  312 
+6.6.5 Resume Burn Session  ....................................................................................................  312 
+6.6.6 Stop Burn Session  ..........................................................................................................  313 
+6.6.7 Mark Burn Session  .........................................................................................................  313 
+6.6.8 Change Disk  ...................................................................................................................  314 
+6.6.9 Get Burn Session State  ..................................................................................................  314 
+6.6.10 Attach  ............................................................................................................................  317 
+6.6.11 Attach Burn Dev State ...................................................................................................  320 
+6.6.12 File Upload  ....................................................................................................................  323 
+6.6.13 File Upload Start  ...........................................................................................................  323 
+6.6.14 File Upload Stop  ...........................................................................................................  324 
+6.7 Lot Box Communication  ............................................................................................................  325 
+6.7.1 Get Sensor Data  .............................................................................................................  325 
+6.7.2 Subscribe to real-time sensor data  .................................................................................  327 
+6.8 Course Record Manager  ...........................................................................................................  330 
+6.8.1 Record Manual Control  ...................................................................................................  330 
+6.9 Others ........................................................................................................................................  331 
+6.9.1 Get Data Upload Status Report  ......................................................................................  331 
+7 Display APIs  .....................................................................................................................................  334 
+7.1 GUI  ............................................................................................................................................  334 
+7.1.1 [Config] GUISet  ...............................................................................................................  334 
+7.2 Split Screen  ...............................................................................................................................  335 
+7.2.1 Split Screen Mode  ..........................................................................................................  335 
+7.3 Moniter Tour  ..............................................................................................................................  336 DAHUA_HTTP_API-V3.87 for HOTEL_BUDING
+--- PAGE 18 ---
+ 
+Table of Contents   XVII 7.3.1 [Config] Moniter Tour  ......................................................................................................  336 
+7.3.2 Enable Tour  .....................................................................................................................  337 
+7.3.3 [Config] Monitor Collection  .............................................................................................  337 
+8 Comm APIs  .......................................................................................................................................  339 
+8.1 PTZ  ............................................................................................................................................  339 
+8.1.1 [Config] PTZ Config  ........................................................................................................  339 
+8.1.2 Get PTZ Protocol List  .....................................................................................................  340 
+8.1.3 Get PTZ Capability of Current Protocol  ..........................................................................  341 
+8.1.4 Get PTZ Status  ...............................................................................................................  342 
+8.1.5 PTZ Control  ....................................................................................................................  343 
+8.1.6 Preset  ..............................................................................................................................  348 
+8.1.7 Tour  ................................................................................................................................ . 350 
+8.1.8 Scan  ................................................................................................................................  353 
+8.1.9 Pattern  ............................................................................................................................  354 
+8.1.10 Pan  ................................................................................................................................  356 
+8.1.11 [Config] PTZ Auto Movement  ........................................................................................  357 
+8.1.12 PTZ Restart  ..................................................................................................................  359 
+8.1.13 PTZ Reset  .....................................................................................................................  359 
+8.1.14 OSD Menu  ....................................................................................................................  360 
+8.1.15 [Config] Electronic PTZ  ................................................................................................ . 362 
+8.1.16 Get View Range Status  ................................................................................................  363 
+8.1.17 Pause Ptz Action  ...........................................................................................................  364 
+8.1.18 Resume Last Task  ........................................................................................................  365 
+8.1.19 Set Preset By Name  .....................................................................................................  365 
+8.1.20 Remove Preset By Name  .............................................................................................  366 
+8.1.21 Goto Preset By Name  ...................................................................................................  366 
+8.1.22 Move To Fixed Angle  ....................................................................................................  366 
+8.2 Wiper  .........................................................................................................................................  367 
+8.2.1 Move Continuously  .........................................................................................................  367 
+8.2.2 Stop Move  .......................................................................................................................  368 
+8.2.3 Move Once ......................................................................................................................  368 
+8.3 Illuminator  ..................................................................................................................................  368 
+8.3.1 [Config] Visible-light Illuminator  ......................................................................................  368 
+8.3.2 [Config]Configuring Lighting  ...........................................................................................  369 
+8.3.3 [Config]Configuring Lighting V2  ......................................................................................  371 
+8.3.4 [Config]Configuring Light Schemes  ................................................................................  375 
+8.4 Flashlight  ...................................................................................................................................  377 
+8.4.1 [Config] Flashlight Config  ...............................................................................................  377 
+8.5 Coaxial Control IO  .....................................................................................................................  378 
+8.5.1 Control White Light or Speaker  ......................................................................................  378 
+8.5.2 Get White Light and Speaker Status  ..............................................................................  378 
+8.6 Pir Alarm  ....................................................................................................................................  379 
+8.6.1 [Config] Pir Parameter  ....................................................................................................  379 
+8.7 SCADA  .......................................................................................................................................  382 
+8.7.1 Searching for SCADA Attributes  .....................................................................................  382 
+8.7.2 Configuring SCADA Attributes  ........................................................................................  385 
+8.7.3 Obtaining Real-time Data of Monitoring Points  ..............................................................  386 DAHUA_HTTP_API-V3.87 for HOTEL_BUDING
+--- PAGE 19 ---
+ 
+Table of Contents   XVIII 8.7.4 Configuring Monitoring Points  ........................................................................................  388 
+8.7.5 Starting Searching for Historical Data  ............................................................................  389 
+8.7.6 Obtaining Historical Data  ................................................................................................  389 
+8.7.7 Stopping Searching for Historical Data  ..........................................................................  391 
+8.7.8 Obtaining IDs of External Devices Connected to the Host  ............................................  391 
+8.8 Gyro  ...........................................................................................................................................  392 
+8.8.1 get gyroscope info  ..........................................................................................................  392 
+8.9 Other  .........................................................................................................................................  393 
+8.9.1 [Config]Day/Night Settings of PTZ Module  ....................................................................  393 
+8.9.2 Configuring UHF Integrated Card Reader  ............................................................................  396 
+9 Video Analyse APIs  ...........................................................................................................................  399 
+9.1 Video Analyse Event  .................................................................................................................  399 
+9.1.1 [Event] LeftDetection  ......................................................................................................  399 
+9.1.2 [Event] TakenAwayDetection  ..........................................................................................  400 
+9.1.3 [Event] WanderDetection  ................................................................................................  400 
+9.1.4 [Event] StayDetection  .....................................................................................................  402 
+9.1.5 [Event] HumanTrait  .........................................................................................................  403 
+9.1.6 [Event] CrossLineDetection  ............................................................................................  406 
+9.1.7 [Event] CrossRegionDetection  .......................................................................................  408 
+9.1.8 [Event] QueueStayDetection  ..........................................................................................  410 
+9.1.9 [Event] QueueNumDetection  ........................................................................................... 411 
+9.1.10 [Event] WorkClothesDetection  ......................................................................................  412 
+9.1.11 [Event] SmokeDetection  ...............................................................................................  425 
+9.1.12 [Event] FireDetection  ....................................................................................................  430 
+9.1.13 [Event] CarDrivingInOut  ................................................................................................  435 
+9.1.14 [Event] ParkingSpaceStatus  .........................................................................................  437 
+9.1.15 [Event] Object Appear  ...................................................................................................  438 
+9.1.16 [Event] Object Disappear  ..............................................................................................  441 
+9.1.17 [Event] Object Status Detection  ...................................................................................  444 
+9.1.18 [Event] Change Detection  .............................................................................................  446 
+9.1.19 [Event] Door State Detection  ........................................................................................  448 
+9.1.20 [Event] Elevator Work Info  ............................................................................................  450 
+9.1.21 [Event] Trapped In Lift Detection  ..................................................................................  453 
+9.1.22 [Event] Open Close Door Detection  .............................................................................  455 
+9.1.23 [Event] Instrument Detection  ........................................................................................  456 
+9.2 FaceRecognitionServer  ............................................................................................................  460 
+9.2.1 Create Face Group  .........................................................................................................  460 
+9.2.2 Modify Face Group  .........................................................................................................  461 
+9.2.3 Delete Face Group  .........................................................................................................  461 
+9.2.4 Deploy Face Group .........................................................................................................  462 
+9.2.5 Find Face Group  .............................................................................................................  464 
+9.2.6 Re-Abstract Feature By Group  .......................................................................................  467 
+9.2.7 Add Person  .....................................................................................................................  467 
+9.2.8 Modify Person  .................................................................................................................  468 
+9.2.9 Delete Person  .................................................................................................................  469 
+9.2.10 Find Person  ..................................................................................................................  470 
+9.2.11 Re-Abstract Features By Person  ..................................................................................  473 DAHUA_HTTP_API-V3.87 for HOTEL_BUDING
+--- PAGE 20 ---
+ 
+Table of Contents   XIX 9.2.12 [Config] Face Recognition AlarmOut Setting  ................................................................  473 
+9.2.13 Find Person by Picture  ................................................................................................ . 475 
+9.2.14 Find History Person by Picture  .....................................................................................  479 
+9.2.15 [Event] FaceDetection  ..................................................................................................  483 
+9.2.16 [Event] FaceRecognition  ..............................................................................................  485 
+9.2.17 [Event] FaceFeatureAbstract  ........................................................................................  487 
+9.2.18 [Config] Face Recognition Event Handler Setting  ........................................................  488 
+9.2.19 [Config] Face-ID Recognition Threshold  ......................................................................  489 
+9.2.20 Export Face Database  ..................................................................................................  489 
+9.2.21 Importing Face Database  .............................................................................................  491 
+9.2.22 Remote Delete Person  ................................................................................................ . 492 
+9.2.23 Add Face Lib Download Task  .......................................................................................  493 
+9.2.24 Import face library image files  ......................................................................................  493 
+9.2.25 Export face library image files  ......................................................................................  495 
+9.2.26 Getting Face Recognition Server Capability  ................................................................  496 
+9.2.27  Query facial recognition attendance statistics dat a .....................................................  500 
+9.3 People Counting ........................................................................................................................  505 
+9.3.1 Get Summary  ..................................................................................................................  505 
+9.3.2 Query the Count of People  .............................................................................................  509 
+9.3.3 Clear the People Count Information  ...............................................................................  513 
+9.3.4 Subscribe the People Count Information  .......................................................................  514 
+9.3.5 Get Area Info  ...................................................................................................................  518 
+9.3.6 Subscription statistics period data  ..................................................................................  519 
+9.3.7 Clear statistics in time section  ........................................................................................  523 
+9.3.8 Query personnel details  ..................................................................................................  524 
+9.3.9 Read personnel details query results  .........................................................................  525 
+9.3.10 End querying personnel details  ................................................................................  528 
+9.3.11 Attach Video Statistics Data  ..........................................................................................  529 
+9.3.12 [DataStruct]VideoStatSummary(StereoBehavior)  ........................................................  532 
+9.3.13 [DataStruct]VideoStatSummary(CrowdDistriMap)  .......................................................  533 
+9.3.14 [DataStruct]VideoStatSummary(VehiclesDistri)  ...........................................................  534 
+9.3.15 [DataStruct]VideoStatSummary(IntelliParking)  ............................................................  535 
+9.3.16 [DataStruct]VideoStatSummary(HeadLiftDetection)  ....................................................  536 
+9.3.17 [DataStruct]VideoStatSummary(TankCapacityDetection)  ............................................  537 
+9.3.18 [DataStruct]VideoStatSummary(AttendanceRateDetection)  ........................................  537 
+9.3.19 [DataStruct]VideoStatSummary(SeatingRateDetection)  ..............................................  538 
+9.3.20 [Config] Video Widget Number Status  ..........................................................................  538 
+9.3.21 [Event] NumberStat  ......................................................................................................  539 
+9.3.22 [Event] ManNumDetection  ............................................................................................  540 
+9.3.23 [Event] CrowdDetection  ................................................................................................  541 
+9.3.24 [Event] LeaveDetection  ................................................................................................  542 
+9.3.25 Get Target Count in Time Range  ..................................................................................  543 
+9.4 Heat Map  ...................................................................................................................................  545 
+9.4.1 Get Heat Map Information  ..............................................................................................  545 
+9.4.2 Get People Heat Map Information  ..................................................................................  546 DAHUA_HTTP_API-V3.87 for HOTEL_BUDING
+--- PAGE 21 ---
+ 
+Table of Contents   XX 9.4.3 Subscribe People Realtime Trace Information  ...............................................................  547 
+9.4.4 Get People Histroy Trace Information  ............................................................................  549 
+9.4.5 Subscribe Heat Map Raw Data  ......................................................................................  550 
+9.5 Crowd Distribute Map  ...............................................................................................................  551 
+9.5.1 Get Channel Caps  ..........................................................................................................  551 
+9.5.2 Subscribe to Realtime Crowd Stat  .................................................................................  552 
+9.5.3 Get Current Crowd Stat  ..................................................................................................  554 
+9.6 Video Analyse  ...........................................................................................................................  555 
+9.6.1 Get Video Analyse Capability  .........................................................................................  555 
+9.6.2 [Config] Video Analyse Global  ........................................................................................  558 
+9.6.3 [Config] Video Analyse Rule  ...........................................................................................  559 
+9.6.4 Get Last Event Info  .........................................................................................................  563 
+9.6.5 [Config] GlobalDeviceParam  ..........................................................................................  564 
+9.6.6 Get Template Rule  ..........................................................................................................  565 
+9.6.7 [Config] IntelliSchemeTourEnableSetting  .......................................................................  566 
+9.6.8 [Config] Intelligent Tour Plan  ...........................................................................................  566 
+9.6.9 Export Intelligent Diagnosis, Allowlist, and Blocklist Information  ...................................  571 
+9.6.10 Import Intelligent O&M, Allowlist, and Blocklist Information  .........................................  572 
+9.6.11 Get Intelligent Capability  ...............................................................................................  573 
+9.6.12 Subscribe Resource Usage Info  ...................................................................................  574 
+9.6.13 Export Encrypted Files  ................................................................................................ . 576 
+9.6.14 Platform intelligent control  ............................................................................................  577 
+9.6.18 Get Algorithm Version Of Channel  ...............................................................................  579 
+9.6.19 [Config]Gets Scenario Mode  ........................................................................................  580 
+9.6.20 [config] Traffic Over Or Under Speed  ...........................................................................  580 
+9.6.21 [config]Acupick Mode configuration  ..............................................................................  585 
+9.6.22 Get Intelligent Information  ............................................................................................  586 
+9.7 WorkSuitCompareServer  ..........................................................................................................  593 
+9.7.1 Add Compliance Library  ................................................................................................ . 593 
+9.7.2 Delete Compliance Library  .............................................................................................  594 
+9.7.3 Find Compliance Library  ................................................................................................ . 594 
+9.7.4 Get Compliance Library Arming Information of Channels  ..............................................  596 
+9.7.5 Modify Compliance Group Information  ...........................................................................  597 
+9.7.6 Deploy Compliance Library  ............................................................................................  597 
+9.7.7 Find Workwear Information in Compliance Library  ........................................................  598 
+9.7.8 Get Find Workwear Information Result  ..........................................................................  599 
+9.7.9 Stop Find Workwear Information  ....................................................................................  601 
+9.7.10 Delete Workwear Information  .......................................................................................  602 
+9.7.11 Re-extracting Features by Workwear  ...........................................................................  602 
+9.7.12 Stop Re-extracting Workwear Features  .......................................................................  603 
+9.8 Smart Motion Detection  ............................................................................................................  603 
+9.8.1 [Config] SmartMotionDetect  ...........................................................................................  603 
+9.8.2 Start SMD Data Search  ..................................................................................................  605 
+9.8.3 Get SMD Data Search Result .........................................................................................  606 
+9.8.4 End SMD Data Search  ...................................................................................................  607 
+9.9 Intelligent analysis tasks  ...........................................................................................................  607 
+9.9.1 Add task  ..........................................................................................................................  607 DAHUA_HTTP_API-V3.87 for HOTEL_BUDING
+--- PAGE 22 ---
+ 
+Table of Contents   XXI 9.9.2 Attach task result  ............................................................................................................  619 
+9.9.3 Remove task  ...................................................................................................................  621 
+9.9.4 Push Picture File  .............................................................................................................  622 
+9.10 SceneModeManager  ...............................................................................................................  623 
+9.10.1 Get Scene Mode Capabilities  .......................................................................................  623 
+9.10.2 Get The Current Scene Mode  ......................................................................................  624 
+9.10.3 Get The Default Scene Mode  .......................................................................................  624 
+9.10.4 Set The Scene Mode  ....................................................................................................  625 
+9.11 ExperienceRegistry  .................................................................................................................  626 
+9.11.1 Searching for Records of Suspected False Alarm Events  ...........................................  626 
+9.11.2 Reading Search Results for Suspected False Alarm Events  .......................................  627 
+9.11.3 Stopping Searching for Records of Suspected False Alarm Events  ............................  628 
+9.11.4 Acquiring Experience Database Capabilities  ................................................................  629 
+9.11.5 Creating Experience Database  .....................................................................................  631 
+9.11.6 Searching for Group Information on Experience Database  .........................................  632 
+9.11.7 Deleting Information on Experience Database Groups  ................................................  634 
+9.11.8 Modifying Information on Experience Database Groups  ..............................................  634 
+9.11.9 Searching for Remaining Storage Size of the Experience Database  ..........................  635 
+9.11.10 Acquiring Additional Tokens  ........................................................................................  636 
+9.11.11 Adding Multiple Experience Database Samples Asynchronously  ..............................  636 
+9.11.12  Searching for Image Information on the Experience Database  ...................................  640 
+9.11.13 Reading Search Results of Experience Database Images  ........................................  641 
+9.11.14 Stopping Searching for Image Information on Experience Database  ........................  643 
+9.11.15 Deleting Image Information on the Experience Database  ..........................................  643 
+9.11.16 Subscribing Feature Extraction Results  .....................................................................  645 
+9.11.17 Remodeling Experience Database  .............................................................................  648 
+9.11.18 Modeling All Items in the Experience Databases  .......................................................  649 
+9.11.19 Unbinding Experience Databases  ..............................................................................  650 
+9.12 RemoteExperienceRegistry  ....................................................................................................  651 
+9.12.1 Downloading Images from Front-end Experience Da tabases  ...............................  651 
+9.12.2 Obtaining Additional Token  ........................................................................................  652 
+9.12.3 Adding Multiple Experience Database Samples Asy nchronously  .........................  653 
+9.12.4 Searching for Remaining Storage Space of Front- end Experience Databases .. 657 
+9.12.5 Acquiring Capability of Front-end Experience Da tabases  .....................................  658 
+9.12.6 Searching for Image Information in Front-end Experience Databases  ........................  667 
+9.12.7 Reading Image Search Results from Front-end Experience Databases  .....................  668 
+9.12.8 Stopping Searching for Image Information in Front-end Experience Databases  ........  672 
+9.12.9 Remodeling Front-end Experience Database  ..............................................................  673 
+9.12.10 Modeling All Front-end Experience Databases  ..........................................................  674 
+9.12.11 Deleting Image Information from Front-end Experience Databases  ..........................  674 
+9.12.12 Creating Front-end Experience Database  ..................................................................  676 
+9.12.13 Searching for Group Information in Front-end Experience Databases  ......................  679 
+9.12.14 Modifying Group Information in Front-end Experience Databases  ............................  683 
+9.12.15 Deleting Group Information from Front-end Experience Databases ..........................  685 
+10 Intelligent Traffic APIs  .....................................................................................................................  687 
+10.1 Intelligent Traffic Event  ............................................................................................................  687 
+10.1.1 [Event] TrafficJunction  ..................................................................................................  687 DAHUA_HTTP_API-V3.87 for HOTEL_BUDING
+--- PAGE 23 ---
+ 
+Table of Contents   XXII 10.1.2 [Event] TrafficRetrograde  ..............................................................................................  689 
+10.1.3 [Event] TrafficJam  .........................................................................................................  690 
+10.1.4 [Event] TrafficUnderSpeed  ...........................................................................................  691 
+10.1.5 [Event] TrafficOverSpeed  .............................................................................................  692 
+10.1.6 [Event] TrafficPedestrain  ..............................................................................................  693 
+10.1.7 [Event] TrafficParking  ....................................................................................................  694 
+10.2 Traffic Flow  ..............................................................................................................................  695 
+10.2.1 [Event] TrafficFlowStat  ..................................................................................................  695 
+10.2.2 Find Traffic Flow History  ...............................................................................................  696 
+10.2.3 Start Traffic Statistics Search  .......................................................................................  697 
+10.2.4 Get Traffic Statistics  ......................................................................................................  699 
+10.2.5 End Traffic Statistics Search  .........................................................................................  699 
+10.3 Traffic Record  ..........................................................................................................................  700 
+10.3.1 Insert Traffic BlockList/AllowList Record  ......................................................................  700 
+10.3.2 Update Traffic BlockList/AllowList Record  ....................................................................  701 
+10.3.3 Remove Traffic BlockList/AllowList Record  ..................................................................  702 
+10.3.4 Find Traffic BlockList/AllowList Record  ........................................................................  702 
+10.3.5 RemoveEx Traffic BlockList/AllowList Record  ..............................................................  703 
+10.3.6 Import Traffic BlockList/AllowList  ..................................................................................  703 
+10.3.7 Export Traffic BlockList/AllowList  ..................................................................................  704 
+10.3.8 Export Traffic Flow  ........................................................................................................  706 
+10.3.9 Export Traffic Snap Event Info  ......................................................................................  707 
+10.4 Traffic Snap Operation  ............................................................................................................  709 
+10.4.1 Open Strobe  .................................................................................................................  709 
+10.4.2 Close Strobe  .................................................................................................................  709 
+10.4.3 Open/Close Unlicensed Vehicle Detection  ...................................................................  710 
+10.4.4 Manual Snap  .................................................................................................................  710 
+10.4.5 Get Speed Limit  ............................................................................................................. 711 
+10.4.6 Set Speed Limit  ............................................................................................................. 711 
+10.4.7 Set Enable Under Speed or Not  ...................................................................................  712 
+10.4.8 [Config] Traffic Strobe Setting  .......................................................................................  712 
+10.4.9 Set Rule Config  .............................................................................................................  715 
+10.4.10 Traffic Network Snap  ..................................................................................................  716 
+10.5 Traffic Parking  .........................................................................................................................  716 
+10.5.1 Get the Specific Parking Space Status  ........................................................................  716 
+10.5.2 Get All Status of Parking Spaces  .................................................................................  717 
+10.5.3 [Config] Parking Space Light State  ..............................................................................  718 
+10.5.4 Set Order State  .............................................................................................................  721 
+10.5.5 Set Light State  ..............................................................................................................  722 
+10.5.6 [Config] Parking Space Access Filter Setting  ...............................................................  722 
+10.5.7 Set OverLine State  ......................................................................................................  723 
+10.5.8 Set Parking Control Info  ............................................................................................  723 
+10.5.9  Set Parking Space Lighting Plan  ...............................................................................  726 
+10.6 Vehicles Distribution  ................................................................................................................  727 DAHUA_HTTP_API-V3.87 for HOTEL_BUDING
+--- PAGE 24 ---
+ 
+Table of Contents   XXIII 10.6.1 Subscribe Vehicles Distribution Data  ...........................................................................  727 
+10.7 Vehicle Manager  .....................................................................................................................  728 
+10.7.1 Adding Vehicle Groups  ................................................................................................ . 728 
+10.7.2 Modifying Vehicle Groups  .............................................................................................  729 
+10.7.3 Deleting Vehicle Groups  ...............................................................................................  730 
+10.7.4 Searching for Vehicle Groups  .......................................................................................  730 
+10.7.5 Adding Vehicle Records  ................................................................................................  731 
+10.7.6 Modifying Vehicle Information .......................................................................................  734 
+10.7.7 Deleting Vehicle Information  .........................................................................................  736 
+10.7.8 Searching for Vehicles from Registered Database  ......................................................  737 
+10.7.9 Obtaining Vehicle Search Results  ................................................................................  739 
+10.7.10 Stopping Searching for Vehicles  ................................................................................  741 
+10.7.11 Add PlateNumberLib Download Task  .........................................................................  741 
+11 Thermography and Radiometry APIs  ............................................................................................  743 
+11.1 Thermography Manager  ..........................................................................................................  743 
+11.1.1 Get Capability of Thermography  ...................................................................................  743 
+11.1.2 [Config] Thermography Options  ....................................................................................  746 
+11.1.3 Get ExternSystem Information  ......................................................................................  748 
+11.1.4 Get Information of Preset Mode ....................................................................................  749 
+11.1.5 Get Optimized Region Information  ...............................................................................  750 
+11.1.6 Enable Shutter  ..............................................................................................................  750 
+11.1.7 Fix Focus  .......................................................................................................................  751 
+11.1.8 Do Flat Field Correction  ................................................................................................  751 
+11.2 Radiometry  ..............................................................................................................................  751 
+11.2.1 Get Capability of Radiometry  ........................................................................................  751 
+11.2.2 [Config] Heat Image Thermometry  ...............................................................................  753 
+11.2.3 [Config] Thermometry Rule  ...........................................................................................  755 
+11.2.4 [Config] Heat Image Temper Event ...............................................................................  757 
+11.2.5 Get Temperature of Particular Point  .............................................................................  758 
+11.2.6 Get Temperature of Particular Condition  ......................................................................  758 
+11.2.7 Find Temperature Information  .......................................................................................  759 
+11.2.8 Subscribe Temperature Information ..............................................................................  761 
+11.2.9 Subscribe Radiometry Data  ..........................................................................................  763 
+11.2.10 Fetch Radiometry Data  ...............................................................................................  765 
+11.2.11 [Config] FireWarning Config  ........................................................................................  765 
+11.2.12 [Config] FireWarningMode Config  ..............................................................................  767 
+11.2.13 Get Current Hot Cold Spot  ..........................................................................................  767 
+11.2.14 [Config] Heat Image Temper PreAlarm Event  ............................................................  768 
+11.2.15 Get Heat Map Info  .......................................................................................................  769 
+11.2.16 Get Temperature of Particular Region  ........................................................................  770 
+11.2.17 Get Current Rule Temperature Information  ................................................................  771 
+11.3 TemperCustom  ........................................................................................................................  773 
+11.3.1 Set Environment Temperature  ......................................................................................  773 
+12 Access Control APIs  .....................................................................................................................  774 
+12.1 Access Control  ........................................................................................................................  774 
+12.1.1 Open Door  ....................................................................................................................  774 
+12.1.2 Clo se Door  ....................................................................................................................  774 DAHUA_HTTP_API-V3.87 for HOTEL_BUDING
+--- PAGE 25 ---
+ 
+Table of Contents   XXIV 12.1.3 Get Door Status  ............................................................................................................  775 
+12.1.4 Get Lock Status  ............................................................................................................  775 
+12.1.5 Capture Fingerprint  .......................................................................................................  776 
+12.1.6 Capture Face Picture  ....................................................................................................  777 
+12.1.7 Query AccessControl Record  .......................................................................................  778 
+12.1.8 Query Access Control Alarm Record  ............................................................................  782 
+12.1.9 [Event] AccessControl  ..................................................................................................  783 
+12.1.10 [Event] CitizenPictureCompare  ..................................................................................  786 
+12.1.11 [Event] Door Status Event  ..........................................................................................  788 
+12.1.12 [Config] Access Control General Setting  ....................................................................  789 
+12.1.13 [Config] Access Control Setting  ..................................................................................  791 
+12.1.14 [Config] Wiegand Setting  ............................................................................................  795 
+12.1.15 [Config] Access Time Schedule Setting  .....................................................................  796 
+12.1.16 [Config] Special Day Group Setting ............................................................................  797 
+12.1.17 [Config] Special Days Schedule Setting  .....................................................................  798 
+12.1.18 [Config] MeasureTemperature Setting  .......................................................................  799 
+12.1.19 [Config] CitizenPictureCompare Setting  .....................................................................  802 
+12.1.20 Obtain opening records of the access control controller (2ndVersion)  ......................  803 
+12.1.21 Opening Door by Back-end Devices  .................................................................................  808 
+12.1.22  Get Face Feature Code  ................................................................................................  816 
+12.2 Access Control Manager  .........................................................................................................  818 
+12.2.1 Get Access Control Capability  ......................................................................................  818 
+12.2.2 Add SubController .........................................................................................................  819 
+12.2.3 Modify SubController  ....................................................................................................  820 
+12.2.4 Remove SubController  ................................................................................................ . 820 
+12.2.5 Get SubController Info  ..................................................................................................  821 
+12.2.6 Get SubController States  ..............................................................................................  822 
+12.2.7 Set RepeatEnter Route  ................................................................................................  822 
+12.2.8 Get RepeatEnter Route  ................................................................................................  823 
+12.2.9 Set ABLock Route .........................................................................................................  823 
+12.2.10 Get ABLock Route  ......................................................................................................  824 
+12.2.11 Get Log Status  ............................................................................................................  824 
+12.2.12 Sync Offline Log  .........................................................................................................  825 
+12.2.13 Sync SubController Time  ............................................................................................  825 
+12.2.14 [Config] Push Data To Third-Party Platform Setting  ...................................................  825 
+12.3 Access User Account ( V1 )  ....................................................................................................  827 
+12.3.1 Add Access User Face  ................................................................................................ . 827 
+12.3.2 Modify Access User Face  .............................................................................................  828 
+12.3.3 Delete Access User Face  .............................................................................................  829 
+12.3.4 Find Access User Face  ................................................................................................ . 829 
+12.3.5 Get Access User Face Eigen Data  ...............................................................................  830 
+12.3.6 Add Access User Card and Fingerprint  ........................................................................  831 
+12.3.7 Modify Access User Card and Fingerprint  ....................................................................  834 
+12.3.8 Delete Access User Card and Fingerprint  ....................................................................  837 
+12.3.9 Find Access User Card and Fingerprint  .......................................................................  837 
+12.3.10 Get the Total Number of Records of Access User Card and Fingerprint  ...................  845 
+12.4 Access User Account ( V2 )  ....................................................................................................  846 DAHUA_HTTP_API-V3.87 for HOTEL_BUDING
+--- PAGE 26 ---
+ 
+Table of Contents   XXV 12.4.1 Add Access User  ...........................................................................................................  846 
+12.4.2 Modify Access User  ......................................................................................................  849 
+12.4.3 Delete All Access User  ................................................................................................ . 852 
+12.4.4 Delete Multiple Access Users  .......................................................................................  852 
+12.4.5 Find Multiple Access Users  ..........................................................................................  853 
+12.4.6 Start Find Access User Related Information  ................................................................  856 
+12.4.7 Get Find Result of Access User Related Information  ...................................................  859 
+12.4.8 Stop Find Access User Related Information  ................................................................  862 
+12.4.9 Add Multiple Access Cards  ...........................................................................................  862 
+12.4.10 Modify Multiple Access Cards  ....................................................................................  863 
+12.4.11 Delete All Access Cards  ..............................................................................................  864 
+12.4.12 Delete Multiple Access Cards  .....................................................................................  864 
+12.4.13 Find Multiple Access Cards  ........................................................................................  865 
+12.4.14 Start Find Access User Card Related Information  .....................................................  866 
+12.4.15 Get Find Result of Access User Card Related Information  ........................................  867 
+12.4.16 Stop Find Access User Card Related Information  .....................................................  868 
+12.4.17 Add Multiple Access User Fingerprint .........................................................................  868 
+12.4.18 Modify Access User Fingerprint  ..................................................................................  869 
+12.4.19 Delete All Access User Fingerprint  .............................................................................  870 
+12.4.20 Delete Multiple Access User Fingerprint  ....................................................................  870 
+12.4.21 Find Access User Fingerprint  .....................................................................................  871 
+12.4.22 Add Multiple Access User Face  ..................................................................................  872 
+12.4.23 Update Multiple Access User Face  ............................................................................  872 
+12.4.24 Delete All Access User Face  ......................................................................................  873 
+12.4.25 Delete Multiple Access User Face  ..............................................................................  873 
+12.4.26 Find Access User Face  ...............................................................................................  874 
+12.4.27 Start Find Access User Face Related Information  .....................................................  875 
+12.4.28 Get Find Result of Access User Face Related Information  .......................................  875 
+12.4.29 Stop Find Access User Face Related Information  .....................................................  876 
+12.4.30 Access Control Protocol Capability Query  ................................................................ . 877 
+12.4.31 Inserting Bluetooth Card Information ..........................................................................  882 
+12.4.32 Searching for Information on Bluetooth Card  .............................................................  883 
+12.4.33 Deleting All Bluetooth Card Information  .....................................................................  883 
+12.4.34 Deleting Bluetooth Card Information  ..........................................................................  883 
+12.4.35 Searching for Information on Access Control Bluetooth Card  ...................................  884 
+12.4.36 Acquiring the Search Results of Bluetooth Card  ........................................................  884 
+12.4.37 Ending the Bluetooth Card Search  .............................................................................  885 
+12.4.38 Searching for Palm Vein Information  ...............................................................................  885 
+12.4.39 Updating Palm Vein Information  .....................................................................................  887 
+12.4.40 Obtaining Palm Vein Information  ....................................................................................  889 
+12.4.41 Starting Palm Vein Search  ...............................................................................................  890 
+12.4.42 Deleting Palm Veins in Batches  .......................................................................................  891 
+12.4.43 Clearing All Palm Veins  ....................................................................................................  892 
+12.4.44 Adding Multiple Palm Veins  ............................................................................................  892 
+12.4.45 Stopping Palm Vein Search  .............................................................................................  894 
+12.4.46 Getting Image Feature Value ...........................................................................................  894 
+12.4.47 Start Querying Iris Information  ...................................................................................  895 DAHUA_HTTP_API-V3.87 for HOTEL_BUDING
+--- PAGE 27 ---
+ 
+Table of Contents   XXVI 12.4.48 Updating Iris Information  ............................................................................................  896 
+12.4.49 Obtaining Iris Information  ...........................................................................................  898 
+12.4.50 Starting Querying Iris Information  ...............................................................................  899 
+12.4.51 Batch Deletion of User Iris Information  ......................................................................  900 
+12.4.52 Clearing All Iris Information  .........................................................................................  901 
+12.4.53 Stopping Querying Iris Information  .............................................................................  901 
+12.4.54 Adding Iris  ...................................................................................................................  901 
+12.5 Admin Password  .....................................................................................................................  903 
+12.5.1 Add Access Control Admin Password  ..........................................................................  903 
+12.5.2 Modify Access Control Admin Password  ......................................................................  904 
+12.5.3 Delete Access Control Admin Password  ......................................................................  905 
+12.5.4 Find Access Control Admin Password ..........................................................................  906 
+12.5.5 Get the Total Number of Records of Access Control Admin Password  .......................  908 
+13 Intelligent Building APIs  .................................................................................................................  910 
+13.1 Video Talk  ................................................................................................................................  910 
+13.1.1 Subscribe Video Talk Status  .........................................................................................  910 
+13.1.2 Unsubscribe Video Talk Status  .....................................................................................  912 
+13.1.3 Invite Server on Video Talk  ...........................................................................................  912 
+13.1.4 Cancel the Video Talk  ...................................................................................................  914 
+13.1.5 Answer the Invitation  ....................................................................................................  914 
+13.1.6 Refuse to Answer the Video Talk Invitation  ..................................................................  915 
+13.1.7 Hang Up  ........................................................................................................................  916 
+13.2 Intelligent Building Record  ......................................................................................................  916 
+13.2.1 Query Video Talk Log Record  .......................................................................................  916 
+13.2.2 Insert Announcement Record  .......................................................................................  917 
+13.2.3 Query Alarm Record  .....................................................................................................  918 
+13.3 SIP  ...........................................................................................................................................  919 
+13.3.1 [Config] SIP Configuration  ............................................................................................  920 
+13.3.2 [Config] Registar Configuration  ....................................................................................  922 
+13.4 Room Number Database Management  ..................................................................................  923 
+13.4.1 Adding Room Number  ..................................................................................................  923 
+13.4.2 Getting Records by Video Talk short number  ...............................................................  925 
+13.4.3 Getting Records by recno  .............................................................................................  927 
+13.4.4 Updating Room Number Records  ................................................................................  929 
+13.4.5 Deleting Records by recno  ...........................................................................................  930 
+13.4.6 Clearing All Room Numbers  .........................................................................................  931 
+13.4.7 Getting Total Quantity of Room Number  ......................................................................  931 
+13.5 ElevatorFloorCounter  ..............................................................................................................  931 
+13.5.1 Set Elevator Floor Info  ..................................................................................................  931 
+13.5.2 Get Elevator WorkInfo  ..................................................................................................  932 
+13.5.3 Get Capability  ...............................................................................................................  932 
+13.6 Elevator Control  ......................................................................................................................  933 
+13.6.1 Lift Control Interface  .....................................................................................................  933 
+13.6.2 Getting Lift Control Capability Set  ................................................................................  935 
+13.6.3 Getting Lift Control Protocol List  ...................................................................................  935 
+13.6.4 Inserting Lift Control Protocol  .......................................................................................  936 
+13.6.5 Deleting Lift Control Protocol  ........................................................................................  937 DAHUA_HTTP_API-V3.87 for HOTEL_BUDING
+--- PAGE 28 ---
+ 
+Table of Contents   XXVII 13.7 Time Schedule  ........................................................................................................................  937 
+13.7.1 Obtaining Time Schedule Data ...........................................................................................  937 
+13.7.2 Inserting Time Schedule Data to Database in Batches  .........................................................  939 
+13.7.3 Obtaining Time Schedule Data in Database in Batches  ........................................................  940 
+13.7.4 Clearing All Time Schedule Data in Database  ......................................................................  941 
+13.7.5 Deleting Time Schedule Data in Database in Batches  ..........................................................  941 
+13.7.6 Starting Searching for Time Schedule Data  ........................................................................  941 
+13.7.7 Stopping Searching  ...........................................................................................................  942 
+13.7.8 Updating Time Schedule Data in Database in Batches .........................................................  943 
+13.8 Attendance Device  ..................................................................................................................  944 
+ͳ͵.ͺ.ͳ [Config]Attendance Shift  ................................................................................................ . 944 
+13.9 USB import and export  ............................................................................................................  945 
+13.9.1 Subscribe to USB import and export information  .........................................................  945 
+13.9.2 USB export data  ...........................................................................................................  945 
+13.10 Information collection and data entry  ....................................................................................  946 
+13.10.1 Personnel Information Collection  ...............................................................................  946 
+13.10.2 Subscribe Personnel Information Collection  ..............................................................  948 
+14 DVR Custom APIs ............................................................................................................................  958 
+14.1 File Finder  ...............................................................................................................................  958 
+14.1.1 Create a File Finder  ......................................................................................................  958 
+14.1.2 Create a Motion File Finder  ..........................................................................................  960 
+14.1.3 Get the File Information Found by the Finder  ..............................................................  960 
+14.1.4 Stop the Finder  .............................................................................................................  961 
+14.1.5 Get Bound Files  ............................................................................................................  962 
+14.2 BandLimit  ................................................................................................................................  963 
+14.2.1 Get Bandwidth Limit State  ............................................................................................  963 
+14.3 Record Files Protection  ...........................................................................................................  964 
+14.3.1 Add Protection  ..............................................................................................................  964 
+14.3.2 Cancel Protection  .........................................................................................................  964 
+14.3.3 Remove Protection  .......................................................................................................  965 
+14.3.4 DownloadFile  ................................................................................................................  965 
+14.3.5 UploadFile  .....................................................................................................................  966 
+14.3.6 List all elements in the specified directory  ....................................................................  967 
+14.3.7 DownloadFile By Condition  ..........................................................................................  968 
+14.3.8 Download File By Piece  ................................................................................................  969 
+14.4 Daylight  ...................................................................................................................................  970 
+14.4.1 Get Daylight  ..................................................................................................................  970 
+15 Other APIs  ......................................................................................................................................  972 
+15.1 Discover Devices  ....................................................................................................................  972 
+15.1.1 Discover Devices on Internet ........................................................................................  972 
+15.2 Open Platform  .........................................................................................................................  973 
+15.2.1 Application Start and Stop  ............................................................................................  973 
+15.2.2 Install Application  ..........................................................................................................  974 
+15.2.3 Update Application and License  ...................................................................................  975 
+15.2.4 Uninstall Application  .....................................................................................................  976 
+15.2.5 Download Application Log  ............................................................................................  976 
+15.3 GPS  .........................................................................................................................................  977 DAHUA_HTTP_API-V3.87 for HOTEL_BUDING
+--- PAGE 29 ---
+ 
+Table of Contents   XXVIII 15.3.1 Get Capablity  ................................................................................................................  977 
+15.3.2 [Config] GPS config  ......................................................................................................  978 
+15.3.3 Get GPS Status  ............................................................................................................  978 
+15.4 Lens Function  ..........................................................................................................................  979 
+15.4.1 Get Lens Capability  ......................................................................................................  979 
+15.4.2 Adjust Angle Continuously  ............................................................................................  980 
+15.4.3 Stop Adjusting Angle  .....................................................................................................  980 
+15.4.4 Adjust Depth Field .........................................................................................................  981 
+15.4.5 Adjust Depth Field Continuously  ..................................................................................  981 
+15.4.6 Get Depth Field Status  ................................................................................................ . 982 
+15.4.7 Auto Adjust Depth Field  ................................................................................................  982 
+15.4.8 Scene Correction  ..........................................................................................................  983 
+15.4.9 Reset Angle  ..................................................................................................................  984 
+15.5 FishEye  ...................................................................................................................................  984 
+15.5.1 Get FishEye Capability  ................................................................................................ . 984 
+15.5.2 [Config] FishEye Setting  ...............................................................................................  985 
+15.6 Radar Adaptor  .........................................................................................................................  988 
+15.6.1 Get Radar Capability  ....................................................................................................  988 
+15.6.2 Get Radar Capbility ( Enhanced )  ................................................................................  988 
+15.6.3 Get Status  .....................................................................................................................  989 
+15.6.4 Calculate Real Size  ......................................................................................................  990 
+15.6.5 Subscribe Alarm Point Info  ...........................................................................................  990 
+15.6.6 Manual Locate  ..............................................................................................................  993 
+15.6.7 Start Radar Calibration  ................................................................................................ . 994 
+15.6.8 Add Radar Link SD  .......................................................................................................  994 
+15.6.9 Del Radar Link SD  ........................................................................................................  995 
+15.6.10 Get Link SD State  .......................................................................................................  995 
+15.6.11 [Config] MapPara  ........................................................................................................  996 
+15.6.12 [Config] RadarAnalyseRule  ........................................................................................  997 
+15.6.13 [Config] RadarCalibration  ...........................................................................................  999 
+15.6.14 [Config] RadarGuardLine  ..........................................................................................  1000  
+15.6.15 [Config] RadarLi nk ....................................................................................................  1001  
+15.6.16 [Config] RadarLinkDevice  .........................................................................................  1001  
+15.6.17 [Config] RadarPara  ...................................................................................................  1002  
+15.6.18 [Config] RadarTrackGlobal  .......................................................................................  1003  
+15.6.19 [Config] RemoteSDLink  ............................................................................................  1004  
+15.7 Water Radar  ..........................................................................................................................  1005  
+15.7.1 Acquire Radar Capability  ............................................................................................  1005  
+15.7.2 Get Radar Detection Target Data  ...............................................................................  1005  
+15.8 Water Quality Detection  ........................................................................................................  1006  
+15.8.1 Get Capability  .............................................................................................................  1006  
+15.8.2 Get Real-time Detection Data  ....................................................................................  1006  
+15.8.3 Start Find Water Quality Report  .................................................................................  1008  
+15.8.4 Get Find Water QUality Report Search Results  .........................................................  1009  
+15.8.5 Stop Find Water Quality Report  ................................................................................... 1011  
+15.9 Advertisement  ........................................................................................................................ 1011  
+15.9.1 Modifying the Display Duration of Image Advertisments ............................................. 1011  DAHUA_HTTP_API-V3.87 for HOTEL_BUDING
+--- PAGE 30 ---
+ 
+Table of Contents   XXIX 15.9.2 Releasing Advertisements  ..........................................................................................  1012  
+15.9.3 Getting the List of Advertisement Resources  .............................................................  1014  
+15.9.4 Searching for the Released Advertisements  ..............................................................  1016  
+15.9.5 Deleting Advertisement Resources  ............................................................................  1018  
+15.10 Industrial Gateway  ..............................................................................................................  1019  
+15.10.1 Obtaining Sensor History Data  .................................................................................  1019  
+15.10.2 Write the sensor value  ..............................................................................................  1020  
+15.10.3 Conditionally subscribing to sensor real-time data  ..................................................  1021  
+ DAHUA_HTTP_API-V3.87 for HOTEL_BUDING

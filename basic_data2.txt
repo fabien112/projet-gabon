@@ -1,0 +1,328 @@
+=== PAGE 27 ===
+ 
+26 
+ 
+} 
+3.1.4 Update Token  
+Brief Description  
+? Update token information 
+Request Method  
+? POST 
+Request URL  
+? /brms/api/v1.0/accounts/updateToken 
+Request Parameter  
+None 
+Request Example  
+POST /brms/api/v1.0/accounts/updateToken HTTP/1.1  
+Host: 192.168.1.1  
+Connection: close  
+Content -Type: application/json;charset=UTF -8 
+X-Subject- Token: 841e473bacef4b31abc5f53272afeb84  
+ 
+{ 
+ 
+} 
+Return Parameter  
+Parameter  Type  Description  
+code  int Error code  
+desc string  Result description  
+data object  None 
+- token  string  Token  
+- credential  string  Session credentials for downloading static resources such as images 
+and files 
+- duration int Keep -alive interval (seconds)  
+- 
+token Rate int Update token interval (seconds) Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+
+=== PAGE 28 ===
+ 
+27 
+ 
+Return Example  
+{ 
+    "code": 1000,  
+    "desc": "Success",  
+    "data": {  
+        "token": "62cc3c253050429f9fdc839f833ffb2b",  
+"credential": "ff435202efab4a54af01c5c0a4e65abe",  
+        "duration": 30 , 
+"token Rate": 1800 
+    } 
+} 
+3.1.5 Logout  
+Brief Description  
+? Request to destroy a session authenticated by a user 
+Request Method  
+? POST 
+Request URL  
+? /brms/api/v1.0/accounts/unauthorize 
+Request Parameter  
+None 
+Request Example  
+POST /brms/api/v1.0/accounts/unauthorize HTTP/1.1  
+Host: 192.168.1.1  
+Connection: close  
+Content -Type: application/json;charset=UTF-8 
+X-Subject- Token: 30c5f6bea5a643eaa761580cb762d787  
+ 
+{ 
+ 
+} 
+Return Parameter  
+Parameter  Type  Description  
+code  int Error code  Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+
+=== PAGE 29 ===
+ 
+28 
+ 
+Parameter  Type  Description  
+desc string  Result description  
+data object  Data 
+Return Example  
+{ 
+    "code": 1000,  
+"desc": "Success" , 
+"data ": null  
+} 
+3.2 Basic Data  
+3.2.1 Get MQ Configuration  
+Brief Description  
+? Get Active MQ configuration, judge intranet or Internet according to the request 
+IP on client, and return corresponding configuration. At present, addresses of 5 
+protocols are returned and can be used on demand. 
+Request Method  
+? POST 
+Request URL  
+? /brms/api/v1.0/BRM/Config/GetMqConfig  
+Request Parameter  
+None 
+Request Example  
+POST /brms/api/v1.0/BRM/Config/GetMqConfig HTTP/1.1  
+Host: 192.168.1.1  
+Connection: close  
+Content -Type: application/json;charset=UTF -8 
+X-Subject- Token: 841e473bacef4b31abc5f53272afeb84  
+ 
+{ 
+ 
+} Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+
+=== PAGE 30 ===
+ 
+29 
+ 
+Return Parameter  
+Parameter  Type  Description  
+code  int Error code  
+desc string  Result description  
+data object  None 
+- enableTls  string  Whether to enable TLS: 0: No; 1: Yes 
+- 
+userName string  Username  
+- mqtt  string  Mqtt protocol address, used on APP 
+- amqp string  Amqp protocol address  
+- stomp  string  Stomp  protocol address  
+- wss string  Wss protocol address  
+- addr string  Openwire protocol address, used on PC 
+- password  string  The password, after AES encryption, needs to be decrypted using the 
+secret key secretKey and vector secretVector returned by [ 3.1.2 
+Submit Credentials ]. For the decryption method, refer to the 
+decryptWithAES7 method in [ 6.4 Encryption and Decryption 
+Example ]. Among them, the secretKey and the secretVector are not 
+clear text, but are encrypted by RSA and can only be used after 
+decryption. For the decryption method, refer to the 
+decryptRSAByPrivateKey method in [ 6.4 Encryption and Decryption 
+Example ]. 
+Return Example  
+{ 
+    "code": 1000,  
+    "desc": "Success",  
+    "data": {  
+        "enableTls": "1",  
+        "mqtt": "192.168.1.1:1883",  
+        "amqp": "192.168.1.1:5672",  
+        "stomp": "192.168.1.1:61613",  
+        "wss": "192.168.1.1:61615",  
+        "addr": "192.168.1.1:61616",  
+        "userName": "consumer", 
+        "password": 
+"954dd70aef4e85924ed3868bc295d6a59f646f1c262ce1bbc87b9cc44300355e"  
+    } 
+} 
+3.2.2 Get Time Template List  Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+
+=== PAGE 31 ===
+ 
+30 
+ 
+Brief Description  
+? Get time template list  
+Request Method  
+? GET  
+Request URL  
+? /brms/api/v1.1/time -template/list   
+Request Parameters  
+? Body  Parameters 
+Parameter  Required  Type  Description  
+keyword  No string  Keywords, supports fuzzy search, matches time 
+template names  
+Request Example  
+GET /brms/api/v1.1/time -template/list ?keyword= abc HTTP/1.1  
+Host: 192.168.1.1  
+Connection: close  
+Accept -Language: en  
+Content -Type: application/json;charset=UTF-8 
+X-Subject- Token: 5fad3e259cbc497fa3e2ece67676469c  
+Example of a Response  
+{ 
+    "code": 1000,  
+    "desc": "Success",  
+    "data": {  
+        "results": [  
+            { 
+                "id": "10",  
+                "timeTemplateName": "test",  
+                "type": "2",  
+                "monPeriods": [  
+                    { 
+                        "beginTime": "10:00:00",  
+                        "endTime": "18:00:00"  
+                    } 
+                ], 
+                "tuePeriods": [  
+                    { Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+
+=== PAGE 32 ===
+ 
+31 
+ 
+                        "beginTime": "10:00:00",  
+                        "endTime": "18:00:00"  
+                    } 
+                ], 
+                "wedPerio ds": [  
+                    { 
+                        "beginTime": "10:00:00",  
+                        "endTime": "18:00:00"  
+                    } 
+                ], 
+                "thuPeriods": [  
+                    { 
+                        "beginTime": "10:00:00",  
+                        "endTime": "18:00:00"  
+                    } 
+                ], 
+                "friPeriods": [  
+                    { 
+                        "beginTime": "10:00:00",  
+                        "endTime": "18:00:00"  
+                    } 
+                ], 
+                "satPeriods": [  
+                    { 
+                        "beginTime": "10:00:00",  
+                        "endTime": "18:00:00"  
+                    } 
+                ], 
+                "sunPeriods": [  
+                    { 
+                        "beginTime": "10:00:00",  
+                        "endTime": "18:00:00"  
+                    }, 
+                    { 
+                        "beginTime": "19:00:00",  
+                        "endTime": "23:00:00"  
+                    } 
+                ] 
+            } 
+        ] 
+    } 
+} 
+Return Parameter  
+Parameter  Type  Description  
+code  int The error code.  Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+
+=== PAGE 33 ===
+ 
+32 
+ 
+Parameter  Type  Description  
+desc string  Result description  
+data object  Null 
+- results  object  Result  
+- - id string  Time template ID  
+- - 
+timeTemplateName  string  Time template name  
+- - type string  Template type: 1=default template, cannot be edited; 
+2=general template type  
+- - monPeriods object  The period of Monday, which is the value between begin 
+time to end time  
+- - - beginTime  string  Begin time, format: HH:mm:ss 
+- - - endTime string  End time, format: HH:mm:ss 
+- - tuePeriods  object  The period of Tuesday, which is the value between begin 
+time to end time  
+- - - beginTime  string  Begin time, format: HH:mm:ss 
+- - - endTime string  End time, format: HH:mm:ss 
+- - wedPeriods  object  The period of Wednesday, which is the value between 
+begin time to end time  
+- - - beginTime  string  Begin time, format: HH:mm:ss 
+- - - endTime string  End time, format: HH:mm:ss 
+- - thuPeriods object  The period of Thursday, which is the value between begin 
+time to end time  
+- - - beginTime  string  Begin time, format: HH:mm:ss 
+- - - endTime string  End time, format: HH:mm:ss 
+- - friPeriods  object  The period of Fri day, which is the value between begin 
+time to end time  
+- - - beginTime  string  Begin time, format: HH:mm:ss 
+- - - endTime string  End time, format: HH:mm:ss 
+- - satPeriods object  The period of Saturday, which is the value between begin 
+time to end time 
+- - - beginTime  string  Begin  time, format: HH:mm:ss  
+- - - endTime string  End time, format: HH:mm:ss 
+- - sunPeriods object  The period of Sunday, which is the value between begin 
+time to end time  
+- - - beginTime  string  Begin time, format: HH:mm:ss  
+- - - endTime string  End time, format: HH:mm:ss Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+
+=== PAGE 34 ===
+ 
+33 
+ 
+3.2.3 Get Time Zone List  
+Brief Description  
+? Get system zone list  
+Request Method  
+? GET   
+Request URL  
+? /brms/api/v1.1/config/timezone/list   
+Request Parameters  
+None 
+Request Example  
+GET /brms/api/v1.1/config/timezone/list HTTP/1.1  
+Host: 192.168.1.1  
+Connection: close  
+Accept -Language: en  
+Content -Type: application/json;charset=UTF -8 
+X-Subject- Token: e98cfd44f0e14a409e2d5ac7111b4547  
+Example of a Response  
+{ 
+    "code": 1000,  
+    "desc": "Success",  
+    "data": {  
+        "results": [  
+            { 
+                "timezoneId": "1",  
+                "timezoneName": "(UTC -12:00) International Date Line West",  
+                "timezoneOffset": "+08:00",  
+                "enableDst": "1", 
+                "dstType": "1",  
+                "dstBeginTime": {  
+                    "month": "4",  
+                    "week": "0",  
+                    "day": "2",  
+                    "time": "02:40"  
+                }, 
+                "dstEndTime": {  
+                    "month": "10",  Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+

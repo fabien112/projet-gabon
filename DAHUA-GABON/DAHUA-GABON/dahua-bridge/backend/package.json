@@ -1,0 +1,36 @@
+{
+  "name": "dahua-bridge-backend",
+  "version": "1.0.0",
+  "description": "Bridge DSS Pro <-> Sage X3 - Backend API",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "build": "pkg src/index.js --targets node20-win-x64 --output ../dist/bridge-server.exe --compress GZip"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "pg": "^8.11.3",
+    "knex": "^3.1.0",
+    "node-cron": "^3.0.3",
+    "axios": "^1.6.2",
+    "https": "^1.0.0",
+    "winston": "^3.11.0",
+    "dotenv": "^16.3.1",
+    "csv-writer": "^1.6.0",
+    "dayjs": "^1.11.10",
+    "express-validator": "^7.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2",
+    "pkg": "^5.8.1"
+  },
+  "pkg": {
+    "assets": [
+      "src/**/*",
+      "node_modules/knex/lib/**/*"
+    ],
+    "targets": ["node20-win-x64"]
+  }
+}

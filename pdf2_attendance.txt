@@ -1,0 +1,646 @@
+Total pages: 622
+=== ATTENDANCE SECTION (pages 215-230) ===
+--- PAGE 215 ---
+ 
+214 
+ 
+    "code": 1000,  
+    "desc": "Success",  
+    "data": {  
+        "totalCount": " -121",  
+        "pageData": [ 
+            { 
+                "id": "1",  
+                "swipeTime": "2023 -07-12 12:23:23",  
+                "code": "123",  
+                "name": "test", 
+                "deptName": "Root",  
+                "orgInfos": [ 
+                    { 
+                        "orgCode": "001",  
+                        "orgName": "All Persons and Vehicles" 
+                    } 
+                ], 
+                "cardNumber": "12345678",  
+                "personPic": "",  
+                "swipeLocation": "test",  
+                "eventName": "1"  
+            } 
+        ] 
+    } 
+} 
+3.10.2  Search Attendance Reports in Pages  
+Brief Description  
+• Search attendance reports in pages 
+Request Method  
+• GET 
+Request URL  
+• /obms/api/v1.0/attendance/record- info-
+report/page?startTime={startTime}&endTime={endTime}&person Id={personId}&
+personName={personName}&deptId={deptId}&page={page}&pageSize={pageSi
+ze}&timeFormat={timeFormat}  
+Request Parameter  
+• Path Parameters Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+--- PAGE 216 ---
+ 
+215 
+ 
+Parameter  Required  Type  Description  
+startTime  Yes string  The start time in format of yyyy -MM-
+dd HH:mm:ss 
+endTime Yes string  The end time in format of yyyy -MM-
+dd HH:mm:ss 
+personId  No string  Person ID keyword, exact matching 
+personName  No string  Name keyword, fuzzy matching 
+deptId  Yes string  Department ID, such as: 001001,the 
+orgCode field of the corresponding 
+personnel group 
+page Yes string  Page number, staring from 1, the 
+maximum value is 2147483647  
+pageSize Yes string  Number of entries each page, staring 
+from 1 , the maximum value is 1 0000 
+timeFormat  No string  Time format of time length of 
+absence, working hours and 
+overtime, 0 = hour plus minute, 1 = 
+minute, default 0 
+Request Example  
+GET / obms/api/v1.0/attendance/record- info-report/page?startTime=2023 -07-12%200
+0%3A00%3A00 &endTime= 2023 -07-12%2023%3A59%3A59 &personName=&personId=
+&deptId=001&page=1&pageSize=20 &timeFormat=  HTTP/1.1  
+Host: 192.168.1.1  
+Connection: close  
+Content -Type: application/json ;charset=UTF-8 
+X-Subject- Token: 5fad3e259cbc497fa3e2ece67676469c  
+Return Parameter  
+Parameter  Type  Description  
+code  int Error code  
+desc string  Result description  
+data object  None 
+- totalCount  string  Record the total number. Negative numbers indicate 
+no total number of pages to be paginated. They are 
+used to predict the total number of the next 7 pages 
+and assist in displaying paginated controls. Cannot be 
+used for data statistics.  
+- pageData object  None 
+- - id string  Attendance information ID  Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+--- PAGE 217 ---
+ 
+216 
+ 
+Parameter  Type  Description  
+- - 
+attendanceDate  string  Date, such as 2018- 09-20 
+- - code string  Person ID 
+- - name string  Person name 
+- - deptName string  Department name  
+- - orgInfos  array Personnel multi organization infomation  
+- - - orgCode  string  Person group  code 
+- - - orgName string  Person group name 
+- - signOutTime string  Check -out time, such as 13:10  
+- - week  string  Week: 0: Sunday, 1: Monday,..., 6: Saturday 
+- - outTime  string  Outing duration, such as 1 hour and 10 minutes, 10 
+minutes, 1 hour or 0 minute  
+- - workTime  string  Working duration (minutes) 
+- - 
+workOverTime  string  Overtime duration (minutes) 
+- - 
+abnormalStatus string  Exception type: 1 = late, 2 = leave early, 3 = absent, 4 
+= late and leave early, 5 = forget to punch in, 6 = late 
+and forget to punch in, 7 = forget to punch in and 
+leave early  
+Return Example  
+{ 
+    "code": 1000,  
+    "desc": "Success",  
+    "data": {  
+        "totalCount": " -121",  
+        "pageData": [ 
+            { 
+                "id": "1",  
+                "attendanceDate": "2023 -07-12", 
+                "code": "123",  
+                "name": "test", 
+                "deptName": "Root",  
+                "orgInfos": [ 
+                    { 
+                        "orgCo de": "001",  
+                        "orgName": "All Persons" 
+                    } 
+                ], 
+                "orderName": "",  
+                "signInTime": "12:10",  Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+--- PAGE 218 ---
+ 
+217 
+ 
+                "signOutTime": "13:10",  
+                "week": "0",  
+                "outTime": "1 hour and 10 minutes ", 
+                "workTime": "12",  
+                "workOverTime": "13",  
+                "abnormalStatus": "1" 
+            } 
+        ] 
+    } 
+} 
+3.10.3  Search Exception Records in Pages  
+Brief Description  
+• Search abnormal records in pages 
+Request Method  
+• GET 
+Request URL  
+• /obms/api/v1.0/attendance/abnormal-
+report/page?startTime={startTime}&endTime={endTime}&person Id={personId}&
+personName={personName}&deptId={deptId}&eventType={eventType}&p age={
+page}&pageSize={pageSize} 
+Request Parameter  
+• Path Parameters 
+Parameter  Required  Type  Description  
+startTime  Yes string  The start time in format of yyyy -MM-dd 
+HH:mm:ss  
+endTime Yes string  The end time in format of yyyy -MM-dd 
+HH:mm:ss  
+personId  No string  Person ID keyword, exact matching 
+personName  No string  Name keyword, fuzzy matching 
+deptId  Yes string  Department ID, such as: 001001,the 
+orgCode field of the corresponding 
+personnel group 
+eventType  No string  Attendance event type: 0: All: 1: Late; 2: 
+Leave early; 3: Unauthorized absence; 4: 
+Late and leave early; 5: Forget to punch Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+--- PAGE 219 ---
+ 
+218 
+ 
+Parameter  Required  Type  Description  
+in/out; 6: Late and forget to punch in; 7: 
+Forget to punch out and leave early  
+page Yes string  Page number, staring from 1, the 
+maximum value is 2147483647  
+pageSize Yes string  Number of entries each page, staring 
+from 1 , the maximum value is 1000 0 
+Request Example  
+GET / obms/api/v1.0/attendance/abnormal- report/page?startTime= 2023 -07-12%2000%
+3A00%3A00 &endTime= 2023 -07-12%2023%3A59%3A59 &personName=&personId=&d
+eptId=001&eventType=0&page=1&pageSize=20 HTTP/1.1  
+Host: 192.168.1.1  
+Connection: close  
+Content -Type: application/json;charset=UTF -8 
+X-Subject- Token: 5fad3e259cbc497fa3e2ece67676469c  
+Return Parameter  
+Parameter  Type  Description  
+code  int Error code  
+desc string  Result description  
+data object  None 
+- totalCount  string  Record the total number. Negative numbers 
+indicate no total number of pages to be 
+paginated. They are used to predict the total 
+number of the next 7 pages and assist in 
+displaying paginated controls. Cannot be used 
+for data statistics.  
+- pageData object  None 
+- - id string  Abnormal record ID  
+- - attendanceDate string  Date, format: 20 23-07-12 
+- - code string  Person ID 
+- - name string  Person name 
+- - deptName string  Department name  
+- - orgInfos  array Personnel multi organization infomation  
+- - - orgCode  string  Person group code 
+- - - orgName string  Person group name 
+- - orderName  string  Shift name, reserved field 
+- - signInTime string  Sign- in time, format:12:10  Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+--- PAGE 220 ---
+ 
+219 
+ 
+Parameter  Type  Description  
+- - signOutTime  string  Sign-out time, format: 13:10  
+- - week  string  Weekday: 0: Sunday; 1: Monday...; 6: Saturday 
+- - outTime  string  Outing duration, format: 1 hour 10 minutes, 10 
+minutes, 1 hour, 0 minute 
+- - workTime  string  Work duration (minute) 
+- - workOverTime  string  Overtime duration (minute) 
+- - abnormalStatus string  Exception type: 1: Late; 2: Leave early; 3: 
+Unauthorized absence; 4: Late and leave early; 
+5: Forget to punch in/out; 6: Late and forget to 
+punch in; 7: Forget to punch out and leave 
+early  
+Return Example  
+{ 
+    "code": 1000,  
+    "desc": "Success",  
+    "data": {  
+        "totalCount": " -121",  
+        "pageData": [ 
+            { 
+                "id": "1",  
+                "attendanceDate": "2023 -07-12", 
+                "code": "123",  
+                "name": "test", 
+                "deptName": "Root",  
+                "orgInfos": [ 
+                    { 
+                        "orgCode": "001",  
+                        "orgName": "All Persons and Vehicles" 
+                    } 
+                ], 
+                "orderName": "",  
+                "signInTime": "12:10",  
+                "signOutTime": "13:10",  
+                "week": "0",  
+                "outTime": "1 hour and 10 minutes", 
+                "workTime": "12",  
+                "workOverTime": "13",  
+                "abnormalStatus": "1" 
+            } 
+        ] 
+    } 
+} Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+--- PAGE 221 ---
+ 
+220 
+ 
+3.10.4 Search Overtime Records in Pages  
+Brief Description  
+• Search overtime records in pages 
+Request Method  
+• GET 
+Request URL  
+• /obms/api/v1.0/attendance/work- overtime -
+report/page?startTime={startTime}&endTime={endTime} &personId={personId}&
+personName={personName}&deptId={deptId}&workOverType={workOverType }
+&page={page}&pageSize={pageSize}& timeFormat ={timeFormat } 
+Request Parameter  
+• Path Parameters 
+Parameter  Required  Type  Description  
+startTime  Yes string  The start time in format of yyyy -MM-dd 
+HH:mm:ss  
+endTime Yes string  The end time in format of yyyy -MM-dd 
+HH:mm:ss  
+personId  No string  Person ID keyword, exact matching 
+personName  No string  Name keyword, fuzzy matching 
+deptId  Yes object  Department ID, such as: 001001,t he orgCode 
+field of the corresponding personnel group  
+workOverType  No string  Overtime type: 1: Workday; 2: Holiday; 3: Restday 
+page Yes string  Page number, staring from 1, the maximum 
+value is 2147483647  
+pageSize Yes string  Number of entries each page, staring from 1, the 
+maximum value is 1000 0 
+timeFormat  No string  Time format of time length of absence, working 
+hours and overtime, 0 = hour plus minute, 1 = 
+minute, default 0 
+Request Example  
+GET / obms/api/v1.0/attendance/work- overtime -report/page?startTime=2023 -07-12%2
+000%3A00%3A00 &endTime= 2023 -07-12%2023%3A59%3A59 &personId=&personNam
+e=&deptId=001001&workOverType=0&page=1&pageSize=20 &timeFormat=0  Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+--- PAGE 222 ---
+ 
+221 
+ 
+Host: 192.168.1.1  
+Connection: close  
+Content -Type: application/json;charset=UTF -8 
+X-Subject- Token: 5fad3e259cbc497fa3e2ece67676469c  
+Return Parameter  
+Parameter  Type  Description  
+code  int Error code  
+desc string  Result description  
+data object  None 
+- totalCount  string  Record the total number. Negative numbers 
+indicate no total number of pages to be 
+paginated. They are used to predict the total 
+number of the next 7 pages and assist in 
+displaying paginated controls. Cannot be used for 
+data statistics.  
+- pageData object  None 
+- - id string  Overtime record ID  
+- - date string  Date 2018 -09-20 
+- - code string  Person ID 
+- - name string  Person name 
+- - deptName string  Department name  
+- - orgInfos  array Personnel multi organization infomation  
+- - - orgCode  string  Person group code 
+- - - orgName string  Person group name 
+- - workOverTime  string  Overtime duration (minute) 
+- - workOverType  string  Overtime type: 1: Workday; 2: Holiday; 3: Restday 
+Return Example  
+{ 
+    "code": 1000,  
+    "desc": "Success",  
+    "data": {  
+        "totalCount": " -121",  
+        "pageData": [ 
+            { 
+                "id": "1",  
+                "date": "2023 -07-12", 
+                "code": "56852",  
+                "name": "test", Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+--- PAGE 223 ---
+ 
+222 
+ 
+                "deptName": "Root",  
+                "orgInfo s": [ 
+                    { 
+                        "orgCode": "001",  
+                        "orgName": "All Persons and Vehicles" 
+                    } 
+                ], 
+                "workOverTime": "65",  
+                "workOverType": "1"  
+            } 
+        ] 
+    } 
+} 
+3.10.5 Get Outing Records in Pages  
+Brief Description  
+• Get outing records in pages 
+Request Method  
+• GET 
+Request URL  
+• /obms/api/v1.0/attendance/outing-
+report/page?startTime={startTime}&endTime={endTime}&person Id={personId}&
+personName={personName}&deptId={deptId}&page={page}&pageSize={pageSi
+ze}&timeFormat ={timeFormat } 
+Request Parameter  
+• Path Parameters 
+Parameter  Required  Type  Description  
+startTime  Yes string  The start time in format of yyyy -
+MM-dd HH:mm:ss  
+endTime Yes string  The end time in format of yyyy -MM-
+dd HH:mm:ss 
+personId  No string  Person ID keyword, exact matching 
+personName  No string  Name keyword, fuzzy matching 
+deptId  Yes string  Department ID, such as: 001001,the 
+orgCode field of the corresponding 
+personnel group Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+--- PAGE 224 ---
+ 
+223 
+ 
+Parameter  Required  Type  Description  
+page Yes string  Page number, staring from 1, the 
+maximum value is 2147483647  
+pageSize Yes string  Number of entries each page, 
+staring from 1, t he maximum value is 
+10000 
+timeFormat  No string  Time format of time length of 
+absence, working hours and 
+overtime, 0 = hour plus minute, 1 = 
+minute, default 0 
+Request Example  
+GET / obms/api/v1.0/attendance/outing- report/page?startTime=2023 -07-12%2000%3A
+00%3A00 &endTime= 2023 -07-12%2023%3A59%3A59 &personId=&personName=&dep
+tId=001&page=1&pageSize=20&timeFormat=0  HTTP/1.1  
+Host: 192.168.1.1  
+Connection: close  
+Content -Type: application/json;cha rset=UTF -8 
+X-Subject- Token: 5fad3e259cbc497fa3e2ece67676469c  
+Return Parameter  
+Parameter  Type  Description  
+code  int Error code  
+desc string  Result description  
+data object  None 
+- totalCount  string  Record the total number. Negative numbers 
+indicate no total number of pages to be 
+paginated. They are used to predict the total 
+number of the next 7 pages and assist in 
+displaying paginated controls. Cannot be used for 
+data statistics.  
+- pageData object  None 
+- - id string  Outing record ID 
+- - date string  Date, such as 2018- 09-20 
+- - code string  Person ID 
+- - name string  Person name 
+- - deptName string  Department name  
+- - orgInfos  array Personnel multi organization infomation  
+- - - orgCode  string  Person group code 
+- - - orgName string  Person group name Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+--- PAGE 225 ---
+ 
+224 
+ 
+Parameter  Type  Description  
+- - cardNum  string  Card number  
+- - leaveTime  string  Leaving time, such as 12:10 
+- - backTime string  Return time, such as 13:10 
+- - outingTime  string  Outing period, such as 1 hour and 10 minutes, 10 
+minutes, 1 hour, 0 minutes 
+Return Example  
+{ 
+    "code": 1000,  
+    "desc": "Success",  
+    "data": {  
+        "totalCount": " -121",  
+        "pageData": [ 
+            { 
+                "id": "1",  
+                "date": "2023 -07-12", 
+                "code": "123",  
+                "name": "test", 
+                "deptName": "Root",  
+                "orgInfos": [ 
+                    { 
+                        "orgCode": "001",  
+                        "orgName": "All Persons and Vehicles" 
+                    } 
+                ], 
+                "cardNum": "11122223",  
+                "leaveTime": "12:10",  
+                "backTime": "13:10",  
+                "outingTime": "1 hour and 10 minutes" 
+            } 
+        ] 
+    } 
+} 
+3.11 Vehicle(Entrance and Exit)  
+3.11.1 Vehicle Group  
+3.11.1.1 Add a Vehicle Entrance and Exit Group 
+Brief Description  
+• Add a Vehicle Entrance and Exit Group Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+--- PAGE 226 ---
+ 
+225 
+ 
+Request Method  
+• POST  
+Request URL  
+• /ipms/api/v1.1/entrance -group 
+Request Parameter  
+• Body  Parameters 
+Parameter  Required  Type  Description  
+parkingLotIds  Yes array  Primary p arking ID  
+groupName Yes string  Group name,  Cannot exceed 50 characters  
+groupColor  Yes string  Group color : 1=gray, 2=red, 3=orange, 4=yellow, 
+5=green, 6=green, 7=blue, 8=purple  
+remark  No string  Remarks, the maximum length is 1024 bytes  
+Request Example  
+POST /ipms/api/v1.1/entrance -group HTTP/1.1  
+Host: 192.168.1.1  
+Connection: keep -alive 
+Accept -Language: en  
+Content -Type: application/json;charset=UTF-8 
+X-Subject- Token: 8b8a07b9d6944ba1b62b84774b175463  
+ 
+{ 
+    "parkingLotIds": [  
+        "1", 
+        "2" 
+    ], 
+    "groupName": "test",  
+    "groupColor": "1",  
+    "remark": ""}  
+Return Parameter  
+Parameter  Type  Description  
+code  int Error code  
+desc string  Result description  
+data object  None 
+- id string  The ID of a specified group  Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+--- PAGE 227 ---
+ 
+226 
+ 
+Return Example  
+{ 
+    "code": 1000,  
+    "desc": "Success",  
+    "data": {  
+        "id": "6"  
+    } 
+} 
+3.11.1.2 Update a Vehicle Entrance and Exit Group 
+Brief Description  
+• Update vehicle entrance and exit group 
+Request Method  
+• PUT  
+Request URL  
+• /ipms/api/v1.1/entrance -group/{id} 
+Request Parameter  
+• Path Parameters 
+Parameter  Required  Type  Description  
+id Yes string  Vehicle entrance and exit group ID  
+• Body  Parameters 
+Parameter  Required  Type  Description  
+groupName Yes string  Group name, Cannot exceed 50 
+characters  
+groupColor  Yes string  Group color: 1=gray, 2=red, 
+3=orange, 4=yellow, 5=green, 
+6=green, 7=blue, 8=purple 
+remark  No string  Remarks, The maximum length is 
+1024 bytes  
+Request Example  
+PUT /ipms/api/v1.1/entrance -group/7 HTTP/1.1  
+Host: 192.168.1.1  Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+--- PAGE 228 ---
+ 
+227 
+ 
+Connection: keep -alive 
+Accept -Language: en  
+Content -Type: application/json;charset=UTF -8 
+X-Subject- Token: 8b8a07b9d694 4ba1b62b84774b175463  
+ 
+{ 
+    "groupName": "test2",  
+    "groupColor": "3",  
+    "remark": ""}  
+Return Parameter  
+Parameter  Type  Description  
+code  int Error code  
+desc string  Result description  
+data object  Data 
+Return Example  
+{ 
+    "code": 1000,  
+"desc": "Success" , 
+"data ": null  
+} 
+3.11.1.3 Delete a Vehicle Entrance and Exit Group  
+Brief Description  
+• Delete vehicle entrance and exit group 
+Request Method  
+• DELETE  
+Request URL  
+• /ipms/api/v1.1/entrance -group?ids={ids} 
+Request Parameter  
+• Path Parameters 
+Parameter  Required  Type  Description  
+ids Yes string  Vehicle entrance and exit group ID, separated by 
+commas for multiple IDs  Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+--- PAGE 229 ---
+ 
+228 
+ 
+Request Example  
+DELETE /ipms/api/v1.1/entrance -group?ids=13 HTTP/1.1  
+Host: 192.168.1.1  
+Connection: keep -alive 
+Accept -Language: en  
+Time -Zone: Asia/Shanghai  
+Content -Type: application/json;charset=UTF -8 
+X-Subject- Token: 8b8a07b9d6944ba1b62b84774b175463  
+Return Parameter  
+Parameter  Type  Description  
+code  int Error code  
+desc string  Result description  
+data object  Data 
+Return Example  
+{ 
+    "code": 1000,  
+"desc": "Success" , 
+"data ": null  
+} 
+3.11.1.4 Get the List of Entrance and Exit Groups of Vehicles 
+Brief Description  
+• Get the  list of entrance and e xit Groups of vehicles  
+Request Method  
+• GET  
+Request URL  
+• /ipms/api/v1.1/entrance -
+group/list?parkingLotId={parkingLotId}&keyword={keyword}  
+Request Parameter  
+• Path Parameters 
+Parameter  Required  Type  Description  
+parkingLotId  No string  Parking  Lot ID Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+--- PAGE 230 ---
+ 
+229 
+ 
+Parameter  Required  Type  Description  
+keyword  No string  Keyword, supporting fuzzy search, matching 
+vehicle group name 
+orgCode No string  Parking lot organization code 
+ 
+Request Example  
+ 
+GET /ipms/api/v1.1/entrance -group/list?parkingLotId=1&keyword= HTTP/1.1  
+Host: 192.168.1.1  
+Connection: keep -alive 
+Accept -Language: zh  
+Content -Type: application/json;charset=UTF-8 
+X-Subject- Token: 8b8a07b9d6944ba1b62b84774b175463  
+Return Parameter  
+Parameter  Type  Description  
+code  int Error code  
+desc string  Description of results  
+data object  Data  
+- results  array Resu lt 
+- - parkingLotId string  Parking l ot ID 
+- - parkingLotName string  Parking l ot name 
+- - groupId string  Group ID 
+- - groupName  string  Group na me 
+- - groupColor  string  Group color: 1=gray, 2=red, 3=orange, 
+4=yellow, 5=green, 6=green, 7=blue, 
+8=purple  
+- - groupType string  Group t ype: 1 = visitor, 2 = vehicle group 
+allowlist, 3 = control group, 4 = vehicle 
+group blocklist, 5 = temporary vehicle, 6 
+= private parking space group 
+- - remark  string  Remark 
+- - defaultGroup string  Whether it is a default group: 0 = no, 1 = 
+yes 
+- - vehicleCount  string  Total number of vehicles in the current 
+group 
+- - effectiveCount  string  Number of current group valid vehicles  
+- - invalidCount string  Current group invalid number of vehicles  
+Return Example  Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING

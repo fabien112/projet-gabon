@@ -1,0 +1,495 @@
+Total pages: 622
+=== PAGE 1 ===
+ 
+  
+Dahua DSS Platform  
+API Document  
+Dahua DSS Platform  
+API Document  Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+
+=== PAGE 2 ===
+ 
+1 
+ 
+Forward  
+Overview  
+VMS is a digital and intelligent video management platform comprised of seven cor e 
+modules: Monitoring Center, Event Center, Intelligent Search, Access Control, Parki ng 
+Management, Intelligent Analysis, and Operation and Maintenance Center, along 
+with two subsystems for Retail and Energy. The system employs a Client/Ser ver (C/S) 
+architecture based on a Service -Oriented Architect ure (SOA), allowing for clear 
+functionality of service modules and maintaining loose coupling between servi ces, 
+which facilitates module reuse and flexible expansion. The system supports  All-In-
+One deployment for all services and also allows for distribute d deployment to 
+achieve elastic scaling for medium to large project scenarios.  Additionally, VMS is a 
+fully open northbound system that defines a comprehensive set of open APIs. Thes e 
+open northbound APIs enable rapid integration between third- party applic ations and 
+the VMS platform.  
+Target Audience  
+This document is mainly for developers of third -party manufacturers who want to 
+develop applications based on DSS open capabilities. 
+To better understand the content of this document, the following technical skills are 
+required: 
+? Proficiency in programming languages such as Java and C#. 
+? Familiarity with the security industry, including understanding terms related to 
+video surveillance, alarms, and PTZ (Pan- Tilt-Zoom) cameras.  
+? A good understanding of v ideo-related protocols, including knowledge of the 
+usage of RTSP (Real Time Streaming Protocol) and HTTP (Hypertext Transfer 
+Protocol).  Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+
+=== PAGE 3 ===
+ 
+2 
+ 
+Terms 
+Terms/  
+Abbreviation  Description 
+VMS Video Management Platform  
+TLS Transport Layer Security  
+HTTPS  The HTTP channel aimed at security ensures the integrity of the 
+transmission process through encryption and authentication based on 
+HTTP.  
+RTSP  Real-time streaming protocol is specially used to control the transmission 
+of multimedia streams, which can play, pause and stop the video stream 
+through a series of commands.  
+RTP Real-time Transport Protocol  
+FLV Flash Video  
+HLS HTTP Live Streaming  
+Token  After a user successfully logs in to the VMS platform, the platform will 
+automatically assign a token as the unique credential of the user  
+Organization  The platform defaults to a root organization, which can encompass sub -
+organizations as well as devices.  
+Device  Referring to a physical device, such as an NVR, IPC, access control or alarm 
+hub 
+Unit The platform categorizes devices into multiple units based on their 
+capabilities. Unit types include encoding units, decoding units, alarm input 
+units, alarm output units, among others. A single device may contain 
+multiple units.  
+Channel  Each unit contains multiple channels, with channels being the smallest 
+units that provide data capabilities. For example, an encoding channel can 
+output video stream data, while an alarm channel can detect and output 
+alarms.  
+Revision History  
+Version  Release Time  Revision Content  
+01 2020.04.10  First release.  
+02 2021.02.20  1. Updated the content of personnel 
+management, access control and facial 
+recognition business.  
+2. Focuses on the rapid integration process and 
+the open service capabilities.  
+3. Updated the API protocols.  Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+
+=== PAGE 4 ===
+ 
+3 
+ 
+Version  Release Time  Revision Content  
+03 2021.07.18  1. Added the module of intelligent analysis.  
+2. Update the protoc ols on device details and 
+visitor business.  
+04 2021.10.25  New protocols for MPT record searching, alarm 
+hub operations, and access control group 
+authorizations.  
+05 2022.04.20  1. Added the protocols on searching for device 
+status and notifications.  
+2. Opened the protocols of PTZ control  
+3. Opened smart retrieva l remaining query export 
+protocol.  
+4. Updated the face database sending control 
+protocol.  
+5. Added parking record query export protocol.  
+06 2022.11.14  1. Added alarm correlation information query 
+protocol.  
+2. Added alarm hub query operation protocol.  
+3. Added time zone list query protocol.  
+4. Added time template list query protocol.  
+5. Added the elevator control information for the 
+protocols of devices, personnel and visitors.  
+07 2023.06.10  1. Reconstruction of access control services to add 
+features for zones and passage rules.  
+2. Remove the protocols of exporting, MPT and 
+POS.  
+08 2023.12.21  1. Added the interface for searching for roles.  
+2. Isolation of authentication tokens for interfaces 
+and image resources.  
+3. Added# and Python code exam ples for 
+invocation.  
+09 2024.07.16  1. Added the interface for audio.  
+2. The parking lot business changes, along with 
+the addition of personnel, may result in some 
+agreements being incompatible with the previous 
+version.  
+3. The alarm subscription feature n ow includes 
+image information delivery, which may lead to 
+incompatibility with the previous logic.  
+4. Added the interface for searching for MPT 
+records.  
+5. The method of accessing static resources, such 
+as images on the platform, is not compatible. 
+Please refer chapter 3.3.6 for details.  Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+
+=== PAGE 5 ===
+ 
+4 
+ 
+Version  Release Time  Revision Content  
+10 2025.01.01  1. Replace the old interface with the new 
+hierarchical loading tree interface.  
+2. Added an interface to retrieve streaming media 
+addresses via FLV/HLS methods.  
+3. Added an interface to retrieve the door status.  
+4. Added an interface to retrieve visual intercom 
+call records.  
+5. Added new interfaces for entrance and exit 
+operations, including parking lot details, vehicle 
+details, alarm details, and vehicle monitoring lists.  
+6. Cancel the interfaces for stre am key retrieval 
+and fingerprint collection. The services will still be 
+operational.  
+11 2 025.07.30  1. Added an interface to  capture picture from real -
+time video.  
+2. Added an interface to  lock or unlock person of 
+access control.  
+3. Cancel the interfaces  for alarm associated with 
+traffic and entrance/exit information . The services 
+will still be operational.  
+ 
+  Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+
+=== PAGE 6 ===
+ 
+5 
+ 
+Table of Contents  
+Table of Contents  
+Forward  ...................................................................................................................................................................1 
+Table of Contents  ...............................................................................................................................................5 
+1 Overview  .......................................................................................................................................................7 
+1.1 Instruction  .................................................................................................................................7 
+1.2 Architecture  ..............................................................................................................................8 
+1.3 Preparation ...............................................................................................................................8 
+1.4 Integration Process ............................................................................................................. 10 
+2 Interface Specifications  ........................................................................................................................ 12 
+2.1 HTTP Interface Protocol Specification  ......................................................................... 12 
+2.2 Specification of MQ Message Subscription and Push .......................................... 17 
+2.3 Specifications of Accessing Images .............................................................................. 17 
+3 API Interface ............................................................................................................................................. 19 
+3.1 Login Authentication  ......................................................................................................... 19 
+3.2 Basic Data  ............................................................................................................................... 28 
+3.3 Device  ...................................................................................................................................... 38 
+3.4 Live View  ................................................................................................................................. 82 
+3.5 Record Playback ................................................................................................................... 90 
+3.6 Alarm(Event Center)  ......................................................................................................... 100 
+3.7 Access Control  .................................................................................................................... 120 
+3.8 Person  .................................................................................................................................... 131 
+3.9 Visitor  ...........................................
+
+=== PAGE 7 ===
+ 
+6 
+ 
+5.3 Vi deo Services  .................................................................................................................... 506 
+5.4 Access Control  .................................................................................................................... 520 
+5.5 Personnel Management.................................................................................................. 522 
+5.6 Visitor Management ......................................................................................................... 531 
+5.7 Attendance Management .............................................................................................. 534 
+5.8 Entrance and Exit ............................................................................................................... 536 
+5.9 Face Recognition  ............................................................................................................... 541 
+5.10 Alarm Messages  .............................................................................................................. 546 
+6 Appendix  .................................................................................................................................................. 551 
+6.1 Data Dictionary  .................................................................................................................. 551 
+6.2 Common Error Codes  ...................................................................................................... 567 
+6.3 Docking Example  ............................................................................................................... 567 
+6.4 Encryption and Decryption Example  ......................................................................... 613 
+7 FAQ ............................................................................................................................................................ 619 
+7.1 Common Errors  .................................................................................................................. 619 
+ 
+  Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+
+=== PAGE 8 ===
+ 
+7 
+ 
+1 Over view  
+1.1 Instruction 
+To quickly understand the API capabilities offered by the VMS platform and exp edite 
+development, please follow the document content in the order provided below.  
+[Forward] : Explain the business capabilities and architecture of the VMS platform, and 
+provide a preliminary understanding of the technical terms that will appear in the  
+document. 
+[Overview] : Describe the open capabilities of the VMS platfo rm and introduce 
+integration solutions for different scenarios, providing a preliminary under standing of the 
+integration process.  
+[Interface Specification] : Introduce the calling specifications for the VMS Open API and 
+the MQ message push specifications.  
+[API Interface] : Categorize the APIs for easy search, allowing developers to understand 
+specific functions and usage methods through API descriptions and usage examples. 
+Developers can then select the required API interfaces.  
+[MQ Notificati on Message] : Developers should pay attention to this section when they 
+need to receive real -time notifications or alerts from the platform. Notifications can be 
+categorized for easy searching, allowing developers to understand specific f unctions and 
+usage methods through descriptions and examples. They can then subscribe to the 
+necessary notification messages. 
+[Best Practice] : This section provides detailed integration methods for commonly used 
+platform features through several classic integration cases, enabling develope rs to gain a 
+deeper understanding of how to use the platform API effectively. 
+[Appendix] : The data dictionary, error code and code example DEMO of the platform are 
+provided for the developer's reference. There are API login authenticati on ex ample 
+DEMO, MQ docking example DEMO, and encryption and decryption example DEMO. 
+[FAQ] : Provide solutions for common issues encountered during the integration process.  Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+
+=== PAGE 9 ===
+ 
+8 
+ 
+1.2 Architecture 
+The VMS (Video Management System) platform provides comprehensive manag ement 
+capabilities for video, alarms, access control, attendance, personnel, vehicles , parking lots, 
+facial recognition, and structured data. It defines standard REST API interfaces for open 
+access, allowing third- party developers to interact with the plat form via HTTPS. 
+Additionally, developers can receive real- time notifications from the platform through 
+subscribed MQ messages.  
+For video services, the platform supports pulling streams directly via R TSP, FLV, and HLS 
+protocols. To address the complexity of video services and facilitate third -party 
+integration, it provides a packaged DPSDK.dll for client and app integration, as well as a  
+JS package for Web plug-in integration. Third- party developers can choose the 
+appropriate integration method based on the ir specific requirements.  
+The architecture is as follows:  
+Video
+ PTZ
+ Alarm
+ Intelligent
+Access 
+ControlParking 
+Lot
+Personnel VehicleNginxVMS
+DPSDK/Web plug -in/RTSP/FLV/HLSLive Video/Playback
+Alarm
+Access 
+Control
+ANPR
+ PersonnelNon-video FunctionsThird -party Application
+MQHTTPS TLS(MQTT/ Openwire )
+HTTPS TLSRTSP/FLV/HLS
+ 
+1.3 Preparation  
+Step 1: Prepare the VMS environment  
+? Install the VMS platform  
+Get the installation package, install the platform according to the platform user?s 
+manual, and then enable all the services. Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+
+=== PAGE 10 ===
+ 
+9 
+ 
+? Install the VMS client  
+Get the client installation package and install it. Con figure the login account. The 
+default user is system.  
+? Import the License  
+Get the valid activation code of the License, and import the L icense to the 
+platform to authenticate the platform.  
+? Adding Devices  
+Add front-end equipment to the platform to ensure that the platform has 
+accessible front -end codec resources.  
+? Select the L angua ge 
+Select a suitable programming language that facilitates in teraction with 
+protocols such as HTTP, MQ, and RTSP. If video playback functionality is 
+required, incorporate the implementation of the playback component as well. 
+The platform offers two access methods: HTTP (unencrypted) and HTTPS 
+(encrypted). The defaul t access port for HTTP is port 80, while the default port 
+for HTTPS is 443. During the development and debugging phase, HTTP can be 
+used for easier packet capturing and troubleshooting. In actual usage, HTTPS 
+must be employed to ensure the security of info rmation transmission. To enable 
+access via HTTP on port 80, the client must configure the HTTP allowlist in the 
+[System Parameters -> Security Configuration] page, adding the IP addresses of 
+third -party developer machines to the allowlist.  
+Step 2 Select the integration method based on the scenario.  
+VMS provides various integration methods for different scenarios. Third- party 
+developers can choose the appropriate integration method based on their 
+business requirements and development languages. 
+? Directly integrating with the video service using DPSDK.dll allows you to 
+utilize the DPSDK integration method without needing to focus on the API 
+documentation. Please refer to the DPSDK usage instructions for guidance. 
+The download link for DPSDK is: 
+https://depp.dahuasecurity.com/integration/guide/download/DSS%20SDK. Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+
+=== PAGE 11 ===
+ 
+10 
+ 
+? Integrate with the video service using the API along with a Web plugin. 
+Please contact DSS marketing personnel to obtain the Web plugin. 
+? Integrate with the video service using the API combined with FLV/HLS. The 
+default baseline installation package of DSS does not support FLV/HLS 
+streaming. Please contact DSS marketing personnel to obtain the installation 
+package for FLV/HLS services and install it in the DSS environment. 
+? Integrate with the video service using the API with the RTSP method. This is 
+supported by the default DSS baseline installation. 
+? Non-video services need to be integrated using the API method.  
+Step 3 I ntegra ted with VMS  
+? After the third -party developers obtain the username and password for 
+logging into the VMS and confirm the integration method, they can start 
+integrating with the VMS. 
+1.4 Integration Process 
+The API integration with VMS involves 3 steps:  
+Log in and authenticate through the HTTP Digest method- > Obta in MQ configuration 
+and subscribe to MQ notification message- > Call the business interface to complete 
+business docking . The process is as follows:  Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+
+=== PAGE 12 ===
+ 
+11 
+ 
+Third -party 
+developerVMS
+POST / brms/ api/v1.0/accounts/authorize
+HTTPS 401 unauthorize
+POST / brms/ api/v1.0/accounts/authorize
+HTTPS 200 OK
+POST / brms/ api/v1.0/accounts/ keepalive
+HTTPS 200 OK
+POST / brms/ api/v1.0/BRM/Config/GetMqConfig
+HTTPS 200 OK
+Subscribe MQ notify
+Call  Business  API
+HTTPS 200 OK
+  Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+
+=== PAGE 13 ===
+ 
+12 
+ 
+2 Interface  Specifications  
+2.1 HTTP Interface Protocol Specification  
+All APIs provided by VMS are based on the HTTP/1.1 protocol and follow RE STful 
+principles. Data exchanged is standardized in JSON format. VMS defaults to open HTTPS 
+ports and does not recommend using HTTP for calls. To enable HTTP access, the allowlist 
+for port 80 must be configured in VMS (System Parameters - > Security Configuration -> 
+HTTP Allowlist).  
+Item  Description  
+Transmission 
+Method  To ensure the security of transmission, uses HTTPS transmission . 
+URL format  http(s)://[ platform ip ]:[platform 
+port]/[subsystem]/api/[version]/[module]/[interface]/... For detail, see the rules 
+of URL below.  
+Request Method  GET / POST / PUT / DELETE  
+Data Format  All in JSON format for the request and response data.  
+Character 
+Encoding  Using UTF- 8 encoding  
+Safety 
+Authentication  Access to the API is secured through username/password authentication; only 
+users who successfully authenticate and obtain a Token can access the API.  
+Permission 
+Control  Most APIs are controlled by VMS menu permissions. Calling an unauthorized 
+API will result in an error message.  
+Certificate 
+Requirements  None 
+Calling Result  See the instruction on HTTP returned parameters.  
+2.1.1 Request Instructions  
+? Request Methods : 
+Request 
+Method  Operation  
+POST  Obtain resources, mostly used for business data query and data acquisition . Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+
+=== PAGE 14 ===
+ 
+13 
+ 
+Request 
+Method  Operation  
+GET Resource creation and data submission, primarily used for sending data to the 
+backend or inserting it into a database.  
+PUT Resource updating, primarily used for refreshing backend caches, databases, 
+etc. 
+DELETE  Resource deletion, primarily used for removing data records.  
+? URL Instructions: 
+The HTTP  request URL format is as follows:  http(s)://[ platform ip ]:[platform 
+port]/[subsystem]/api/[version]/[module]/[interface]/...  
+Item Instruction  
+ip VMS IP address  
+port Port Number  
+subsystem  Sub-system name, including brms , obms , ipms , iams and more  
+version  API versioning is indicated by "V" followed by the major version and 
+minor version, such as v1.0 or v1.1. The major version number changes 
+when there are breaking changes, while the minor version number 
+changes when new features are added.  
+module  Module name, can be omitted.  
+interface  Port name  
+In the format above, the ellipsis (...) may represent multiple hierarchical node s in the 
+resource description (e.g., node1/node2), depending on the specific context. 
+The completed example is as follows:  
+# new resources  
+POST /brms/api/v1.1/user  
+# resource acquisition  
+GET /brms/api/v1.1/user/{id}  
+# resource update  
+PUT /brms/api/v1.1/user/{id} ? 
+# resource upate (an attribute)  
+PUT /brms/api/v1.1/user/{id}/password  
+# resource operation  
+PUT /brms/api/v1.1/user/{id}/lock  
+# resource deletion  
+DELETE /brms/api/v1.1/ user/{id}  
+# delete in batches (Parameters are simple and do not exceed the Uri length limit)  
+DELETE /brms/api/v1.1/user?ids={ids}  
+# delete in batches (Parameter is complex or may exceed Uri length limit)  
+POST /brms/api/v1.1/user/delete/batch  
+# search for ( list) 
+GET /brms/api/v1.1/user/list  
+# search for (page)  
+GET /brms/api/v1.1/user/page  Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+
+=== PAGE 15 ===
+ 
+14 
+ 
+? Head of HTTP  public message:  
+The HTTP request header needs to contain the following fields: Accept -Language, 
+Content- Type , X-Subject- Token , not including login interface. 
+Parameter  Required  Type Description  Example  
+Accept -Language  Yes string  Language environment, is 
+primarily used for internat
+ionalization translation; in
+correct entries may affect 
+the language of returned 
+data.  Accept -language: E
+N. For details, ple
+ase refer to the in
+ternationalization 
+guidelines.  
+Content -Type  Y es string  Data Type : Unless 
+specifically stated 
+otherwise, the format for 
+all APIs in this document is 
+application/json.  application/json;ch
+arset=UTF -8 
+X-Subject -Token  Y es string  Authentication Token: Used 
+for API authorization and 
+authentication. The Token 
+is returned upon successful 
+login to the platform.  d725f34e4f034038bf1
+771a8ea43c931  
+Example of request head: 
+Accept -Language: zh  
+Content -Type: application/json;charset=UTF -8 
+X-Subject -Token: d725f34e4f034038bf1771a8ea43c931  
+? International : 
+The internationalization parameters for the interface should be included in the header 
+information under the Accept -Language field. 
+PUT /brms/api/v1.0/accounts/keepalive HTTP/1.1  
+Host: 192.168.1.1  
+Connection: close  
+Accept -Language: zh  
+Content -Type: application/json;charset=UTF -8 
+X-Subject -Token: 841e473bacef4b31abc5f53272afeb84  
+ 
+{ 
+ 
+} 
+The list of language code abbreviations corresponding to the internationalizati on local 
+values is as follows:  
+Language Code  Country  
+ar Arabic  
+bg Bulgarian  
+cs Czech Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+

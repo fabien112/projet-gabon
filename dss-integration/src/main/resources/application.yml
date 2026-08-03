@@ -1,0 +1,22 @@
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  application:
+    name: dss-integration
+
+dss:
+  protocol: ${DSS_PROTOCOL:https}
+  host: ${DSS_HOST:}
+  port: ${DSS_PORT:443}
+  username: ${DSS_USERNAME:}
+  password: ${DSS_PASSWORD:}
+  verify-ssl: ${DSS_VERIFY_SSL:false}
+  connect-timeout: ${DSS_CONNECT_TIMEOUT:10s}
+  read-timeout: ${DSS_READ_TIMEOUT:15s}
+  keep-alive-interval: ${DSS_KEEP_ALIVE_INTERVAL:25s}
+
+logging:
+  level:
+    com.company.dss: ${DSS_LOG_LEVEL:INFO}
+    org.springframework.web.reactive.function.client: ${DSS_HTTP_LOG_LEVEL:WARN}

@@ -1,0 +1,193 @@
+PAGE 139:
+ 
+138 
+ 
+Brief Description  
+? Add person  
+Request Method  
+? POST  
+Request URL   
+? /obms/api/v1.1/acs/person  
+Request Parameter   
+? Body  Parameters 
+Parameter  Required  Type  Description  
+baseInfo  Yes object  Basic person information  
+- personId  Yes string  Person ID,  contain a maximum 
+of 30 letters and numbers  
+- lastName  No string  Last name,  contains a 
+maximum of 127 characters  
+- firstName  Yes string  First name , contains a 
+maximum of 127 characters  
+- gender Yes strin
+---
+PAGE 143:
+ 
+142 
+ 
+Parameter  Required  Type  Description  
+- - - entranceEndTime No string  End time of the validity period, 
+timestamp, in seconds; required 
+for non -long-term vehicles  
+Request Example  
+POST /obms/api/v1.1/acs/person HTTP/1.1  
+Host: 192.168.1.1  
+Connection: keep -alive 
+Accept -Language: en  
+Content -Type: application/json;charset=UTF-8 
+X-Subject- Token: 522eb5ed8e014c809978b7f64ae9cdd1  
+ 
+{ 
+    "baseInfo": {  
+        "personId": "16448790",  
+        "lastName": "",  
+       
+---
+PAGE 154:
+ 
+153 
+ 
+Parameter  Required  Type  Description  
+mode  No string  Delete Mode: 1=Normal Mode, 
+2=Strong Delete Mode, default to 
+Normal Delete  
+orgCode  No string  Person group ID, required ,contains a 
+maximum of ten layers and 30 digits. 
+Each layer consists of three digits, for 
+example, 001001  
+containChild  No string  Include c hild organizations: 0 = No, 1 = 
+Yes, default 0  
+Request Example  
+POST /obms/api/v1.1/acs /person -group /person/delete/batch HTTP/1.1  
+Host: 192.168.1.1  
+Con
+---
+PAGE 163:
+ 
+162 
+ 
+Request URL   
+? /obms /api/v1.1/acs/person/page?page={page}&pageSize={pageSize}&orgCode=
+{orgCode}&containChild={containChild}&personId={personId}&cardNo={ca rdNo}
+&personName={personName}&sipId={sipId}&associated={associated} &hasVehicl
+e={hasVehicle}&isHouseHolder={isHouseHolder}&isVdpUser={isVdpUse r}&access
+Type={accessType}&expired={expired}&inFaceRepository={inFaceRepo sitory}& ha
+sParkingSpace={hasParkingSpace}&hasFace={hasFace}&hasCard={hasCard}&hasF
+ingerprint={hasFingerprint}
+---
+PAGE 164:
+ 
+163 
+ 
+Parameter  Required  Type  Description  
+inFaceRepository  No string  Is it in the facial control group: 0=No, 1=Yes  
+hasParkingSpace No string  Is there a parking space:0=No,1=Yes 
+hasFace No string  Is there a face: 0=No, 1=Yes  
+hasCard No string  Is there a card: 0=No, 1=Yes 
+hasFingerprint No string  Is there a fingerprint: 0=No, 1=Yes  
+hasPalmVein No string  Has palmar vein: 0=No, 1=Yes 
+plateNo  No string  License plate number, precise matching 
+plateNoMatchMode  No string  Lic
+---
+PAGE 172:
+ 
+171 
+ 
+{ 
+    "code": 1000,  
+    "desc": "Success",  
+    "data": {  
+        "totalCount": "1",  
+        "pageData": [  
+            { 
+                "personId": "19476543",  
+                "lastName": "",  
+                "firstName": "Lily",  
+                "orgCode": "001",  
+                "orgName": "All Persons",  
+                "orgInfos": [  
+                    { 
+                        "orgCode": "001",  
+                        "orgName": "All Persons",  
+             
+---
+PAGE 184:
+ 
+183 
+ 
+Request Example  
+GET /obms/api/v1.1/acs/access/record/123 HTTP/1.1  
+Host: 192.168.1.1  
+Connection: close  
+Content -Type: application/json;charset=UTF -8 
+X-Subject- Token: 0e9720a36c304014a2efd5b7cfeb3bec  
+Accept -Language: en   
+Return Parameter  
+Parameter  Type  Description  
+code  int The error code.  
+desc string  The result description.  
+data object  Response data  
+- id string  The record ID.  
+- alarmTime  string  The start time, in seconds. 
+- deviceCode  string  The devi
+---
+PAGE 187:
+ 
+186 
+ 
+Parameter  Required  Type  Description  
+approved; 6 = Overstayed; -1 = No 
+restriction  
+key No string  Keyword, fuzzy search by visitor 
+name, visited person name, 
+organization of visited person, 
+precise search by contact phone 
+number, email address, ID number, 
+card number of visitor  
+orderType  Yes string  Sorting field, 0 = Visitor ID; 1 = 
+Name of vis ited person; 2 = 
+Organization of visited person; 3 = 
+Appointed time of visit; 4 = Time 
+of visit; 5 = Status, 0 by default  
+
+---
+PAGE 197:
+ 
+196 
+ 
+                            "floorName": "Floor 1"  
+                        } 
+                    ] 
+                } 
+            ] 
+        } 
+    } 
+} 
+3.9.3 Add a New Visitor  
+Brief Description  
+? Add new visitor (new visitor visit and appointment registration)  
+Request Method  
+? POST 
+Request URL  
+? /obms/api/v1.0/visitors/visitor  
+Request Parameter  
+? Body  Parameters 
+Parameter  Required  Type  Description  
+status  Yes string  Visitor status: 0  = Appointment, 1 = 
+In 
+---
+PAGE 208:
+ 
+207 
+ 
+Request Method  
+? GET 
+Request URL  
+? /obms/api/v1.1/visitor/history/record/page?page={page}&pageSize ={pageSize}&
+visitorName={visitorName}&tel={tel}&email={email}&cardNo={cardNo}& idNo={i
+dNo} &plateNo=&visitedName={visitedName}&visitedCompany={visitedCompan
+y}&startTime={startTime}&en dTime={endTime}&status={status}&currentPage={c
+urrentPage}&splitId={splitId}&visitedPersonOrgCode={visitedPersonOrg Code} 
+Request Parameter  
+? Path Parameters 
+Parameter  Required  Type  Description
+---

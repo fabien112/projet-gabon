@@ -1,0 +1,1091 @@
+=== PAGE 32 ===
+ 
+31 
+ 
+                        "beginTime": "10:00:00",  
+                        "endTime": "18:00:00"  
+                    } 
+                ], 
+                "wedPerio ds": [  
+                    { 
+                        "beginTime": "10:00:00",  
+                        "endTime": "18:00:00"  
+                    } 
+                ], 
+                "thuPeriods": [  
+                    { 
+                        "beginTime": "10:00:00",  
+                        "endTime": "18:00:00"  
+                    } 
+                ], 
+                "friPeriods": [  
+                    { 
+                        "beginTime": "10:00:00",  
+                        "endTime": "18:00:00"  
+                    } 
+                ], 
+                "satPeriods": [  
+                    { 
+                        "beginTime": "10:00:00",  
+                        "endTime": "18:00:00"  
+                    } 
+                ], 
+                "sunPeriods": [  
+                    { 
+                        "beginTime": "10:00:00",  
+                        "endTime": "18:00:00"  
+                    }, 
+                    { 
+                        "beginTime": "19:00:00",  
+                        "endTime": "23:00:00"  
+                    } 
+                ] 
+            } 
+        ] 
+    } 
+} 
+Return Parameter  
+Parameter  Type  Description  
+code  int The error code.  Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+
+=== PAGE 33 ===
+ 
+32 
+ 
+Parameter  Type  Description  
+desc string  Result description  
+data object  Null 
+- results  object  Result  
+- - id string  Time template ID  
+- - 
+timeTemplateName  string  Time template name  
+- - type string  Template type: 1=default template, cannot be edited; 
+2=general template type  
+- - monPeriods object  The period of Monday, which is the value between begin 
+time to end time  
+- - - beginTime  string  Begin time, format: HH:mm:ss 
+- - - endTime string  End time, format: HH:mm:ss 
+- - tuePeriods  object  The period of Tuesday, which is the value between begin 
+time to end time  
+- - - beginTime  string  Begin time, format: HH:mm:ss 
+- - - endTime string  End time, format: HH:mm:ss 
+- - wedPeriods  object  The period of Wednesday, which is the value between 
+begin time to end time  
+- - - beginTime  string  Begin time, format: HH:mm:ss 
+- - - endTime string  End time, format: HH:mm:ss 
+- - thuPeriods object  The period of Thursday, which is the value between begin 
+time to end time  
+- - - beginTime  string  Begin time, format: HH:mm:ss 
+- - - endTime string  End time, format: HH:mm:ss 
+- - friPeriods  object  The period of Fri day, which is the value between begin 
+time to end time  
+- - - beginTime  string  Begin time, format: HH:mm:ss 
+- - - endTime string  End time, format: HH:mm:ss 
+- - satPeriods object  The period of Saturday, which is the value between begin 
+time to end time 
+- - - beginTime  string  Begin  time, format: HH:mm:ss  
+- - - endTime string  End time, format: HH:mm:ss 
+- - sunPeriods object  The period of Sunday, which is the value between begin 
+time to end time  
+- - - beginTime  string  Begin time, format: HH:mm:ss  
+- - - endTime string  End time, format: HH:mm:ss Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+
+=== PAGE 34 ===
+ 
+33 
+ 
+3.2.3 Get Time Zone List  
+Brief Description  
+? Get system zone list  
+Request Method  
+? GET   
+Request URL  
+? /brms/api/v1.1/config/timezone/list   
+Request Parameters  
+None 
+Request Example  
+GET /brms/api/v1.1/config/timezone/list HTTP/1.1  
+Host: 192.168.1.1  
+Connection: close  
+Accept -Language: en  
+Content -Type: application/json;charset=UTF -8 
+X-Subject- Token: e98cfd44f0e14a409e2d5ac7111b4547  
+Example of a Response  
+{ 
+    "code": 1000,  
+    "desc": "Success",  
+    "data": {  
+        "results": [  
+            { 
+                "timezoneId": "1",  
+                "timezoneName": "(UTC -12:00) International Date Line West",  
+                "timezoneOffset": "+08:00",  
+                "enableDst": "1", 
+                "dstType": "1",  
+                "dstBeginTime": {  
+                    "month": "4",  
+                    "week": "0",  
+                    "day": "2",  
+                    "time": "02:40"  
+                }, 
+                "dstEndTime": {  
+                    "month": "10",  Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+
+=== PAGE 35 ===
+ 
+34 
+ 
+                    "week": "0",  
+                    "day": "6",  
+                    "time": "03:50"  
+                } 
+            } 
+        ] 
+    } 
+} 
+Return Parameter  
+Parameter  Type  Description  
+code  int The error code  
+desc string  Result description  
+data object  Null 
+- results  object  Result  
+- - timezoneId  string  Time zone ID  
+- - 
+timezoneName  string  Time zone name  
+- - 
+timezoneOffset  string  Time zone offset, for example: +08:00  
+- - enableDst string  Enable DST 0: Close  
+1: Open 
+- - dstType  string  DST type: 1=date mode, 2=week mode 
+- - - 
+dstBeginTime  object  Start time of DST  
+- - - month  string  Month  
+- - - week  string  Week (the field value is 0 for the date mode); -1 means the 
+final week  
+- - - day string  Date (meaning a weekday in the week mode); 0 means Sunday 
+- - - time string  Time, such as 09:30  
+- - dstEndTime object  End time of DST 
+- - - month  string  Month  
+- - - week  string  Week (the field value is 0 for the date mode); -1 means the 
+final week  
+- - - day string  Date (meaning a weekday in the week mode); 0 means Sunday 
+- - - time string  Time, such as 09:30  
+3.2.4 Get All Role List  
+Brief Description  Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+
+=== PAGE 36 ===
+ 
+35 
+ 
+? Get all role list   
+Request Method  
+? GET   
+Request URL  
+? /brms/api/v1.1/role/all/list  
+Request Parameters  
+None 
+Request Example  
+GET /brms/api/v1.1/role/all/list HTTP/1.1  
+Host: 192.168.1.1  
+Connection: close  
+Accept -Language: en  
+Content -Type: application/json;charset=UTF -8 
+X-Subject-Token: 5fad3e259cbc497fa3e2ece67676462c  
+Return Parameter  
+Parameter  Type  Description  
+code  int The error code  
+desc string  Result description  
+data object  Data 
+- results  array Results  
+- - id string  Role id  
+- - roleName  string  Role name 
+- - memo  string  Description  
+- - 
+manageable string  Whether the current user can manage the role: 0 = No, 1 = 
+Yes 
+- - roleType  string  Role type: 1 = Super Administrator, 2 = Administrator 
+(default),3 = Custom Operator, 4 = Custom Administrator  
+- - owning string  Whether the current user owns the role: 0 = No, 1 = Yes  
+Example of a Response  
+{ 
+    "code": 1000,  
+    "desc": "Success",  Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+
+=== PAGE 37 ===
+ 
+36 
+ 
+    "data": {  
+        "results": [  
+            { 
+                "id": "1",  
+                "roleName": "Super Administrator",  
+                "memo": "",  
+                "manageable": "0",  
+                "roleType": "1",  
+                "owning": "0" 
+            }, 
+            { 
+                "id": "2",  
+                "roleNa me": "Administrator",  
+                "memo": "",  
+                "manageable": "0",  
+                "roleType": "2",  
+                "owning": "0" 
+            }, 
+            { 
+                "id": "3",  
+                "roleName": "test",  
+                "memo": "just for test",  
+                "manageable": "1",  
+                "roleType": "3",  
+                "owning": "1" 
+            } 
+        ] 
+    } 
+} 
+3.2.5 Get a List of Data Dictionaries  
+Brief Description  
+? Get a list of data dictionaries  
+Request Method  
+? GET 
+Request URL  
+? /brms/api/v1.1/dictionary/list?types={types}  
+Request Parameter  
+? Path Parameters Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+
+=== PAGE 38 ===
+ 
+37 
+ 
+Parameter  Required  Type  Description  
+types  Yes string  Dictionary type, separated by commas  
+Request Example  
+GET /brms/api/v1.1/dictionary/list?types= 9046 HTTP/1.1  
+Host: 192.168.1.1  
+Connection: keep -alive 
+Accept -Language: en  
+Content -Type: application/json;charset=UTF -8 
+X-Subject- Token: ca19ae28474040f192b9fc8cc7b9c69a   
+Return Parameter  
+Parameter  Type  Description  
+code  int Error code  
+desc string  Result description  
+data object  Response data  
+- results  array Result  
+- - type string  Dictionary type  
+- - name string  Dictionary type name  
+- - items  array Dictionary item  
+- - - code int Dictionary code  
+- - - name string  Dictionary name 
+- - - param1 string  Parameter 1, separated by commas 
+- - - param2 string  Parameter 2, separated by commas 
+- - - sort string  Sort 
+Return Example  
+{ 
+    "code": 1000,  
+    "desc": "Success",  
+    "data": {  
+        "results": [  
+            { 
+                "type": "8",  
+                "name": "alarm type",  
+                "items": [  
+                    { 
+                        "code": "41",  
+                        "name": "Duress Alarm",  
+                        "param1": "16",  Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+
+=== PAGE 39 ===
+ 
+38 
+ 
+                        "param2": "0",  
+                        "sort": "1"  
+                    } 
+                ] 
+            } 
+        ] 
+    } 
+}  
+3.3 Device  
+3.3.1 Device Information  
+3.3.1.1 Get Device Details  
+Brief Description  
+? Get device details . Calling interfaces requires administrator privileges . 
+Request Method  
+? GET 
+Request URL  
+? /brms/api/v1.1/device/{deviceCode}  
+Request Parameters  
+? Path Parameters 
+Parameter  Required  Type  Description  
+deviceCode  Yes string  Device code  
+Request Example  
+GET /brms/api/v1.1/device/1000000 HTTP/1.1  
+Host: 192.168.1.1  
+Connection: close  
+Accept -Language: en  
+Content -Type: application/json;charset=UTF -8 
+X-Subject- Token: 5fad3e259cbc497fa3e2ece67676469c  
+Return Parameter  Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+
+=== PAGE 40 ===
+ 
+39 
+ 
+Parameter  Type  Description  
+code  int Error code  
+desc string  Result description  
+data object  None 
+- deviceCode  string  Device code  
+- addType string  Device adding type: 1 = IP address; 2 
+= IP segment; 3 = Domain name; 4 = 
+Auto registration; 5 = P2P adding 
+device  
+- deviceIp  string  IP address 
+- devicePort  string  Port 
+- loginName string  Device account  
+- loginPass string  Device password, AES encryption  
+- protocolType  string  Protocol type: 1=VMS, 2=Hikvision, 
+98=SNMP, 99=Onvif, 100=SIA, 
+185=JIUZHOU  
+- deviceCategory  string  Device category  
+- deviceType  string  Device sub -category 
+- deviceSeries  string  Device series  
+- deviceModel  string  Device model  
+- mac string  Device mac address  
+- deviceName  string  Device name  
+- deviceSn string  Device serial number  
+- capability  string  Device capability  
+- registerId  string  Registration ID  
+- manufacturer string  Manufacturer: 1 = VMS; 2 = 
+Hikvision; 3 = Other; 185 = Jiuzhou  
+- manufacturerName string  Customized manufacturer name, 
+which does not correspond to the 
+manufacturer field one- to-one 
+- serverCode  string  Server code  
+- orgCode string  Organization code 
+- sipId  string  Video call SIP -ID 
+- sipPwd  string  SIP password of video call, AES 
+encryption  
+- enableBuilding  string  Enable building for talk devices 
+- enableUnit string  Enable unit for talk devices 
+- enablePhase string  Enable phase for talk devices Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+
+=== PAGE 41 ===
+ 
+40 
+ 
+Parameter  Type  Description  
+- softwareVersion  string  Software version  
+- hardwareVersion string  Hardware version 
+- protocolVersion  string  Supported protocol versions: 1=first 
+generation, 2=second generation 
+- faceAlgorithmVersion  string  Face algorithm version  
+- domainId string  Domain ID 
+- isVideoNexus  string  Whether large baseline for video 
+communication nexus: 1 = Yes, 0 = 
+No 
+- proxyIp  string  Proxy IP (Auto registration 
+/P2P/ONVIF/Hikvision/GB28281 
+devices not connected by IP)  
+- proxyPort  string  Proxy port (Auto registration 
+/P2P/ONVIF/Hikvision/GB28281 
+devices not connected by IP)  
+- snmpReadCredential string  SNMP protocol read  credential  
+- snmpWriteCredential  string  SNMP protocol write credential  
+- snmpAuthVersion string  SNMP authentication version: 1=v1, 
+2=v2, 3=v3  
+- snmpAuthType string  SNMP authentication encryption 
+type: 1=MD5, 2=SHA  
+- snmpUser  string  SNMP authentication username 
+- snmpPassword  string  SNMP authentication password 
+- snmpEncryptType  string  SNMP message encryption type: 
+1=CBC -DES, 2=CFB -AES 
+- snmpEncryptSecretKey  string  SNMP message encryption key 
+- devicePosition  string  Device location  
+- palmVeinAlgorithmVersion  string  Palmar v ein algorithm version  
+- deviceContacts  array Device contact  
+- - contactName string  Device contact name  
+- - contactPhone string  Device contact  phone 
+- - contactEmail  string  Device contact  email  
+- - contactNote  string  Remark 
+- timezoneId  string  Time zone ID  
+- timezoneName  string  Time zone name  
+- timezoneOffset  string  Time zone offset, such as +08:00  Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+
+=== PAGE 42 ===
+ 
+41 
+ 
+Parameter  Type  Description  
+- enableDst string  Enable DST: 0 = Disabled; 1 = 
+Enabled 
+- dstType  string  DST type: 1 = Date mode; 2 = Week 
+mode 
+- dstBeginTime  object  Start time of DST  
+- - month  string  Month  
+- - week  string  Week (the field value is 0 for the date 
+mode); -1 means the final week 
+- - day string  Date (meaning a weekday in the 
+week mode); 0 means Sunday 
+- - time string  Time, such as 09:30  
+- dstEndTime object  End time of DST 
+- - month  string  Month  
+- - week  string  Week (the field value is 0 for the date 
+mode); -1 means the final week 
+- - day string  Date (meaning a weekday in the 
+week mode); 0 means Sunday 
+- - time string  Time, such as 09:30  
+- timeSyncStatus string  Syncing status: 0 = Failed; 1 = 
+Successful; 2 = In distribution; 3 = 
+Not supported  
+- controllers  array Controller  
+- - controllerSeq  string  Controller number  
+- - name string  Name 
+- - property  string  Unidirection/Bidirection information  
+- encoderUnits  array Encoding unit information 
+- - unitType  string  Unit type  
+- - unitSeq string  Unit number 
+- - channelCount string  Total number of channels 
+- - streamType  string  Stream type  
+- - zeroChannelEncode  string  Zero-channel encoding or not 
+- - transcoder string  Whether to use Hikvision private 
+stream: 0 = No; 1 = Yes  
+- - channels array Channel information 
+- - - channelSeq string  Channel number 
+- - - channelSn string  Channel serial number Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+
+=== PAGE 43 ===
+ 
+42 
+ 
+Parameter  Type  Description  
+- - - channelType string  Channel type, such as video channel, 
+picture channel, video/picture mixed 
+channel 
+- - - channelSubtype string  Channel sub- type: 0 = Normal video; 
+1 = Visible light; 2 = Thermal 
+imaging 
+- - - remoteChannelType string  Remote channel type, including: local 
+encoding channel, remote channel, 
+cascading channel, and analog matrix 
+channel 
+- - - channelName string  Channel name 
+- - - cameraType  string  Camera type, such as bullet camera, 
+PTZ camera, dome camera, etc. 
+- - - keyCode  string  Keyboard code 
+- - - streamType  string  Channel stream type: 1: Main stream, 
+2: Sub stream 1, 3: Sub stream 2, 
+default 1 
+- - - capability  string  Capability set, a decimal system value  
+- - - enableWeb  string  Support for access channels web:0 = 
+No, 1 = Yes  
+- - - channelMac string  Channel mac address 
+- - - encoderChannelType string  Video Channel Type: 1 = Local 
+channel, 2 = Remote channel 
+- - - gpsX  string  Longitude 
+- - - gpsY string  Latitude  
+- - - mapId string  Map ID 
+- - - rtspUrls  array RTSP address 
+- - - - streamType  string  Channel stream type: 1: Main stream, 
+2: Sub stream 1, 3: Sub stream 2, 
+default 1 
+- - - - rtspUrl  string  RTSP address, AES encryption 
+- - - channelIp string  Channel IP 
+- - - channelExt object  Channel extension information  
+- - - - roadway string  Lane number 
+- - - - cartMaxSpeed string  Maximum speed of large vehicle 
+- - - - cartMinSpeed string  Minimum speed of large vehicle 
+- - - - dollyMaxSpeed  string  Maximum speed of small vehicle  
+- - - - dollyMinSpeed  string  Minimum speed of small vehicle  Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+
+=== PAGE 44 ===
+ 
+43 
+ 
+Parameter  Type  Description  
+- - - - direction  string  Driving direction  
+- decoderUnits  array Decoding unit 
+- - unitType  string  Unit type  
+- - unitSeq string  Unit number 
+- - channelCount string  Number of channels  
+- - decodeMode  string  Decoding mode 
+- - supportCombine  string  Whether to support combination: 0 = 
+No; 1 = Yes  
+- - channels array Channel list  
+- - - channelSeq string  Channel number 
+- - - channelSn string  Channel serial number 
+- - - channelName string  Channel name 
+- - - maxSplitCount  string  Maximum number of splits  
+- - - channelType string  Channel type: 1 = Output channel; 2 
+= Decoding channel 
+- alarmInputUnits array Alarm input channel 
+- - unitType  string  Unit type  
+- - unitSeq string  Unit number 
+- - channelCount string  Quantity of channels 
+- - channels array Channel list  
+- - - channelSeq string  Channel number 
+- - - channelName string  Channel name 
+- - - alarmType string  Alarm type 
+- - - alarmLevel  string  Alarm level  
+- - - parentTargetSeq string  The target serial number. If it is 
+empty, it indicates the device itself; 
+otherwise, it indicates the serial 
+number of the remote front -end 
+channel 
+- - - parentTargetName string  Target name, channel name or device 
+name 
+- - - associateId  string  External ID of the external 
+connection, which is the unique ID of 
+the three -party system  
+- - - subsystemSeq  string  Subsystem serial number 
+- - - supportPartial string  Partition of defense area  Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+
+=== PAGE 45 ===
+ 
+44 
+ 
+Parameter  Type  Description  
+- - - deviceIdentification  string  Attribute of accessory device 
+category 
+- - - extendZone string  Whether to extend the defense zone: 
+0 = No 1 = Yes  
+- - - supportSnapshot string  Whether to support snapshot: 0 = 
+No, 1 = Yes 
+- - - accessorySn  string  Defense area accessory serial number  
+- alarmOutputUnits array Alarm output unit 
+- - unitType  string  Unit type  
+- - unitSeq string  Unit number 
+- - channelCount string  Quantity of channels 
+- - channels array Channel list  
+- - - channelSeq string  Channel number 
+- - - channelName string  Channel name 
+- - - parentTargetSeq string  The target serial number. If it is 
+empty, it indicates the device itself; 
+otherwise, it indicates the serial 
+number of the remote front -end 
+channel 
+- - - parentTargetName string  Target name, channel name or device 
+name 
+- - - activeStatus  string  Channel enable status: 0=disabled, 
+1=enabled, 2=unknown 
+- accessUnits  array Access control unit  
+- - unitType  string  Unit type  
+- - unitSeq string  Unit number 
+- - channelCount string  Quantity of channels 
+- - fingerPrintAuth string  Whether to support fingerprint 
+authentication: 0 = Unknown 
+(compatible with the previous), 1 = 
+Not supported; 2 = Supported  
+- - cardAuth string  Whether to support card 
+authentication: 1 = Yes; 0 = No 
+- - faceAuth  string  Whether to support face recognition 
+authentication: 1 = Yes; 0 = No 
+- - palmVeinAuth  string  Whether to support palm vein  
+authentication: 1 = Yes; 0 = No 
+- - multiFace  string  Whether to support multi -face 
+recognition: 1 = Yes; 0 = No  Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+
+=== PAGE 46 ===
+ 
+45 
+ 
+Parameter  Type  Description  
+- - userIsolate  string  Whether to support human-card 
+separation: 1 = Yes; 0 = No 
+- - unlockModes string  Combination of the unlocking modes 
+supported by the device; separated 
+by commas for multiple modes, for 
+example: 0, 1, 2, 3  
+- - channels array Channel list  
+- - - channelSeq string  Channel number 
+- - - channelName string  Channel name 
+- - - controllerSeq  string  Controller number  
+- - - readIds array Read head ID  list 
+- virtualUnits  object  Virtual unit  
+- - unitType  string  Unit type  
+- - unitSeq string  Unit number 
+- - channelCount string  Quantity of channels 
+- - channels array Channel list  
+- - - channelSeq string  Channel number 
+- - - channelName string  Channel name 
+- posUnits  array POS unit 
+- - unitType  string  Unit type  
+- - unitSeq string  Unit number 
+- - channelCount string  Quantity of channels 
+- - channels array Channel list  
+- - - channelSeq string  Channel number 
+- - - channelName string  Channel name 
+- ledUnits  array LED unit 
+- - unitType  string  Unit type  
+- - unitSeq string  Unit number 
+- - channelCount string  Quantity of channels 
+- - channels array Channel list  
+- - - channelSeq string  Channel number 
+- - - channelName string  Channel name 
+- - - direction  string  Display direction: 1 = Go straight; 2 = 
+Left turn; 3 = Right turn; 4 = Go 
+straight and left turn; 5 = Go straight 
+and right turn; 13 = Pregnant; 14 = 
+Vehicle  Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+
+=== PAGE 47 ===
+ 
+46 
+ 
+Parameter  Type  Description  
+- - - defaultText  string  Preset text  
+- - - showContents  object  Displayed content 
+- - - - id string  Number  
+- - - - content  string  Displayed content 
+- - - - userDefined string  Custom content or not: 0 = No; 1 = 
+Yes 
+- - - fixedContentType  string  Fixed content in idle mode: 0 = 
+Empty; 1 = Empty parking spots in 
+field; 2 = Custom content  
+- - - fixedContent  string  Arrow direction: 1 = Left; 2 = Right  
+- - - row string  Number of displayed rows  
+- - - height string  LED screen height 
+- - - width  string  LED screen width  
+- - - color  string  LED display color: 1 = Red; 2 = 
+Green; 3 = Yellow  
+- - - zeroDisplayType  string  LED display color: 1 = Red; 2 = 
+Green; 3 = Yellow  
+- - - rollType  string  Content rolling type: 0 = Fixed; 1 = 
+Rolling  
+- - - rollSpeed  string  Rolling speed  
+- cviAlarmUnits  array CVI alarm unit 
+- - unitType  string  Unit type  
+- - unitSeq string  Unit number 
+- - channelCount string  Quantity of channels 
+- - channels array Channel list  
+- - - channelSeq string  Channel number 
+- - - channelName string  Channel name 
+- - - encoderChannelSeq string  Video channel number 
+- - - encoderChannelName string  Video channel name 
+- - - alarmType string  Alarm type  
+- boxAlarmUnits  array Alarm box unit 
+- - unitType  string  Unit type  
+- - unitSeq string  Unit number 
+- - channelCount string  Quantity of channels 
+- - channels array Channel list  
+- - - channelSeq string  Channel number Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+
+=== PAGE 48 ===
+ 
+47 
+ 
+Parameter  Type  Description  
+- - - channelName  string  Channel name  
+- - - boxSeq  string  Alarm box number, value range [0, 3] 
+- - - alarmType string  Alarm type  
+- boxAlarm OutUnits  array Alarm box output unit 
+- - unitType  string  Unit type  
+- - unitSeq string  Unit number 
+- - channelCount string  Quantity of channels 
+- - channels array Channel list  
+- - - channelSeq string  Channel number 
+- - - channelName string  Channel name 
+- - - boxSeq  string  Alarm box number, value range [0, 3] 
+- - - boxOutIndex string  Alarm box output channel address 
+- audioLightAlarmUnits object  Audio light alarm unit 
+- - unitType  string  Unit type  
+- - unitSeq string  Unit number 
+- - channelCount string  Quantity of channels 
+- - channels array Channel list  
+- - - channelSeq string  Channel number 
+- - - channelName string  Channel name 
+- - - parentTargetSeq string  Target serial number, if it is empty, it 
+means the device itself, otherwise it 
+means the serial number of the 
+remote front -end channel 
+- - - parentTargetName string  Target name, channel name or device 
+name 
+- - - channelType string  Channel type: 1=Audio, 2=Light  
+- enableLift  string  Lift control enable  
+- liftUnits  array Lift unit  
+- - unitType  string  Unit type  
+- - unitSeq string  Unit number 
+- - channelCount string  Quantity of channels 
+- - channels array Channel list  
+- - - channelSeq string  Channel number 
+- - - channelName string  Channel name 
+- - - floorNum  string  Floor number  Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+
+=== PAGE 49 ===
+ 
+48 
+ 
+Parameter  Type  Description  
+- - - gloabControl  string  Global lift control  
+- - - floors  array Floor  
+- - - - floorSerialNo  string  Floor serial no.  
+- - - - floorName  string  Floor name 
+- - fingerPrintAuth string  Whether fingerprint authentication is 
+supported: 0 = No, 1 = Yes    
+- easUnits  array Eas unit 
+- - unitType  string  Unit type  
+- - unitSeq string  Unit number 
+- - unitName string  Unit name 
+- - channelCount string  Channel count 
+- - channels array Channel list 
+- - - channelSeq string  Channel number 
+- - - channelName string  Channel name 
+- alarmSignalUnits array Alarm signal unit 
+- - unitType  string  Unit type  
+- - unitSeq string  Unit number 
+- - channelCount string  Channel count 
+- - channels object  Channel list 
+- - - channelSeq string  Channel number 
+- - - channelName string  Channel name 
+- uvssUnits  array UVSS unit 
+- - unitType  string  Unit type  
+- - unitSeq string  Unit number 
+- - channelCount string  Channel count 
+- - channels array Channel list 
+- - - channelSeq string  Channel number 
+- - - channelName string  Channel name 
+- parkingSpaceUnits array Parking space unit 
+- - unitType  string  Unit type  
+- - unitSeq string  Unit number 
+- - channelCount string  Channel count 
+- - parkingSpaceMode string  Vehicle detector mode: 0 = parking 
+space area mode or unknown, 1 = 
+license plate mode, 2 = parking Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+
+=== PAGE 50 ===
+ 
+49 
+ 
+Parameter  Type  Description  
+space statistics mode (mainly 
+outdoor vehicle detector)  
+- - channels array Channel list 
+- - - channelSeq string  Channel number 
+- - - channelName string  Channel name 
+- - - encoderChannelSeq string  Serial number of the video channel 
+- - - encoderChannelName string  Name of the video channel 
+- ledPartitionUnits  array Led partitionUnits unit  
+- - unitType  string  Unit type  
+- - unitSeq string  Unit number 
+- - channelCount string  Channel count 
+- - channels array Channel list 
+- - - channelSeq string  Channel number 
+- - - channelName string  Channel name 
+- gate Units  array Gate unit 
+- - unitType  string  Unit type  
+- - unitSeq string  Unit number 
+- - channelCount string  Channel count 
+- - channels array Channel list 
+- - - channelSeq string  Channel number 
+- - - channelName string  Channel name 
+- audioUnits array Audio unit 
+- - unitType  string  Unit type  
+- - unitSeq string  Unit number 
+- - channelCount string  Channel count 
+- - channels array Channel list 
+- - - channelSeq string  Channel number 
+- - - channelName string  Channel name 
+- subsystems  array Subsystem Information  
+- - subsystem Seq string  Subsystem  seq 
+- - subsystemName  string  Subsystem name 
+- cardNo  string  LingGuan device card no. 
+- outRtspPort  string  External network mapping streaming 
+port of onvif device  Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+
+=== PAGE 51 ===
+ 
+50 
+ 
+Parameter  Type  Description  
+- enableRtspTls  string  Onvif supports RTSP OVER TLS 
+enable: 0=off, 1=on 
+- encryptType  string  Encryption method: 0=No 
+encryption, 1=AES -CBC Nopadding  
+- access Key string  Access key  
+- secretKey  string  Secret  key, AES encryption 
+- sourceType  string  Source type: 1=Platform, 3=Third-
+party  
+- sourceId  string  Source ID  
+- associateId  string  Third party device ID  
+- streamProtocol  string  Media transmission protocol: 1=TCP, 
+2=UDP, 3=HTTP, valid for ONVIF 
+devices  
+- linkMode string  Device connection mode: 0=long 
+connection, 1=short connection  
+- maxBatchIssuePersons string  The access control device supports 
+the maximum number of personnel 
+issued in batches, with a default of 1 
+- netWork  string  Device usage working network: 
+1=public network, 2=network card 1, 
+3=network card 2  
+- unlockModes string  The combination of unlocking modes 
+supported by the device, multiple 
+separated by commas, such as 0,1,2,3 
+- exceedChannelCapability  string  Channel capacity set beyond 
+platform limit, decimal value  
+Return Example  
+{ 
+    "code": 1000,  
+    "desc": "Success",  
+    "data": {  
+        "deviceCode": "1000026",  
+        "deviceName": "dev1",  
+        "deviceIp": "192.168.1.1",  
+        "orgCode": "001",  
+        "deviceCategory": "1",  
+        "deviceType": "2",  
+        "devicePort ": "37777",  
+        "outRtspPort": "0",  
+        "loginName": "admin",  Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+
+=== PAGE 52 ===
+ 
+51 
+ 
+        "loginPass": null,  
+        "protocolType": "1",  
+        "deviceSeries": "0",  
+        "deviceModel": "N5",  
+        "mac": "4c:37:77:74:96:58",  
+        "deviceSn": "sim- 3777749658" , 
+        "capability": "0",  
+        "registerId": "", 
+        "manufacturer": "1",  
+        "manufacturerName": "",  
+        "serverCode": "video#local",  
+        "sipId": null, 
+        "sipPwd": null, 
+        "enableBuilding": null,  
+        "enableUnit": null,  
+        "enablePhase": null,  
+        "softwareVersion": "12345",  
+        "faceAlgorithmVersion": "", 
+        "hardwareVersion": null, 
+        "domainId": null, 
+        "isVideoNexus": null,  
+        "proxyIp": null,  
+        "proxyPort": "",  
+        "addType": "1",  
+        "snmpReadCredential": "",  
+        "snmpWriteCredential": "",  
+        "snmpAuthVersion": "",  
+        "snmpAuthType": "",  
+        "snmpUser": "",  
+        "snmpPassword": "",  
+        "snmpEncryptType": "",  
+        "snmpEncryptSecretKey": "",  
+        "devicePosition": "",  
+        "palmVeinAlgorithmVersion": "v1.0",  
+        "deviceContacts": [  
+            { 
+                "contactName": "Jack", 
+                "contactPhone": "12345678" , 
+                "contactEmail": "test@123.com",  
+                "contactNote": ""  
+            } 
+        ], 
+        "timezoneId": "100",  
+        "timezoneName": "(UTC+08:00) Beijing, Chongqing, Hong Kong, Urumqi", 
+        "timezoneOffset": "+08:00",  
+        "enableDst": "0",  
+        "dstType": "2",  
+        "dstBeginTime": {  Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+
+=== PAGE 53 ===
+ 
+52 
+ 
+            "month": "1",  
+            "week": "1",  
+            "day": "1",  
+            "time": "00:00"  
+        }, 
+        "dstEndTime": { 
+            "month": "1",  
+            "week": "1",  
+            "day": "2",  
+            "time": "00:00"  
+        }, 
+        "timeSyncStatus": "1", 
+        "controllers": [],  
+        "enco derUnits": [  
+            { 
+                "unitType": "1",  
+                "unitSeq": "0", 
+                "channelCount": "1", 
+                "channels": [ 
+                    { 
+                        "channelSeq": "0", 
+                        "channelName": "Channel0",  
+                        "channelSn": null, 
+                        "channelType": "1",  
+                        "channelIp": null, 
+                        "channelMac": null, 
+                        "channelSubtype": null, 
+                        "remoteChannelType": null,  
+                        "cameraType": "1",  
+                        "keyCode": null,  
+                        "capability": "21",  
+                        "channelExt": { 
+                            "roadway": null, 
+                            "cartMaxSpeed": null,  
+                            "cartMinSpeed": null,  
+                            "dollyMaxSpeed": null,  
+                            "dollyMin Speed": null,  
+                            "direction": null 
+                        }, 
+                        "streamType": "3",  
+                        "rtspUrls": null,  
+                        "enableWeb": "0",  
+                        "encoderChannelTyp e": "1",  
+                        "gpsX": "120.45",  
+                        "gpsY": "30.12",  
+                        "mapId": "0",  
+                    } 
+                ], Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+
+=== PAGE 54 ===
+ 
+53 
+ 
+                "streamType": "2",  
+                "zeroChannelEncode": "0", 
+                "transcoder": "0" 
+            } 
+        ], 
+        "decoderUnits": null,  
+        "alarmInputUnits": [ 
+            { 
+                "unitType": "3",  
+                "unitSeq": "0", 
+                "channelCount": "1", 
+                "channels": [ 
+                    { 
+                        "channelSeq": "0", 
+                        "channelName": "dev1_1",  
+                        "alarmLevel": "1",  
+                        "alarmType": "2",  
+                        "parentTargetSeq": null, 
+                        "parentTargetName": "dev1",  
+                        "associateId": null, 
+                        "subsystemSeq": null, 
+                        "supportPartial": "0",  
+                        "deviceIdentification": "",  
+                        "extendZone": "0", 
+                        "supportSnapshot": "1", 
+                        "accessorySn": "" 
+                    } 
+                ] 
+            } 
+        ], 
+        "alarmOutputUnits": [ 
+            { 
+                "unitType": "4",  
+                "unitSeq": "0", 
+                "channelCount": "1", 
+                "channels": [ 
+                    { 
+                        "channelSeq": "0", 
+                        "channelName": "dev1_1",  
+                        "parentTargetSeq": null, 
+                        "parentTargetName": null, 
+                        "activeStatus": "1"  
+                    } 
+                ] 
+            } 
+        ], 
+        "accessUnits": null,  
+        "virtualUnits": null,  Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+
+=== PAGE 55 ===
+ 
+54 
+ 
+        "posUnits": null,  
+        "ledUnits": null, 
+        "cviAlarmUnits": null,  
+        "boxAlarmUnits": null,  
+        "boxAlarmOutUnits": null,  
+        "audioLightAlarmUnits": null,  
+        "enableLift": "0",  
+        "liftUnits": null,  
+        "parkingSpaceUnits": null, 
+        "ledPartitionUnits": null, 
+        "easUnits": null, 
+        "uvssUnits": null,  
+        "alarmSignalUnits": null, 
+        "audioUnits": null,  
+        "gateUnits": null, 
+        "cardNo": "", 
+        "enableRtspTls": "0",  
+        "protocolVersion": "",  
+        "encryptType": "0",  
+        "accessKey": "",  
+        "secretKey": "",  
+        "sour ceType": "1",  
+        "sourceId": null, 
+        "associateId": "",  
+        "unlockModes": "", 
+        "streamProtocol": "1",  
+        "linkMode": "0",  
+        "maxBatchIssuePersons": "1", 
+        "subsystems": [],  
+        "netWork": null, 
+        "exceedChannelCapability": "0"  
+    } 
+} 
+3.3.1.2 Get the List of Devices in Pages  
+Brief Description  
+? Get list of devices in pages . Calling interfaces requires administrator privileges. 
+Request Method  
+? GET 
+Request URL  
+? /brms/api/v1.1/device/page  Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+
+=== PAGE 56 ===
+ 
+55 
+ 
+Request Parameters  
+? Body  Parameters 
+Parameter  Required  Type  Description  
+page Yes string  Page number, staring from 1, the maximum value 
+is 2147483647  
+pageSize Yes string  Number of entries each page, staring from 1, the 
+maximum value is 1000 0 
+orderType  No string  Sorting type: 1 = device IP,2 = device model, 3 = 
+device code . If it is null, default sorting by online 
+status  
+orderDirection  No string  Sorting direction: 0 = Ascending sequence; 1 = 
+Descending sequence , default 1 
+keyword  No string  Keywords, fuzzy search supported, to match 
+device name, IP, and device code  
+orgCode No string  Organization code 
+deviceCategory  No string  Device category  
+deviceType  No string  Device sub -category 
+status  No string  Device status: 0 = Offline; 1 = Online; null means 
+all 
+permitted  No string  Permission filtering: 0 = Not filtered; 1 = Filtered; 
+null means all 
+domain No s tring  Cascade device included or not: 0 = No; 1 = Yes; 
+null means all 
+sourceType  No s tring  Device channel type: 1=Platform, 3=  Third -party , 
+blank indicates querying all 
+containChild  No string  Include subsets: 0=No, 1=Yes, default to 1 
+protocolTypes  No s tring  Protocol type: 1=Dahua Protocol, 2=Hikvision 
+Access, 99=Onvif Access, 185=Jiuzhou Protocol, 
+multiple separated by commas, empty indicates 
+all 
+manufacturers No s tring  Manufacturer: 1=Dahua, 2=Hikvision, 4= AXIS, 
+5=Uniview, 6=BOSCH, 185= JIUZHOU , 
+246=Other, multiple separated by commas, 
+empty means query all 
+Request Example  
+GET /brms/api/v1 .1/device/page?page=1&pageSize=20 &orderType=&orderDirection=
+&orgCode=001&deviceCategory=&deviceType=&status=&keyword=&permitt ed=&do
+main= &sourceType= &containChild= &protocolTypes=&manufacturers= HTTP/1.1 
+Host: 192.168.1.1  Dahua-HTTP-API-For-DSS-V8.7_EN for HOTEL_BUDING
+

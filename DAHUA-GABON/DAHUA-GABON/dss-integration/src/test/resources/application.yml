@@ -1,0 +1,9 @@
+spring:
+  main:
+    lazy-initialization: true
+
+dss:
+  host: test-host
+  username: test-user
+  password: test-password
+  verify-ssl: false
