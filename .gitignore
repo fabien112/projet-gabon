@@ -1,0 +1,11 @@
+﻿.env
+**/.env
+!**/.env.example
+**/data/
+**/target/
+**/node_modules/
+**/dist/
+dist-client/data/
+dist-client/*.jar
+*.log
+.DS_Store

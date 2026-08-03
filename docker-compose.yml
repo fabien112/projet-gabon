@@ -1,0 +1,73 @@
+services:
+  db:
+    image: mysql:8.4
+    container_name: dss-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: dss
+      MYSQL_USER: dss
+      MYSQL_PASSWORD: ${DB_PASSWORD:-changeme}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-changeme_root}
+    volumes:
+      - dss_mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    # Port non exposé par défaut (accès interne Docker seulement)
+    # ports:
+    #   - "3306:3306"
+
+  api:
+    build:
+      context: ./dss-integration
+      dockerfile: Dockerfile
+    image: dss-people-counting-api:0.1.0
+    container_name: dss-api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: 8080
+      H2_CONSOLE: "false"
+      DB_URL: jdbc:mysql://db:3306/dss?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Africa/Libreville
+      DB_USER: dss
+      DB_PASSWORD: ${DB_PASSWORD:-changeme}
+      DB_DRIVER: com.mysql.cj.jdbc.Driver
+      DSS_PROTOCOL: ${DSS_PROTOCOL:-https}
+      DSS_HOST: ${DSS_HOST}
+      DSS_PORT: ${DSS_PORT:-443}
+      DSS_USERNAME: ${DSS_USERNAME}
+      DSS_PASSWORD: ${DSS_PASSWORD}
+      DSS_VERIFY_SSL: ${DSS_VERIFY_SSL:-false}
+      DSS_CONNECT_TIMEOUT: ${DSS_CONNECT_TIMEOUT:-10s}
+      DSS_READ_TIMEOUT: ${DSS_READ_TIMEOUT:-15s}
+      DSS_KEEP_ALIVE_INTERVAL: ${DSS_KEEP_ALIVE_INTERVAL:-25s}
+      DSS_MQ_ENABLED: ${DSS_MQ_ENABLED:-true}
+      DSS_LOGIN_TYPE: ${DSS_LOGIN_TYPE:-2}
+      DSS_AUTO_LOGIN: ${DSS_AUTO_LOGIN:-true}
+      DSS_PASSENGER_FLOW_POLL_ENABLED: ${DSS_PASSENGER_FLOW_POLL_ENABLED:-true}
+      DSS_PASSENGER_FLOW_POLL_INTERVAL: ${DSS_PASSENGER_FLOW_POLL_INTERVAL:-60s}
+      DSS_LOG_LEVEL: ${DSS_LOG_LEVEL:-INFO}
+      DSS_HTTP_LOG_LEVEL: ${DSS_HTTP_LOG_LEVEL:-WARN}
+    # API accessible en interne ; le front nginx expose le port public
+    # ports:
+    #   - "8080:8080"
+
+  web:
+    build:
+      context: ./dss-frontend
+      dockerfile: Dockerfile
+    image: dss-people-counting-web:0.1.0
+    container_name: dss-web
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "${WEB_PORT:-80}:80"
+
+volumes:
+  dss_mysql_data:

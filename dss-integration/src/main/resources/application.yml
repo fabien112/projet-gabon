@@ -4,6 +4,27 @@ server:
 spring:
   application:
     name: dss-integration
+  web:
+    resources:
+      # Frontend buildé (pack client) : dossier ./web à côté du JAR
+      static-locations: classpath:/static/,file:${WEB_ROOT:./web}/
+  datasource:
+    url: ${DB_URL:jdbc:h2:file:./data/dss;MODE=MySQL;DB_CLOSE_DELAY=-1;AUTO_SERVER=TRUE}
+    username: ${DB_USER:sa}
+    password: ${DB_PASSWORD:}
+    driver-class-name: ${DB_DRIVER:org.h2.Driver}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: Africa/Libreville
+  h2:
+    console:
+      enabled: ${H2_CONSOLE:true}
+      path: /h2-console
 
 dss:
   protocol: ${DSS_PROTOCOL:https}
@@ -15,6 +36,11 @@ dss:
   connect-timeout: ${DSS_CONNECT_TIMEOUT:10s}
   read-timeout: ${DSS_READ_TIMEOUT:15s}
   keep-alive-interval: ${DSS_KEEP_ALIVE_INTERVAL:25s}
+  mq-enabled: ${DSS_MQ_ENABLED:true}
+  login-type: ${DSS_LOGIN_TYPE:2}
+  auto-login: ${DSS_AUTO_LOGIN:true}
+  passenger-flow-poll-enabled: ${DSS_PASSENGER_FLOW_POLL_ENABLED:true}
+  passenger-flow-poll-interval: ${DSS_PASSENGER_FLOW_POLL_INTERVAL:60s}
 
 logging:
   level:

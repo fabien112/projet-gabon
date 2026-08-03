@@ -1,0 +1,12 @@
+target/
+data/
+.env
+*.log
+.git/
+.idea/
+.vscode/
+.mvn/
+mvnw
+mvnw.cmd
+*.md
+passenger-flow-*.json

@@ -11,6 +11,7 @@ public record AuthLoginResponse(
         String credential,
         String userId,
         String userName,
+        String userGroupId,
         @JsonProperty("code") Integer errorCode,
         String desc
 ) {

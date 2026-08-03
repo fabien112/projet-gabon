@@ -1,9 +1,21 @@
 spring:
   main:
     lazy-initialization: true
+  datasource:
+    url: jdbc:h2:mem:dss-test;MODE=MySQL;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    open-in-view: false
 
 dss:
   host: test-host
   username: test-user
   password: test-password
   verify-ssl: false
+  auto-login: false
+  mq-enabled: false
+  passenger-flow-poll-enabled: false

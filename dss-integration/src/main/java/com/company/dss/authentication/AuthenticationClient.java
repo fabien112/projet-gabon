@@ -1,6 +1,7 @@
 package com.company.dss.authentication;
 
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import com.company.dss.client.DssClient;
 import com.company.dss.common.DssApiPaths;
@@ -11,6 +12,7 @@ import com.company.dss.dto.authentication.AuthCredentialsRequest;
 import com.company.dss.dto.authentication.AuthLoginResponse;
 import com.company.dss.dto.authentication.DssApiResponse;
 import com.company.dss.exception.DssAuthenticationException;
+import com.company.dss.util.DssCryptoUtils;
 import com.company.dss.util.DssSignatureUtils;
 
 import lombok.RequiredArgsConstructor;
@@ -31,7 +33,8 @@ public class AuthenticationClient {
     public AuthLoginResponse login() {
         dssProperties.validateForLogin();
 
-        log.info("DSS — déclenchement du challenge d'authentification pour l'utilisateur {}", dssProperties.getUsername());
+        log.info("------------------------------------------------------------");
+        log.info(">>> [LOGIN] Étape 1/2 — challenge pour utilisateur '{}'", dssProperties.getUsername());
 
         AuthChallengeRequest challengeRequest = new AuthChallengeRequest(
                 dssProperties.getUsername(),
@@ -50,6 +53,8 @@ public class AuthenticationClient {
             throw new DssAuthenticationException(
                     "Challenge DSS invalide : realm ou randomKey manquant dans la réponse");
         }
+        log.info(">>> [LOGIN] Challenge OK (realm={}, publickey={})",
+                challenge.realm(), StringUtils.hasText(challenge.publicKey()) ? "oui" : "non");
 
         String signature = DssSignatureUtils.computeSignature(
                 dssProperties.getUsername(),
@@ -57,6 +62,17 @@ public class AuthenticationClient {
                 challenge.realm(),
                 challenge.randomKey()
         );
+
+        DssCryptoUtils.AesCredentials aes = DssCryptoUtils.generateAesCredentials();
+        String encryptedSecretKey = "";
+        String encryptedSecretVector = "";
+
+        if (StringUtils.hasText(challenge.publicKey())) {
+            encryptedSecretKey = DssCryptoUtils.encryptForPlatform(aes.secretKey(), challenge.publicKey());
+            encryptedSecretVector = DssCryptoUtils.encryptForPlatform(aes.secretVector(), challenge.publicKey());
+        } else {
+            log.warn(">>> [LOGIN] publickey absente — déchiffrement MQ impossible");
+        }
 
         AuthCredentialsRequest credentialsRequest = new AuthCredentialsRequest(
                 "",
@@ -68,12 +84,17 @@ public class AuthenticationClient {
                 "",
                 DssApiPaths.CLIENT_TYPE,
                 DssApiPaths.USER_TYPE,
-                "",
-                "",
-                DssApiPaths.LOGIN_TYPE
+                encryptedSecretKey,
+                encryptedSecretVector,
+                StringUtils.hasText(dssProperties.getLoginType())
+                        ? dssProperties.getLoginType()
+                        : DssApiPaths.LOGIN_TYPE
         );
 
-        log.info("DSS — soumission des identifiants (randomKey valide 10 secondes)");
+        log.info(">>> [LOGIN] Étape 2/2 — soumission credentials (loginType={})",
+                StringUtils.hasText(dssProperties.getLoginType())
+                        ? dssProperties.getLoginType()
+                        : DssApiPaths.LOGIN_TYPE);
 
         AuthLoginResponse loginResponse = dssClient.post(
                 DssApiPaths.AUTHORIZE,
@@ -88,15 +109,22 @@ public class AuthenticationClient {
         }
 
         int durationMinutes = loginResponse.duration() != null ? loginResponse.duration() : 30;
-        tokenHolder.setToken(loginResponse.token(), durationMinutes);
+        tokenHolder.setSession(
+                loginResponse.token(),
+                durationMinutes,
+                loginResponse.userId(),
+                loginResponse.userGroupId(),
+                StringUtils.hasText(challenge.publicKey()) ? aes.secretKey() : null,
+                StringUtils.hasText(challenge.publicKey()) ? aes.secretVector() : null
+        );
 
-        log.info("DSS — authentification réussie pour {}", loginResponse.userName());
+        log.info(">>> [LOGIN] SUCCÈS — user={}, userId={}, userGroupId={}, durée={} min",
+                loginResponse.userName(), loginResponse.userId(), loginResponse.userGroupId(), durationMinutes);
         return loginResponse;
     }
 
     public void keepAlive() {
         tokenHolder.getToken().ifPresent(token -> {
-            log.debug("DSS — envoi keep-alive");
             dssClient.put(
                     DssApiPaths.KEEP_ALIVE,
                     java.util.Map.of("token", token),

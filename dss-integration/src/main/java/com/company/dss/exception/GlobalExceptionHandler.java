@@ -32,6 +32,13 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(status).body(errorBody("DSS_CLIENT_ERROR", ex.getMessage()));
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException ex) {
+        log.warn("Requête invalide : {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(errorBody("BAD_REQUEST", ex.getMessage()));
+    }
+
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<Map<String, Object>> handleIllegalState(IllegalStateException ex) {
         log.warn("Configuration invalide : {}", ex.getMessage());

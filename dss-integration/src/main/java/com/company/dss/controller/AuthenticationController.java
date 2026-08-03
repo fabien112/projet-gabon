@@ -43,7 +43,8 @@ public class AuthenticationController {
         return ResponseEntity.ok(Map.of(
                 "connected", authenticationService.isConnected(),
                 "configured", dssProperties.isConfigured(),
-                "host", dssProperties.getHost() != null ? dssProperties.getHost() : ""
+                "host", dssProperties.getHost() != null ? dssProperties.getHost() : "",
+                "loginType", dssProperties.getLoginType() != null ? dssProperties.getLoginType() : ""
         ));
     }
 }
