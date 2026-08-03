@@ -19,3 +19,8 @@ dss:
   auto-login: false
   mq-enabled: false
   passenger-flow-poll-enabled: false
+
+app:
+  security:
+    username: admin
+    password: test

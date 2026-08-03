@@ -1,9 +1,4 @@
-import axios from 'axios'
-
-const api = axios.create({
-  baseURL: '/api',
-  timeout: 30000,
-})
+import { api } from './http'
 
 export async function fetchCameras() {
   const { data } = await api.get('/reports/cameras')

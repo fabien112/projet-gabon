@@ -7,6 +7,7 @@
       </div>
       <div class="top-actions">
         <RouterLink class="btn-outline" to="/">← Rapport</RouterLink>
+        <button type="button" class="btn-outline" @click="doLogout">Déconnexion</button>
       </div>
     </header>
 
@@ -83,10 +84,12 @@
 
 <script setup>
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
+import { logoutApp } from '../api/auth'
 import { fetchSyncStatus, startHistorySync } from '../api/sync'
 
 const today = new Date().toISOString().slice(0, 10)
+const router = useRouter()
 const monthAgo = new Date()
 monthAgo.setDate(monthAgo.getDate() - 30)
 
@@ -124,6 +127,15 @@ const progressPct = computed(() => {
 
 function applyStatus(data) {
   Object.assign(status, data)
+}
+
+async function doLogout() {
+  try {
+    await logoutApp()
+  } catch {
+    // ignore
+  }
+  router.replace('/login')
 }
 
 function formatDate(isoDate) {
@@ -211,6 +223,7 @@ onUnmounted(() => {
   color: #0f172a;
   font-weight: 600;
   font-size: 0.85rem;
+  cursor: pointer;
 }
 .panel {
   background: #fff;

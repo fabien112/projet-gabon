@@ -6,7 +6,6 @@
         <h1>People Counting – Rapport personnalisé</h1>
       </div>
       <div class="top-actions">
-        <RouterLink class="btn-outline" to="/lea">🔄 Sync /lea</RouterLink>
         <button
           type="button"
           class="btn-outline excel"
@@ -24,6 +23,7 @@
           ⤓ Exporter PDF
         </button>
         <button type="button" class="btn-icon" title="Aujourd'hui" @click="setToday">📅</button>
+        <button type="button" class="btn-outline" @click="doLogout">Déconnexion</button>
       </div>
     </header>
 
@@ -190,13 +190,15 @@
 
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
-import { RouterLink } from 'vue-router'
+import { useRouter } from 'vue-router'
+import { logoutApp } from '../api/auth'
 import { fetchCameras, fetchPersonalizedReport, fetchReportStatus } from '../api/reports'
 import DailyLineChart from '../components/DailyLineChart.vue'
 import WeekdayBarChart from '../components/WeekdayBarChart.vue'
 import { exportExcel, exportPdf } from '../utils/exportReport'
 
 const today = new Date()
+const router = useRouter()
 const iso = (d) => {
   const y = d.getFullYear()
   const m = String(d.getMonth() + 1).padStart(2, '0')
@@ -271,6 +273,15 @@ function setToday() {
   filters.timeFrom = '00:00'
   filters.timeTo = '24:00'
   filterError.value = ''
+}
+
+async function doLogout() {
+  try {
+    await logoutApp()
+  } catch {
+    // ignore
+  }
+  router.replace('/login')
 }
 
 async function runExport(kind, exporter) {

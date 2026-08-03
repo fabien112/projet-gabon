@@ -4,10 +4,8 @@ services:
     container_name: dss-db
     restart: unless-stopped
     environment:
-      MYSQL_DATABASE: dss
-      MYSQL_USER: dss
-      MYSQL_PASSWORD: ${DB_PASSWORD:-changeme}
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-changeme_root}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-appdb}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
     volumes:
       - dss_mysql_data:/var/lib/mysql
     healthcheck:
@@ -33,9 +31,9 @@ services:
     environment:
       SERVER_PORT: 8080
       H2_CONSOLE: "false"
-      DB_URL: jdbc:mysql://db:3306/dss?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Africa/Libreville
-      DB_USER: dss
-      DB_PASSWORD: ${DB_PASSWORD:-changeme}
+      DB_URL: jdbc:mysql://db:3306/${MYSQL_DATABASE:-appdb}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Africa/Libreville
+      DB_USER: root
+      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       DB_DRIVER: com.mysql.cj.jdbc.Driver
       DSS_PROTOCOL: ${DSS_PROTOCOL:-https}
       DSS_HOST: ${DSS_HOST}
@@ -53,6 +51,8 @@ services:
       DSS_PASSENGER_FLOW_POLL_INTERVAL: ${DSS_PASSENGER_FLOW_POLL_INTERVAL:-60s}
       DSS_LOG_LEVEL: ${DSS_LOG_LEVEL:-INFO}
       DSS_HTTP_LOG_LEVEL: ${DSS_HTTP_LOG_LEVEL:-WARN}
+      APP_LOGIN_USER: ${APP_LOGIN_USER:-admin}
+      APP_LOGIN_PASSWORD: ${APP_LOGIN_PASSWORD:-changeme}
     # API accessible en interne ; le front nginx expose le port public
     # ports:
     #   - "8080:8080"

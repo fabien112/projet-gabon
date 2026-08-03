@@ -42,6 +42,12 @@ dss:
   passenger-flow-poll-enabled: ${DSS_PASSENGER_FLOW_POLL_ENABLED:true}
   passenger-flow-poll-interval: ${DSS_PASSENGER_FLOW_POLL_INTERVAL:60s}
 
+# Login unique partagé pour l'UI (tous les utilisateurs)
+app:
+  security:
+    username: ${APP_LOGIN_USER:admin}
+    password: ${APP_LOGIN_PASSWORD:changeme}
+
 logging:
   level:
     com.company.dss: ${DSS_LOG_LEVEL:INFO}
