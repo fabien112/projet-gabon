@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import ReportView from './views/ReportView.vue'
-import LeaSyncView from './views/LeaSyncView.vue'
+import SyncView from './views/SyncView.vue'
 import LoginView from './views/LoginView.vue'
 import { fetchMe } from './api/auth'
 
@@ -9,7 +9,8 @@ const router = createRouter({
   routes: [
     { path: '/login', name: 'login', component: LoginView, meta: { public: true } },
     { path: '/', name: 'report', component: ReportView },
-    { path: '/lea', name: 'lea', component: LeaSyncView },
+    { path: '/sync', name: 'sync', component: SyncView },
+    { path: '/lea', redirect: '/sync' },
   ],
 })
 

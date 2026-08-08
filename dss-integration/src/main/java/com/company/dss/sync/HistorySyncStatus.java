@@ -21,6 +21,18 @@ public record HistorySyncStatus(
         String lastJobStatus,
         String lastJobMessage,
         LocalDate lastJobFrom,
-        LocalDate lastJobTo
+        LocalDate lastJobTo,
+        boolean dssSessionActive,
+        // Poll automatique (DSS → BD)
+        boolean pollEnabled,
+        boolean pollInProgress,
+        boolean pollSuspended,
+        String pollInterval,
+        Instant pollLastAt,
+        String pollLastStatus,
+        String pollLastMessage,
+        int pollLastRowsUpserted,
+        int pollLastActiveSlots,
+        LocalDate pollLastDate
 ) {
 }

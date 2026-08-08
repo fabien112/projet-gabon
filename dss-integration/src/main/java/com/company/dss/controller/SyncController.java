@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.company.dss.passengerflow.PassengerFlowPollScheduler;
+import com.company.dss.service.AuthenticationService;
 import com.company.dss.sync.HistorySyncService;
 import com.company.dss.sync.HistorySyncStatus;
 
@@ -23,6 +25,8 @@ import lombok.RequiredArgsConstructor;
 public class SyncController {
 
     private final HistorySyncService historySyncService;
+    private final PassengerFlowPollScheduler passengerFlowPollScheduler;
+    private final AuthenticationService authenticationService;
 
     /**
      * Lance une sync manuelle (historique / rattrapage). Ne démarre jamais toute seule.
@@ -33,15 +37,35 @@ public class SyncController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to
     ) {
         try {
-            HistorySyncStatus status = historySyncService.start(from, to);
-            return ResponseEntity.accepted().body(status);
+            historySyncService.start(from, to);
+            return ResponseEntity.accepted().body(historySyncService.status(passengerFlowPollScheduler.status()));
         } catch (IllegalStateException | IllegalArgumentException ex) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", ex.getMessage()));
         }
     }
 
+    /** Force un relogin DSS (utile si la session a expiré). */
+    @PostMapping("/dss-reconnect")
+    public ResponseEntity<?> reconnectDss() {
+        try {
+            authenticationService.ensureLoggedIn();
+            if (!authenticationService.isConnected()) {
+                authenticationService.login();
+            }
+            return ResponseEntity.ok(Map.of(
+                    "message", "Session DSS active",
+                    "dssSessionActive", true
+            ));
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of(
+                    "message", "Impossible de reconnecter DSS : " + ex.getMessage(),
+                    "dssSessionActive", false
+            ));
+        }
+    }
+
     @GetMapping("/status")
     public ResponseEntity<HistorySyncStatus> status() {
-        return ResponseEntity.ok(historySyncService.status());
+        return ResponseEntity.ok(historySyncService.status(passengerFlowPollScheduler.status()));
     }
 }

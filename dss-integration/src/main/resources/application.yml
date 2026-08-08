@@ -40,7 +40,7 @@ dss:
   login-type: ${DSS_LOGIN_TYPE:2}
   auto-login: ${DSS_AUTO_LOGIN:true}
   passenger-flow-poll-enabled: ${DSS_PASSENGER_FLOW_POLL_ENABLED:true}
-  passenger-flow-poll-interval: ${DSS_PASSENGER_FLOW_POLL_INTERVAL:60s}
+  passenger-flow-poll-interval: ${DSS_PASSENGER_FLOW_POLL_INTERVAL:45s}
 
 # Login unique partagé pour l'UI (tous les utilisateurs)
 app:

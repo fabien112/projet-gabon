@@ -8,15 +8,20 @@ import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import com.company.dss.passengerflow.CompteuseCameraRules;
+import com.company.dss.persistence.entity.CameraEntity;
 import com.company.dss.persistence.entity.PeopleCountingHourlyEntity;
+import com.company.dss.persistence.repository.CameraRepository;
 import com.company.dss.persistence.repository.PeopleCountingHourlyRepository;
 import com.company.dss.report.PersonalizedReportResponse.DailyDetailRow;
 import com.company.dss.report.PersonalizedReportResponse.DailyEvolutionPoint;
@@ -27,35 +32,47 @@ import com.company.dss.report.PersonalizedReportResponse.WeekdayDistributionRow;
 import lombok.RequiredArgsConstructor;
 
 /**
- * Agrège les créneaux horaires stockés pour le rapport personnalisé de l'UI.
+ * Agrège les créneaux horaires pour le rapport.
+ * <p>
+ * Règle de comptage : somme des entrées/sorties des caméras sélectionnées uniquement.
+ * « Toutes » = les 3 compteuses principales ({@code $1$}), jamais les doublons {@code $3$}.
  */
 @Service
 @RequiredArgsConstructor
 public class PersonalizedReportService {
 
+    public static final int MAX_CAMERAS = 3;
+
     private static final DateTimeFormatter DAY_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final Locale FR = Locale.FRENCH;
 
     private final PeopleCountingHourlyRepository hourlyRepository;
+    private final CameraRepository cameraRepository;
 
     public PersonalizedReportResponse build(
             LocalDate fromDate,
             LocalDate toDate,
             LocalTime timeFrom,
             LocalTime timeTo,
-            String channelIdOrAll,
+            String cameraParam,
             String groupBy
     ) {
-        String channelId = normalizeChannel(channelIdOrAll);
-        List<PeopleCountingHourlyEntity> rows = hourlyRepository.findForReport(
-                fromDate, toDate, timeFrom, timeTo, channelId
-        );
+        CameraSelection selection = parseCameraSelection(cameraParam);
+        List<String> channelIds = resolveChannelIds(selection);
 
+        List<PeopleCountingHourlyEntity> rows = channelIds.isEmpty()
+                ? List.of()
+                : hourlyRepository.findForReportByChannels(
+                        fromDate, toDate, timeFrom, timeTo, channelIds
+                );
+
+        // Agrégation journalière — une seule passe.
+        // Présence = Σin − Σout (= Σ(in−out) par caméra). Créneau unique en DB.
         Map<LocalDate, long[]> byDay = new TreeMap<>();
         for (PeopleCountingHourlyEntity row : rows) {
             long[] agg = byDay.computeIfAbsent(row.getSlotDate(), d -> new long[2]);
-            agg[0] += row.getEntries();
-            agg[1] += row.getExits();
+            agg[0] += Math.max(0, row.getEntries());
+            agg[1] += Math.max(0, row.getExits());
         }
 
         List<DailyDetailRow> details = new ArrayList<>();
@@ -65,8 +82,7 @@ public class PersonalizedReportService {
         for (Map.Entry<LocalDate, long[]> e : byDay.entrySet()) {
             long in = e.getValue()[0];
             long out = e.getValue()[1];
-            long presence = in - out;
-            details.add(new DailyDetailRow(e.getKey(), in, out, presence));
+            details.add(new DailyDetailRow(e.getKey(), in, out, in - out));
             evolution.add(new DailyEvolutionPoint(e.getKey(), in, out));
             totalIn += in;
             totalOut += out;
@@ -95,7 +111,6 @@ public class PersonalizedReportService {
                 ))
                 .toList();
 
-        String cameraLabel = channelId == null ? "Toutes" : channelId;
         String periodLabel = DAY_FMT.format(fromDate) + " → " + DAY_FMT.format(toDate)
                 + "\n" + timeFrom + " → " + timeTo;
 
@@ -105,7 +120,7 @@ public class PersonalizedReportService {
                         toDate,
                         timeFrom.toString(),
                         timeTo.toString(),
-                        cameraLabel,
+                        selection.label(),
                         StringUtils.hasText(groupBy) ? groupBy : "Jour"
                 ),
                 new ReportKpis(
@@ -122,15 +137,55 @@ public class PersonalizedReportService {
         );
     }
 
-    private static String normalizeChannel(String channelIdOrAll) {
-        if (!StringUtils.hasText(channelIdOrAll)) {
-            return null;
+    /** « Toutes » → ids des 3 compteuses principales ; sinon les ids demandés (filtrés). */
+    private List<String> resolveChannelIds(CameraSelection selection) {
+        List<String> primary = primaryChannelIds();
+        if (selection.includeAll()) {
+            return primary;
         }
-        String v = channelIdOrAll.trim();
-        if ("all".equalsIgnoreCase(v) || "toutes".equalsIgnoreCase(v)) {
-            return null;
+        Set<String> primarySet = new LinkedHashSet<>(primary);
+        return selection.channelIds().stream()
+                .filter(primarySet::contains)
+                .limit(MAX_CAMERAS)
+                .toList();
+    }
+
+    private List<String> primaryChannelIds() {
+        return cameraRepository.findAll().stream()
+                .filter(c -> CompteuseCameraRules.isPrimary(c.getChannelId(), c.getName(), c.isActive()))
+                .sorted(Comparator.comparing(CameraEntity::getName, String.CASE_INSENSITIVE_ORDER))
+                .map(CameraEntity::getChannelId)
+                .limit(MAX_CAMERAS)
+                .toList();
+    }
+
+    static CameraSelection parseCameraSelection(String cameraParam) {
+        if (!StringUtils.hasText(cameraParam)) {
+            throw new IllegalArgumentException("Sélectionnez au moins 1 caméra (ou « Toutes »).");
         }
-        return v;
+        String raw = cameraParam.trim();
+        if ("all".equalsIgnoreCase(raw) || "toutes".equalsIgnoreCase(raw)) {
+            return new CameraSelection(true, List.of(), "Toutes");
+        }
+
+        Set<String> unique = new LinkedHashSet<>();
+        for (String part : raw.split(",")) {
+            String id = part.trim();
+            if (StringUtils.hasText(id) && !"all".equalsIgnoreCase(id) && !"toutes".equalsIgnoreCase(id)) {
+                unique.add(id);
+            }
+        }
+        if (unique.isEmpty()) {
+            throw new IllegalArgumentException("Sélectionnez au moins 1 caméra (ou « Toutes »).");
+        }
+        if (unique.size() > MAX_CAMERAS) {
+            throw new IllegalArgumentException(
+                    "Maximum " + MAX_CAMERAS + " caméras autorisées (reçu : " + unique.size() + ")."
+            );
+        }
+        List<String> ids = List.copyOf(unique);
+        String label = ids.size() == 1 ? ids.get(0) : ids.get(0) + " +" + (ids.size() - 1);
+        return new CameraSelection(false, ids, label);
     }
 
     private static String capitalize(String value) {
@@ -138,5 +193,11 @@ public class PersonalizedReportService {
             return value;
         }
         return value.substring(0, 1).toUpperCase(FR) + value.substring(1);
+    }
+
+    record CameraSelection(boolean includeAll, List<String> channelIds, String label) {
+        CameraSelection {
+            channelIds = channelIds == null ? List.of() : List.copyOf(channelIds);
+        }
     }
 }

@@ -13,11 +13,15 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.springframework.stereotype.Service;
 
 import com.company.dss.authentication.TokenHolder;
+import com.company.dss.exception.DssClientException;
+import com.company.dss.passengerflow.CompteuseCameraRules;
+import com.company.dss.passengerflow.CompteuseChannel;
 import com.company.dss.passengerflow.PassengerFlowClient;
 import com.company.dss.persistence.PeopleCountingSyncService;
 import com.company.dss.persistence.entity.SyncMetaEntity;
 import com.company.dss.persistence.repository.PeopleCountingHourlyRepository;
 import com.company.dss.persistence.repository.SyncMetaRepository;
+import com.company.dss.service.AuthenticationService;
 
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +30,8 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * Synchronisation manuelle de l'historique DSS (jamais au démarrage).
  * Upsert jour par jour → relancer la même période complète sans doublons.
+ * <p>
+ * Anti rate-limit DSS (HTTP 429) : pause entre jours + retry avec backoff.
  */
 @Slf4j
 @Service
@@ -33,11 +39,16 @@ import lombok.extern.slf4j.Slf4j;
 public class HistorySyncService {
 
     private static final long META_ID = 1L;
-    private static final long PAUSE_MS_BETWEEN_DAYS = 250L;
+    /** Pause entre deux jours — DSS refuse trop de requêtes rapides (429). */
+    private static final long PAUSE_MS_BETWEEN_DAYS = 1_500L;
+    private static final int MAX_CAMERAS = 3;
+    private static final int MAX_RETRIES = 5;
+    private static final long[] RETRY_BACKOFF_MS = {2_000L, 5_000L, 12_000L, 25_000L, 45_000L};
 
     private final PassengerFlowClient passengerFlowClient;
     private final PeopleCountingSyncService syncService;
     private final TokenHolder tokenHolder;
+    private final AuthenticationService authenticationService;
     private final SyncMetaRepository syncMetaRepository;
     private final PeopleCountingHourlyRepository hourlyRepository;
 
@@ -50,6 +61,10 @@ public class HistorySyncService {
     private final AtomicBoolean running = new AtomicBoolean(false);
     private final AtomicReference<LiveProgress> progress = new AtomicReference<>(LiveProgress.idle());
 
+    public boolean isRunning() {
+        return running.get();
+    }
+
     public HistorySyncStatus start(LocalDate from, LocalDate to) {
         if (from == null || to == null) {
             throw new IllegalArgumentException("Les dates from et to sont obligatoires");
@@ -57,8 +72,16 @@ public class HistorySyncService {
         if (to.isBefore(from)) {
             throw new IllegalArgumentException("La date de fin doit être >= date de début");
         }
+        try {
+            authenticationService.ensureLoggedIn();
+        } catch (Exception ex) {
+            throw new IllegalStateException(
+                    "Session DSS inactive — impossible de se reconnecter : " + ex.getMessage(),
+                    ex
+            );
+        }
         if (!tokenHolder.hasValidToken()) {
-            throw new IllegalStateException("Session DSS inactive. Vérifiez la connexion / auto-login.");
+            throw new IllegalStateException("Session DSS inactive. Vérifiez DSS_HOST / identifiants / réseau.");
         }
         if (!running.compareAndSet(false, true)) {
             throw new IllegalStateException("Une synchronisation est déjà en cours");
@@ -77,6 +100,10 @@ public class HistorySyncService {
     }
 
     public HistorySyncStatus status() {
+        return status(null);
+    }
+
+    public HistorySyncStatus status(com.company.dss.passengerflow.PassengerFlowPollStatus poll) {
         LiveProgress live = progress.get();
         SyncMetaEntity meta = syncMetaRepository.findById(META_ID).orElse(null);
         LocalDate maxInDb = hourlyRepository.findMaxSlotDate().orElse(null);
@@ -101,7 +128,18 @@ public class HistorySyncService {
                 meta != null ? meta.getLastStatus() : null,
                 meta != null ? meta.getLastMessage() : null,
                 meta != null ? meta.getLastFromDate() : null,
-                meta != null ? meta.getLastToDate() : null
+                meta != null ? meta.getLastToDate() : null,
+                tokenHolder.hasValidToken(),
+                poll != null && poll.enabled(),
+                poll != null && poll.inProgress(),
+                poll != null && poll.suspended(),
+                poll != null ? poll.interval() : null,
+                poll != null ? poll.lastAt() : null,
+                poll != null ? poll.lastStatus() : null,
+                poll != null ? poll.lastMessage() : null,
+                poll != null ? poll.lastRowsUpserted() : 0,
+                poll != null ? poll.lastActiveSlots() : 0,
+                poll != null ? poll.lastDate() : null
         );
     }
 
@@ -110,27 +148,45 @@ public class HistorySyncService {
         int rowsTotal = 0;
         LocalDate current = from;
         try {
-            List<String> channelIds = passengerFlowClient.discoverCompteuseChannelIds();
-            if (channelIds.isEmpty()) {
-                throw new IllegalStateException("Aucun canal Compteuse trouvé dans DSS");
+            authenticationService.ensureLoggedIn();
+            List<CompteuseChannel> channels = passengerFlowClient.discoverCompteuseChannels().stream()
+                    .filter(c -> CompteuseCameraRules.isPrimary(c.channelId(), c.name(), true))
+                    .limit(MAX_CAMERAS)
+                    .toList();
+            if (channels.isEmpty()) {
+                throw new IllegalStateException("Aucun canal Compteuse principal trouvé dans DSS");
             }
-            log.info(">>> [SYNC] Début sync manuelle {} → {} ({} jours, {} canaux)",
-                    from, to, daysTotal, channelIds.size());
+            int camerasSaved = syncService.upsertCameras(channels);
+            List<String> channelIds = channels.stream().map(CompteuseChannel::channelId).toList();
+            log.info(">>> [SYNC] Début sync manuelle {} → {} ({} jours, {} canaux, cameras upsert={})",
+                    from, to, daysTotal, channelIds.size(), camerasSaved);
 
             while (!current.isAfter(to)) {
                 progress.set(new LiveProgress(
                         true, "RUNNING", from, to, current, daysTotal, daysDone, rowsTotal,
-                        "Sync du " + current, startedAt, null
+                        "Sync du " + current + " (" + (daysDone + 1) + "/" + daysTotal + ")",
+                        startedAt, null
                 ));
 
-                List<Map<String, Object>> rows = passengerFlowClient.fetchHistoryForDate(current, channelIds);
+                List<Map<String, Object>> rows = fetchDayWithRetry(
+                        current, channelIds, from, to, daysTotal, daysDone, rowsTotal, startedAt
+                );
                 int saved = syncService.upsertRows(rows);
                 rowsTotal += saved;
                 daysDone++;
 
-                log.info(">>> [SYNC] {} — upsert={} (total lignes={})", current, saved, rowsTotal);
+                log.info(">>> [SYNC] {} — upsert={} — caméras={} (total lignes={})",
+                        current, saved, channelIds.size(), rowsTotal);
 
+                // Keep-alive session + pause anti-429
                 if (!current.equals(to)) {
+                    if (daysDone % 10 == 0) {
+                        try {
+                            authenticationService.ensureLoggedIn();
+                        } catch (Exception ex) {
+                            log.warn(">>> [SYNC] Relogin périodique échoué : {}", ex.getMessage());
+                        }
+                    }
                     Thread.sleep(PAUSE_MS_BETWEEN_DAYS);
                 }
                 current = current.plusDays(1);
@@ -148,11 +204,76 @@ public class HistorySyncService {
             Thread.currentThread().interrupt();
             fail(from, to, daysTotal, daysDone, rowsTotal, startedAt, "Interrompu");
         } catch (Exception ex) {
-            fail(from, to, daysTotal, daysDone, rowsTotal, startedAt, ex.getMessage());
+            fail(from, to, daysTotal, daysDone, rowsTotal, startedAt, friendlyError(ex));
             log.warn(">>> [SYNC] Échec : {}", ex.getMessage());
         } finally {
             running.set(false);
         }
+    }
+
+    /**
+     * Récupère un jour avec retry sur 429 / 503 / 401.
+     */
+    private List<Map<String, Object>> fetchDayWithRetry(
+            LocalDate day,
+            List<String> channelIds,
+            LocalDate from,
+            LocalDate to,
+            int daysTotal,
+            int daysDone,
+            int rowsTotal,
+            Instant startedAt
+    ) throws InterruptedException {
+        Exception last = null;
+        for (int attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+            try {
+                return passengerFlowClient.fetchHistoryForDate(day, channelIds);
+            } catch (DssClientException ex) {
+                last = ex;
+                int code = ex.getStatusCode();
+                if (code == 401) {
+                    log.warn(">>> [SYNC] 401 sur {} — relogin puis retry", day);
+                    progress.set(new LiveProgress(
+                            true, "RUNNING", from, to, day, daysTotal, daysDone, rowsTotal,
+                            "Session expirée — reconnexion DSS…", startedAt, null
+                    ));
+                    authenticationService.ensureLoggedIn();
+                    Thread.sleep(1_000L);
+                    continue;
+                }
+                if (code == 429 || code == 503) {
+                    long wait = RETRY_BACKOFF_MS[Math.min(attempt, RETRY_BACKOFF_MS.length - 1)];
+                    log.warn(">>> [SYNC] HTTP {} sur {} — pause {}s puis retry ({}/{})",
+                            code, day, wait / 1000, attempt + 1, MAX_RETRIES);
+                    progress.set(new LiveProgress(
+                            true, "RUNNING", from, to, day, daysTotal, daysDone, rowsTotal,
+                            "DSS saturé (HTTP " + code + ") — pause " + (wait / 1000) + "s…",
+                            startedAt, null
+                    ));
+                    Thread.sleep(wait);
+                    continue;
+                }
+                throw ex;
+            }
+        }
+        throw new IllegalStateException(
+                "DSS refuse toujours les requêtes après " + MAX_RETRIES + " tentatives sur " + day
+                        + (last != null ? " : " + last.getMessage() : ""),
+                last
+        );
+    }
+
+    private static String friendlyError(Exception ex) {
+        if (ex instanceof DssClientException dss && dss.getStatusCode() == 429) {
+            return "DSS a limité le débit (HTTP 429). Réessayez dans 1–2 minutes "
+                    + "ou synchronisez par tranches plus courtes.";
+        }
+        String msg = ex.getMessage();
+        if (msg != null && msg.contains("429")) {
+            return "DSS a limité le débit (HTTP 429). Réessayez dans 1–2 minutes "
+                    + "ou synchronisez par tranches plus courtes.";
+        }
+        return msg != null ? msg : ex.getClass().getSimpleName();
     }
 
     private void fail(

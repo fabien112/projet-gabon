@@ -61,12 +61,12 @@
 
       <label class="filter-item">
         <span class="label">Caméra</span>
-        <select v-model="filters.camera" class="single">
-          <option value="all">Toutes</option>
-          <option v-for="cam in cameras" :key="cam.channelId" :value="cam.channelId">
-            {{ cam.name }}
-          </option>
-        </select>
+        <CameraMultiSelect
+          v-model="selectedCameras"
+          :options="cameras"
+          :max="MAX_CAMERAS"
+          :invalid="!cameraSelectionValid"
+        />
       </label>
 
       <label class="filter-item">
@@ -94,6 +94,7 @@
       <span class="info-ico">ℹ</span>
       Résultat de {{ formatDate(filters.from) }} à {{ formatDate(filters.to) }}
       pour la tranche horaire {{ filters.timeFrom }} - {{ displayTimeTo }}
+      · {{ selectedCameraLabel }}
     </p>
 
     <section v-if="report" class="kpis">
@@ -195,7 +196,10 @@ import { logoutApp } from '../api/auth'
 import { fetchCameras, fetchPersonalizedReport, fetchReportStatus } from '../api/reports'
 import DailyLineChart from '../components/DailyLineChart.vue'
 import WeekdayBarChart from '../components/WeekdayBarChart.vue'
+import CameraMultiSelect from '../components/CameraMultiSelect.vue'
 import { exportExcel, exportPdf } from '../utils/exportReport'
+
+const MAX_CAMERAS = 3
 
 const today = new Date()
 const router = useRouter()
@@ -213,9 +217,10 @@ const filters = reactive({
   to: iso(today),
   timeFrom: '09:00',
   timeTo: '11:00',
-  camera: 'all',
   groupBy: 'Jour',
 })
+
+const selectedCameras = ref([])
 
 const hourOptionsStart = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`)
 const hourOptionsEnd = [
@@ -233,9 +238,31 @@ const dbStatus = reactive({ cameras: 0, hourlySlots: 0 })
 
 const displayTimeTo = computed(() => (filters.timeTo === '24:00' ? '00:00' : filters.timeTo))
 
+const cameraSelectionValid = computed(
+  () => selectedCameras.value.length >= 1 && selectedCameras.value.length <= MAX_CAMERAS,
+)
+
+const allCamerasSelected = computed(
+  () =>
+    cameras.value.length > 0 &&
+    selectedCameras.value.length === cameras.value.length &&
+    cameras.value.every((c) => selectedCameras.value.includes(c.channelId)),
+)
+
+const selectedCameraLabel = computed(() => {
+  const names = selectedCameras.value.map(
+    (id) => cameras.value.find((c) => c.channelId === id)?.name || id,
+  )
+  if (names.length === 0) return 'Aucune caméra'
+  if (allCamerasSelected.value) return `Toutes les caméras (${names.length})`
+  if (names.length === 1) return `Caméra : ${names[0]}`
+  return `${names.length} caméras : ${names.join(', ')}`
+})
+
 const filtersValid = computed(() => {
   if (!filters.from || !filters.to || !filters.timeFrom || !filters.timeTo) return false
   if (filters.to < filters.from) return false
+  if (!cameraSelectionValid.value) return false
   return timeToMinutes(filters.timeTo) > timeToMinutes(filters.timeFrom)
 })
 
@@ -247,6 +274,11 @@ function timeToMinutes(value) {
 
 function isTimeToAllowed(value) {
   return timeToMinutes(value) > timeToMinutes(filters.timeFrom)
+}
+
+function defaultCameraSelection(cams) {
+  if (!cams?.length) return []
+  return cams.slice(0, MAX_CAMERAS).map((c) => c.channelId)
 }
 
 function onPeriodChange() {
@@ -294,7 +326,7 @@ async function runExport(kind, exporter) {
   try {
     await exporter({
       report: report.value,
-      filters: { ...filters },
+      filters: { ...filters, cameras: [...selectedCameras.value] },
       cameras: cameras.value,
     })
   } catch (e) {
@@ -333,21 +365,32 @@ async function refreshMeta() {
     cameras.value = cams
     dbStatus.cameras = status.cameras
     dbStatus.hourlySlots = status.hourlySlots
+    const known = new Set(cams.map((c) => c.channelId))
+    const kept = selectedCameras.value.filter((id) => known.has(id)).slice(0, MAX_CAMERAS)
+    selectedCameras.value = kept.length > 0 ? kept : defaultCameraSelection(cams)
   } catch (e) {
     error.value = 'Backend inaccessible. Démarrez dss-integration sur le port 8080.'
   }
 }
 
 async function loadReport() {
+  if (!cameraSelectionValid.value) {
+    filterError.value = 'Sélectionnez entre 1 et 3 caméra(s).'
+    return
+  }
   loading.value = true
   error.value = ''
   try {
+    const cams =
+      allCamerasSelected.value && cameras.value.length > 0
+        ? 'all'
+        : [...selectedCameras.value]
     report.value = await fetchPersonalizedReport({
       from: filters.from,
       to: filters.to,
       timeFrom: filters.timeFrom,
       timeTo: filters.timeTo === '23:59' ? '24:00' : filters.timeTo,
-      camera: filters.camera,
+      cameras: cams === 'all' ? ['all'] : cams,
       groupBy: filters.groupBy,
     })
     await refreshMeta()
@@ -447,7 +490,7 @@ h1 {
 
 .filters {
   display: grid;
-  grid-template-columns: 1.35fr 1.1fr 0.85fr 0.7fr auto;
+  grid-template-columns: 1.35fr 1.1fr 0.95fr 0.7fr auto;
   gap: 12px;
   align-items: end;
   background: #eef2f6;

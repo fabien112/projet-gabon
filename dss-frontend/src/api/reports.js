@@ -11,6 +11,23 @@ export async function fetchReportStatus() {
 }
 
 export async function fetchPersonalizedReport(params) {
-  const { data } = await api.get('/reports/personalized', { params })
+  const { camera, cameras, ...rest } = params
+  // channelIds sélectionnés : CSV unique pour un filtre IN exact côté backend
+  const selected = Array.isArray(cameras)
+    ? cameras
+    : Array.isArray(camera)
+      ? camera
+      : typeof camera === 'string' && camera
+        ? camera.split(',')
+        : []
+  const cleaned = [...new Set(selected.map((id) => String(id).trim()).filter(Boolean))]
+  const cameraParam =
+    cleaned.length === 0 || cleaned.includes('all')
+      ? 'all'
+      : cleaned.slice(0, 3).join(',')
+
+  const { data } = await api.get('/reports/personalized', {
+    params: { ...rest, camera: cameraParam },
+  })
   return data
 }

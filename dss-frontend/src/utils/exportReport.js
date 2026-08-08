@@ -12,10 +12,22 @@ function displayTimeTo(timeTo) {
   return timeTo === '24:00' ? '00:00' : timeTo
 }
 
+function selectedCameraIds(filters) {
+  if (Array.isArray(filters.cameras)) return filters.cameras
+  if (!filters.camera || filters.camera === 'all') return []
+  if (Array.isArray(filters.camera)) return filters.camera
+  return String(filters.camera)
+    .split(',')
+    .map((id) => id.trim())
+    .filter(Boolean)
+}
+
 function cameraLabel(filters, cameras) {
-  if (!filters.camera || filters.camera === 'all') return 'Toutes'
-  const found = cameras?.find((c) => c.channelId === filters.camera)
-  return found?.name || filters.camera
+  const ids = selectedCameraIds(filters)
+  if (ids.length === 0) return 'Toutes'
+  return ids
+    .map((id) => cameras?.find((c) => c.channelId === id)?.name || id)
+    .join(', ')
 }
 
 function buildFileStamp(filters) {
@@ -27,7 +39,7 @@ function metaRows(filters, cameras) {
     ['Rapport', 'People Counting – Rapport personnalisé'],
     ['Période', `${formatDateFr(filters.from)} → ${formatDateFr(filters.to)}`],
     ['Tranche horaire', `${filters.timeFrom} → ${displayTimeTo(filters.timeTo)}`],
-    ['Caméra', cameraLabel(filters, cameras)],
+    ['Caméras', cameraLabel(filters, cameras)],
     ['Groupe par', filters.groupBy || 'Jour'],
     ['Exporté le', new Date().toLocaleString('fr-FR')],
   ]
@@ -109,7 +121,7 @@ export function exportPdf({ report, filters, cameras }) {
   const meta = [
     `Période : ${formatDateFr(filters.from)} → ${formatDateFr(filters.to)}`,
     `Tranche horaire : ${filters.timeFrom} → ${displayTimeTo(filters.timeTo)}`,
-    `Caméra : ${cameraLabel(filters, cameras)}`,
+    `Caméras : ${cameraLabel(filters, cameras)}`,
     `Groupe par : ${filters.groupBy || 'Jour'}`,
     `Exporté le : ${new Date().toLocaleString('fr-FR')}`,
   ]

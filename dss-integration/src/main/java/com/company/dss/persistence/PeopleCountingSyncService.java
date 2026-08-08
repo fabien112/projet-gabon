@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import com.company.dss.passengerflow.CompteuseChannel;
 import com.company.dss.persistence.entity.CameraEntity;
 import com.company.dss.persistence.entity.PeopleCountingHourlyEntity;
 import com.company.dss.persistence.repository.CameraRepository;
@@ -44,12 +45,47 @@ public class PeopleCountingSyncService {
         return saved;
     }
 
+    /**
+     * Enregistre / met à jour toutes les caméras compteuses découvertes (même sans données du jour).
+     */
+    @Transactional
+    public int upsertCameras(List<CompteuseChannel> channels) {
+        if (channels == null || channels.isEmpty()) {
+            return 0;
+        }
+        int saved = 0;
+        for (CompteuseChannel channel : channels) {
+            if (!StringUtils.hasText(channel.channelId())) {
+                continue;
+            }
+            CameraEntity camera = cameraRepository.findByChannelId(channel.channelId()).orElseGet(() -> {
+                CameraEntity created = new CameraEntity();
+                created.setChannelId(channel.channelId());
+                created.setActive(true);
+                return created;
+            });
+            String name = StringUtils.hasText(channel.name()) ? channel.name() : channel.channelId();
+            camera.setName(name);
+            camera.setSite(guessSite(name));
+            camera.setActive(true);
+            cameraRepository.save(camera);
+            saved++;
+        }
+        return saved;
+    }
+
     private boolean upsertOne(Map<String, Object> row) {
         String channelId = stringVal(row.get("channelId"));
         String cameraName = stringVal(row.get("camera"));
         String startTime = stringVal(row.get("startTime"));
         String endTime = stringVal(row.get("endTime"));
         if (!StringUtils.hasText(channelId) || !StringUtils.hasText(startTime) || !StringUtils.hasText(endTime)) {
+            return false;
+        }
+
+        // Ignore les sous-canaux techniques ($3$ / *_1) — doublons DSS
+        if (!channelId.contains("$1$") || (StringUtils.hasText(cameraName) && cameraName.matches("(?i).*_1\\s*$"))) {
+            log.debug("Skip canal non principal {} ({})", channelId, cameraName);
             return false;
         }
 

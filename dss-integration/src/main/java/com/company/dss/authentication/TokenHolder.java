@@ -30,7 +30,7 @@ public class TokenHolder {
         log.info(">>> [LOGIN] Token enregistré (userId={}), expire à {}", userId, expiresAt);
     }
 
-    /** Compat : met à jour uniquement le token en conservant le reste de la session. */
+    /** Met à jour uniquement le token en conservant le reste de la session. */
     public void setToken(String token, int durationMinutes) {
         TokenSession current = session.get();
         Instant expiresAt = Instant.now().plusSeconds(Math.max(durationMinutes * 60L - 60L, 60L));
@@ -47,6 +47,27 @@ public class TokenHolder {
             ));
         }
         log.info(">>> [LOGIN] Token renouvelé, expire à {}", expiresAt);
+    }
+
+    /**
+     * Prolonge l'expiration locale après un keep-alive DSS réussi
+     * (sans changer le token ni les clés AES).
+     */
+    public void extendExpiry(int durationMinutes) {
+        TokenSession current = session.get();
+        if (current == null) {
+            return;
+        }
+        int minutes = durationMinutes > 0 ? durationMinutes : 30;
+        Instant expiresAt = Instant.now().plusSeconds(Math.max(minutes * 60L - 60L, 60L));
+        session.set(new TokenSession(
+                current.token(),
+                expiresAt,
+                current.userId(),
+                current.userGroupId(),
+                current.aesSecretKey(),
+                current.aesSecretVector()
+        ));
     }
 
     public Optional<String> getToken() {

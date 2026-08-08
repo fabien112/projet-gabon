@@ -3,7 +3,7 @@
     <form class="card" @submit.prevent="submit">
       <div class="brand">
         <span class="logo" aria-hidden="true">👥</span>
-        <h1>People Counting</h1>
+        <h1>Systéme de comptage GABON- DSS </h1>
         <p>Connexion à l’application</p>
       </div>
 

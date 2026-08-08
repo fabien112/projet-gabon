@@ -2,16 +2,22 @@ package com.company.dss.controller;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.company.dss.passengerflow.CompteuseCameraRules;
 import com.company.dss.persistence.entity.CameraEntity;
 import com.company.dss.persistence.repository.CameraRepository;
 import com.company.dss.persistence.repository.PeopleCountingHourlyRepository;
@@ -26,6 +32,7 @@ import lombok.RequiredArgsConstructor;
 public class ReportController {
 
     private static final LocalTime END_OF_DAY = LocalTime.of(23, 59, 59);
+    private static final int MAX_CAMERAS = 3;
 
     private final PersonalizedReportService reportService;
     private final CameraRepository cameraRepository;
@@ -34,6 +41,8 @@ public class ReportController {
     /**
      * Rapport personnalisé pour l'UI People Counting.
      * Tranche 09:00-11:00 = créneaux dont hour_start ∈ [09:00, 11:00).
+     * <p>
+     * {@code camera} : {@code all}, un channelId, ou jusqu'à 3 ids séparés par des virgules.
      */
     @GetMapping("/personalized")
     public ResponseEntity<PersonalizedReportResponse> personalized(
@@ -41,7 +50,7 @@ public class ReportController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
             @RequestParam(defaultValue = "00:00") @DateTimeFormat(pattern = "HH:mm") LocalTime timeFrom,
             @RequestParam(defaultValue = "24:00") String timeTo,
-            @RequestParam(defaultValue = "all") String camera,
+            @RequestParam(defaultValue = "all") List<String> camera,
             @RequestParam(defaultValue = "Jour") String groupBy
     ) {
         if (to.isBefore(from)) {
@@ -51,12 +60,60 @@ public class ReportController {
         if (!effectiveTo.equals(END_OF_DAY) && !effectiveTo.isAfter(timeFrom)) {
             throw new IllegalArgumentException("La tranche horaire est invalide (timeTo > timeFrom)");
         }
-        return ResponseEntity.ok(reportService.build(from, to, timeFrom, effectiveTo, camera, groupBy));
+        String cameraParam = normalizeCameraParam(camera);
+        return ResponseEntity.ok(reportService.build(from, to, timeFrom, effectiveTo, cameraParam, groupBy));
     }
 
+    /**
+     * Normalise {@code camera=all}, {@code camera=id}, {@code camera=id1,id2}
+     * ou params répétés {@code camera=id1&camera=id2} en une seule chaîne CSV (max 3).
+     */
+    public static String normalizeCameraParam(List<String> camera) {
+        if (camera == null || camera.isEmpty()) {
+            return "all";
+        }
+        Set<String> ids = new LinkedHashSet<>();
+        boolean all = false;
+        for (String raw : camera) {
+            if (!StringUtils.hasText(raw)) {
+                continue;
+            }
+            for (String part : raw.split(",")) {
+                String id = part.trim();
+                if (!StringUtils.hasText(id)) {
+                    continue;
+                }
+                if ("all".equalsIgnoreCase(id) || "toutes".equalsIgnoreCase(id)) {
+                    all = true;
+                } else {
+                    ids.add(id);
+                }
+            }
+        }
+        if (all && ids.isEmpty()) {
+            return "all";
+        }
+        if (ids.isEmpty()) {
+            return "all";
+        }
+        if (ids.size() > MAX_CAMERAS) {
+            throw new IllegalArgumentException(
+                    "Maximum " + MAX_CAMERAS + " caméras autorisées (reçu : " + ids.size() + ")."
+            );
+        }
+        return String.join(",", ids);
+    }
+
+    /**
+     * Caméras compteuses principales uniquement (canal {@code $1$}),
+     * sans les doublons techniques {@code $3$} / {@code *_1}.
+     */
     @GetMapping("/cameras")
     public ResponseEntity<?> cameras() {
         return ResponseEntity.ok(cameraRepository.findAll().stream()
+                .filter(c -> CompteuseCameraRules.isPrimary(c.getChannelId(), c.getName(), c.isActive()))
+                .sorted(Comparator.comparing(CameraEntity::getName, String.CASE_INSENSITIVE_ORDER))
+                .limit(MAX_CAMERAS)
                 .map(this::toCameraDto)
                 .toList());
     }
@@ -64,7 +121,11 @@ public class ReportController {
     @GetMapping("/status")
     public ResponseEntity<Map<String, Object>> status() {
         Map<String, Object> body = new LinkedHashMap<>();
-        body.put("cameras", cameraRepository.count());
+        long primaryCams = cameraRepository.findAll().stream()
+                .filter(c -> CompteuseCameraRules.isPrimary(c.getChannelId(), c.getName(), c.isActive()))
+                .limit(MAX_CAMERAS)
+                .count();
+        body.put("cameras", primaryCams);
         body.put("hourlySlots", hourlyRepository.count());
         return ResponseEntity.ok(body);
     }

@@ -11,3 +11,8 @@ export async function startHistorySync({ from, to }) {
   })
   return data
 }
+
+export async function reconnectDss() {
+  const { data } = await api.post('/sync/dss-reconnect')
+  return data
+}

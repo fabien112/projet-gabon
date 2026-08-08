@@ -2,6 +2,7 @@ package com.company.dss.persistence.repository;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,21 +20,45 @@ public interface PeopleCountingHourlyRepository extends JpaRepository<PeopleCoun
             LocalTime hourStart
     );
 
+    /**
+     * Toutes les caméras — tranche [timeFrom, timeTo) sur {@code hourStart}.
+     * Méthode séparée de {@link #findForReportByChannels} : éviter le motif
+     * {@code :flag = true OR x IN :ids} (bug de binding Hibernate / H2 → 0 ligne).
+     */
     @Query("""
             select h from PeopleCountingHourlyEntity h
             join fetch h.camera c
             where h.slotDate between :fromDate and :toDate
               and h.hourStart >= :timeFrom
               and h.hourStart < :timeTo
-              and (:channelId is null or c.channelId = :channelId)
             order by h.slotDate, h.hourStart, c.name
             """)
-    List<PeopleCountingHourlyEntity> findForReport(
+    List<PeopleCountingHourlyEntity> findForReportAll(
+            @Param("fromDate") LocalDate fromDate,
+            @Param("toDate") LocalDate toDate,
+            @Param("timeFrom") LocalTime timeFrom,
+            @Param("timeTo") LocalTime timeTo
+    );
+
+    /**
+     * Uniquement les channelIds demandés (IN).
+     * Tranche [timeFrom, timeTo) sur {@code hourStart}.
+     */
+    @Query("""
+            select h from PeopleCountingHourlyEntity h
+            join fetch h.camera c
+            where h.slotDate between :fromDate and :toDate
+              and h.hourStart >= :timeFrom
+              and h.hourStart < :timeTo
+              and c.channelId in :channelIds
+            order by h.slotDate, h.hourStart, c.name
+            """)
+    List<PeopleCountingHourlyEntity> findForReportByChannels(
             @Param("fromDate") LocalDate fromDate,
             @Param("toDate") LocalDate toDate,
             @Param("timeFrom") LocalTime timeFrom,
             @Param("timeTo") LocalTime timeTo,
-            @Param("channelId") String channelId
+            @Param("channelIds") Collection<String> channelIds
     );
 
     @Query("select max(h.slotDate) from PeopleCountingHourlyEntity h")
