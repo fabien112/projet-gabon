@@ -7,5 +7,9 @@
 **/dist/
 dist-client/data/
 dist-client/*.jar
+installer/out/
+installer/image/
+installer/jpackage-in/
+installer/payload.zip
 *.log
 .DS_Store

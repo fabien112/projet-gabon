@@ -12,6 +12,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import com.company.dss.authentication.TokenHolder;
+import com.company.dss.camera.CameraConfigService;
 import com.company.dss.config.DssProperties;
 import com.company.dss.persistence.PeopleCountingSyncService;
 import com.company.dss.sync.HistorySyncService;
@@ -33,6 +34,7 @@ public class PassengerFlowPollScheduler {
     private final TokenHolder tokenHolder;
     private final PassengerFlowClient passengerFlowClient;
     private final PeopleCountingSyncService syncService;
+    private final CameraConfigService cameraConfigService;
     private final HistorySyncService historySyncService;
     private final ObjectMapper objectMapper;
 
@@ -78,16 +80,12 @@ public class PassengerFlowPollScheduler {
             return;
         }
         try {
-            List<CompteuseChannel> channels = passengerFlowClient.discoverCompteuseChannels().stream()
-                    .filter(c -> CompteuseCameraRules.isPrimary(c.channelId(), c.name(), true))
-                    .limit(3)
-                    .toList();
-            syncService.upsertCameras(channels);
+            List<CompteuseChannel> channels = cameraConfigService.listConfiguredChannels();
             List<String> ids = channels.stream().map(CompteuseChannel::channelId).toList();
             channelIds.set(List.copyOf(ids));
             if (ids.isEmpty()) {
-                log.warn(">>> [FLOW] Aucun canal Compteuse trouvé");
-                remember("FAILED", "Aucun canal Compteuse trouvé", 0, 0, null);
+                log.warn(">>> [FLOW] Aucune caméra configurée");
+                remember("SKIPPED", "Aucune caméra configurée", 0, 0, null);
                 return;
             }
 

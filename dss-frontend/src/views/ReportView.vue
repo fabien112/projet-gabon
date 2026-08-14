@@ -23,6 +23,7 @@
           ⤓ Exporter PDF
         </button>
         <button type="button" class="btn-icon" title="Aujourd'hui" @click="setToday">📅</button>
+        <RouterLink class="btn-outline" to="/config">Config</RouterLink>
         <button type="button" class="btn-outline" @click="doLogout">Déconnexion</button>
       </div>
     </header>
@@ -64,7 +65,7 @@
         <CameraMultiSelect
           v-model="selectedCameras"
           :options="cameras"
-          :max="MAX_CAMERAS"
+          :max="cameraMax"
           :invalid="!cameraSelectionValid"
         />
       </label>
@@ -84,6 +85,10 @@
 
     <p v-if="filterError" class="error">{{ filterError }}</p>
     <p v-if="error" class="error">{{ error }}</p>
+    <p v-if="cameras.length === 0 && !error" class="empty-cams">
+      Aucune caméra de comptage.
+      <RouterLink to="/config?tab=cameras">Ajoutez-en dans Config → Caméras</RouterLink>
+    </p>
 
     <div v-if="loading" class="loading-banner">
       <span class="spinner" aria-hidden="true"></span>
@@ -191,15 +196,13 @@
 
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 import { logoutApp } from '../api/auth'
 import { fetchCameras, fetchPersonalizedReport, fetchReportStatus } from '../api/reports'
 import DailyLineChart from '../components/DailyLineChart.vue'
 import WeekdayBarChart from '../components/WeekdayBarChart.vue'
 import CameraMultiSelect from '../components/CameraMultiSelect.vue'
 import { exportExcel, exportPdf } from '../utils/exportReport'
-
-const MAX_CAMERAS = 3
 
 const today = new Date()
 const router = useRouter()
@@ -238,8 +241,10 @@ const dbStatus = reactive({ cameras: 0, hourlySlots: 0 })
 
 const displayTimeTo = computed(() => (filters.timeTo === '24:00' ? '00:00' : filters.timeTo))
 
+const cameraMax = computed(() => Math.max(cameras.value.length, 1))
+
 const cameraSelectionValid = computed(
-  () => selectedCameras.value.length >= 1 && selectedCameras.value.length <= MAX_CAMERAS,
+  () => selectedCameras.value.length >= 1 && selectedCameras.value.length <= cameraMax.value,
 )
 
 const allCamerasSelected = computed(
@@ -278,7 +283,7 @@ function isTimeToAllowed(value) {
 
 function defaultCameraSelection(cams) {
   if (!cams?.length) return []
-  return cams.slice(0, MAX_CAMERAS).map((c) => c.channelId)
+  return cams.map((c) => c.channelId)
 }
 
 function onPeriodChange() {
@@ -366,7 +371,7 @@ async function refreshMeta() {
     dbStatus.cameras = status.cameras
     dbStatus.hourlySlots = status.hourlySlots
     const known = new Set(cams.map((c) => c.channelId))
-    const kept = selectedCameras.value.filter((id) => known.has(id)).slice(0, MAX_CAMERAS)
+    const kept = selectedCameras.value.filter((id) => known.has(id))
     selectedCameras.value = kept.length > 0 ? kept : defaultCameraSelection(cams)
   } catch (e) {
     error.value = 'Backend inaccessible. Démarrez dss-integration sur le port 8080.'
@@ -375,7 +380,7 @@ async function refreshMeta() {
 
 async function loadReport() {
   if (!cameraSelectionValid.value) {
-    filterError.value = 'Sélectionnez entre 1 et 3 caméra(s).'
+    filterError.value = 'Sélectionnez au moins une caméra.'
     return
   }
   loading.value = true
@@ -829,6 +834,21 @@ tfoot td {
   background: #fee4e2;
   border-radius: 10px;
   padding: 10px 12px;
+}
+
+.empty-cams {
+  margin: 10px 0 0;
+  color: var(--muted);
+  background: #f8fafc;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+}
+
+.empty-cams a {
+  color: var(--blue);
+  font-weight: 700;
+  text-decoration: none;
 }
 
 .empty {

@@ -2,8 +2,8 @@
   <div class="page">
     <header class="topbar">
       <div class="title-wrap">
-        <span class="logo" aria-hidden="true">🔄</span>
-        <h1>Synchronisation</h1>
+        <span class="logo" aria-hidden="true">⚙️</span>
+        <h1>Configuration</h1>
       </div>
       <div class="top-actions">
         <RouterLink class="btn-outline" to="/">← Rapport</RouterLink>
@@ -32,7 +32,30 @@
       </button>
     </section>
 
-    <div class="layout">
+    <nav class="tabs" aria-label="Sections de configuration">
+      <button
+        type="button"
+        class="tab"
+        :class="{ active: tab === 'sync' }"
+        @click="setTab('sync')"
+      >
+        Synchronisation
+      </button>
+      <button
+        type="button"
+        class="tab"
+        :class="{ active: tab === 'cameras' }"
+        @click="setTab('cameras')"
+      >
+        Caméras
+      </button>
+    </nav>
+
+    <div v-show="tab === 'cameras'">
+      <CameraConfigPanel :dss-ready="status.dssSessionActive" />
+    </div>
+
+    <div v-show="tab === 'sync'" class="layout">
       <!-- Action principale -->
       <section class="panel action-panel">
         <h2>Lancer une synchronisation</h2>
@@ -159,14 +182,29 @@
 
 <script setup>
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
-import { RouterLink, useRouter } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { logoutApp } from '../api/auth'
 import { fetchSyncStatus, reconnectDss, startHistorySync } from '../api/sync'
+import CameraConfigPanel from '../components/CameraConfigPanel.vue'
 
 const today = new Date().toISOString().slice(0, 10)
 const router = useRouter()
+const route = useRoute()
 const monthAgo = new Date()
 monthAgo.setDate(monthAgo.getDate() - 30)
+
+const tab = ref(route.query.tab === 'cameras' ? 'cameras' : 'sync')
+
+function setTab(next) {
+  tab.value = next
+  const query = { ...route.query }
+  if (next === 'sync') {
+    delete query.tab
+  } else {
+    query.tab = next
+  }
+  router.replace({ query })
+}
 
 const from = ref(monthAgo.toISOString().slice(0, 10))
 const to = ref(today)
@@ -384,6 +422,33 @@ h1 {
   display: flex;
   gap: 8px;
   align-items: center;
+}
+
+.tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+  padding: 4px;
+  background: #fff;
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: 12px;
+  width: fit-content;
+}
+
+.tab {
+  border: 0;
+  background: transparent;
+  border-radius: 9px;
+  padding: 8px 16px;
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: var(--muted, #64748b);
+  cursor: pointer;
+}
+
+.tab.active {
+  background: #0f172a;
+  color: #fff;
 }
 
 .btn-outline {
@@ -799,6 +864,14 @@ h1 {
   .session-bar {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .tabs {
+    width: 100%;
+  }
+
+  .tab {
+    flex: 1;
   }
 
   .form-grid {

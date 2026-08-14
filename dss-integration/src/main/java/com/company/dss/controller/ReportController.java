@@ -2,7 +2,6 @@ package com.company.dss.controller;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -17,9 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.company.dss.passengerflow.CompteuseCameraRules;
-import com.company.dss.persistence.entity.CameraEntity;
-import com.company.dss.persistence.repository.CameraRepository;
+import com.company.dss.camera.CameraConfigService;
 import com.company.dss.persistence.repository.PeopleCountingHourlyRepository;
 import com.company.dss.report.PersonalizedReportResponse;
 import com.company.dss.report.PersonalizedReportService;
@@ -32,17 +29,17 @@ import lombok.RequiredArgsConstructor;
 public class ReportController {
 
     private static final LocalTime END_OF_DAY = LocalTime.of(23, 59, 59);
-    private static final int MAX_CAMERAS = 3;
+    private static final int MAX_CAMERAS = 50;
 
     private final PersonalizedReportService reportService;
-    private final CameraRepository cameraRepository;
+    private final CameraConfigService cameraConfigService;
     private final PeopleCountingHourlyRepository hourlyRepository;
 
     /**
      * Rapport personnalisé pour l'UI People Counting.
      * Tranche 09:00-11:00 = créneaux dont hour_start ∈ [09:00, 11:00).
      * <p>
-     * {@code camera} : {@code all}, un channelId, ou jusqu'à 3 ids séparés par des virgules.
+     * {@code camera} : {@code all}, un channelId, ou jusqu'à 50 ids séparés par des virgules.
      */
     @GetMapping("/personalized")
     public ResponseEntity<PersonalizedReportResponse> personalized(
@@ -66,7 +63,7 @@ public class ReportController {
 
     /**
      * Normalise {@code camera=all}, {@code camera=id}, {@code camera=id1,id2}
-     * ou params répétés {@code camera=id1&camera=id2} en une seule chaîne CSV (max 3).
+     * ou params répétés {@code camera=id1&camera=id2} en une seule chaîne CSV (max 50).
      */
     public static String normalizeCameraParam(List<String> camera) {
         if (camera == null || camera.isEmpty()) {
@@ -105,39 +102,20 @@ public class ReportController {
     }
 
     /**
-     * Caméras compteuses principales uniquement (canal {@code $1$}),
+     * Caméras de comptage configurées (canaux {@code $1$}),
      * sans les doublons techniques {@code $3$} / {@code *_1}.
      */
     @GetMapping("/cameras")
     public ResponseEntity<?> cameras() {
-        return ResponseEntity.ok(cameraRepository.findAll().stream()
-                .filter(c -> CompteuseCameraRules.isPrimary(c.getChannelId(), c.getName(), c.isActive()))
-                .sorted(Comparator.comparing(CameraEntity::getName, String.CASE_INSENSITIVE_ORDER))
-                .limit(MAX_CAMERAS)
-                .map(this::toCameraDto)
-                .toList());
+        return ResponseEntity.ok(cameraConfigService.listConfigured());
     }
 
     @GetMapping("/status")
     public ResponseEntity<Map<String, Object>> status() {
         Map<String, Object> body = new LinkedHashMap<>();
-        long primaryCams = cameraRepository.findAll().stream()
-                .filter(c -> CompteuseCameraRules.isPrimary(c.getChannelId(), c.getName(), c.isActive()))
-                .limit(MAX_CAMERAS)
-                .count();
-        body.put("cameras", primaryCams);
+        body.put("cameras", cameraConfigService.listConfigured().size());
         body.put("hourlySlots", hourlyRepository.count());
         return ResponseEntity.ok(body);
-    }
-
-    private Map<String, Object> toCameraDto(CameraEntity camera) {
-        Map<String, Object> dto = new LinkedHashMap<>();
-        dto.put("id", camera.getId());
-        dto.put("channelId", camera.getChannelId());
-        dto.put("name", camera.getName());
-        dto.put("site", camera.getSite());
-        dto.put("active", camera.isActive());
-        return dto;
     }
 
     /** 24:00 / 23:59 → fin de journée (inclut le créneau 23:00). */

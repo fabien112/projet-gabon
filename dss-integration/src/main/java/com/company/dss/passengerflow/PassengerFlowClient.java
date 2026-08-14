@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiPredicate;
 
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -41,10 +42,27 @@ public class PassengerFlowClient {
     }
 
     /**
+     * Tous les canaux vidéo principaux DSS ({@code $1$}), sans filtre de nom.
+     */
+    public List<CompteuseChannel> discoverVideoChannels() {
+        List<CompteuseChannel> channels = discoverChannels(
+                (name, code) -> isMainVideoChannelCode(code)
+        );
+        log.info(">>> [FLOW] {} canal(aux) vidéo principal(aux) découvert(s)", channels.size());
+        return channels;
+    }
+
+    /**
      * Découvre toutes les caméras compteuses (canaux vidéo {@code $1$}).
      * Filtre case-insensitive sur le nom (Compteuse / People Count / Passenger).
      */
     public List<CompteuseChannel> discoverCompteuseChannels() {
+        List<CompteuseChannel> channels = discoverChannels(PassengerFlowClient::isCompteuseVideoChannel);
+        log.info(">>> [FLOW] {} caméra(s) compteuse(s) découverte(s)", channels.size());
+        return channels;
+    }
+
+    private List<CompteuseChannel> discoverChannels(BiPredicate<String, String> filter) {
         JsonNode tree = dssClient.post(DssApiPaths.TREE_DEVICES, Map.of(), JsonNode.class);
         List<CompteuseChannel> channels = new ArrayList<>();
         Set<String> seen = new LinkedHashSet<>();
@@ -66,14 +84,13 @@ public class PassengerFlowClient {
                 for (JsonNode channel : unitChannels) {
                     String name = channel.path("channelName").asText("");
                     String code = channel.path("channelCode").asText("");
-                    if (!isCompteuseVideoChannel(name, code) || !seen.add(code)) {
+                    if (!filter.test(name, code) || !seen.add(code)) {
                         continue;
                     }
                     channels.add(new CompteuseChannel(code, name, deviceName));
                 }
             }
         }
-        log.info(">>> [FLOW] {} caméra(s) compteuse(s) découverte(s)", channels.size());
         return channels;
     }
 

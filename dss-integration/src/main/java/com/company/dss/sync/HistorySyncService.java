@@ -13,8 +13,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.springframework.stereotype.Service;
 
 import com.company.dss.authentication.TokenHolder;
+import com.company.dss.camera.CameraConfigService;
 import com.company.dss.exception.DssClientException;
-import com.company.dss.passengerflow.CompteuseCameraRules;
 import com.company.dss.passengerflow.CompteuseChannel;
 import com.company.dss.passengerflow.PassengerFlowClient;
 import com.company.dss.persistence.PeopleCountingSyncService;
@@ -41,12 +41,12 @@ public class HistorySyncService {
     private static final long META_ID = 1L;
     /** Pause entre deux jours — DSS refuse trop de requêtes rapides (429). */
     private static final long PAUSE_MS_BETWEEN_DAYS = 1_500L;
-    private static final int MAX_CAMERAS = 3;
     private static final int MAX_RETRIES = 5;
     private static final long[] RETRY_BACKOFF_MS = {2_000L, 5_000L, 12_000L, 25_000L, 45_000L};
 
     private final PassengerFlowClient passengerFlowClient;
     private final PeopleCountingSyncService syncService;
+    private final CameraConfigService cameraConfigService;
     private final TokenHolder tokenHolder;
     private final AuthenticationService authenticationService;
     private final SyncMetaRepository syncMetaRepository;
@@ -149,12 +149,11 @@ public class HistorySyncService {
         LocalDate current = from;
         try {
             authenticationService.ensureLoggedIn();
-            List<CompteuseChannel> channels = passengerFlowClient.discoverCompteuseChannels().stream()
-                    .filter(c -> CompteuseCameraRules.isPrimary(c.channelId(), c.name(), true))
-                    .limit(MAX_CAMERAS)
-                    .toList();
+            List<CompteuseChannel> channels = cameraConfigService.listConfiguredChannels();
             if (channels.isEmpty()) {
-                throw new IllegalStateException("Aucun canal Compteuse principal trouvé dans DSS");
+                throw new IllegalStateException(
+                        "Aucune caméra configurée. Ajoutez-en dans Config → Caméras."
+                );
             }
             int camerasSaved = syncService.upsertCameras(channels);
             List<String> channelIds = channels.stream().map(CompteuseChannel::channelId).toList();

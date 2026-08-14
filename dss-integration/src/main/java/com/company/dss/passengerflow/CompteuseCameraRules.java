@@ -3,8 +3,9 @@ package com.company.dss.passengerflow;
 import org.springframework.util.StringUtils;
 
 /**
- * Règles communes pour identifier une caméra compteuse « principale »
+ * Règles communes pour identifier une caméra de comptage « principale »
  * (canal vidéo {@code $1$}, hors doublons techniques {@code $3$} / {@code *_1}).
+ * Le nom n'a plus besoin de contenir « Compteuse » : toute caméra ajoutée en Config compte.
  */
 public final class CompteuseCameraRules {
 
@@ -19,6 +20,6 @@ public final class CompteuseCameraRules {
         if (safeName.matches("(?i).*_1\\s*$")) {
             return false;
         }
-        return PassengerFlowClient.isCompteuseVideoChannel(safeName, channelId);
+        return PassengerFlowClient.isMainVideoChannelCode(channelId);
     }
 }

@@ -41,17 +41,20 @@ class PersonalizedReportServiceTest {
     }
 
     @Test
-    void parseCameraSelection_dedupesAndCapsAtThree() {
+    void parseCameraSelection_dedupesAndCapsAtFifty() {
         var sel = PersonalizedReportService.parseCameraSelection("a,b,a,c");
         assertThat(sel.includeAll()).isFalse();
         assertThat(sel.channelIds()).containsExactly("a", "b", "c");
     }
 
     @Test
-    void parseCameraSelection_rejectsMoreThanThree() {
-        assertThatThrownBy(() -> PersonalizedReportService.parseCameraSelection("a,b,c,d"))
+    void parseCameraSelection_rejectsMoreThanFifty() {
+        String tooMany = java.util.stream.IntStream.rangeClosed(1, 51)
+                .mapToObj(i -> "cam-" + i)
+                .collect(java.util.stream.Collectors.joining(","));
+        assertThatThrownBy(() -> PersonalizedReportService.parseCameraSelection(tooMany))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Maximum 3");
+                .hasMessageContaining("Maximum 50");
     }
 
     @Test
@@ -119,6 +122,28 @@ class PersonalizedReportServiceTest {
         verify(hourlyRepository).findForReportByChannels(any(), any(), any(), any(), idsCaptor.capture());
         assertThat(idsCaptor.getValue()).hasSize(3);
         assertThat(idsCaptor.getValue()).noneMatch(id -> id.contains("$3$"));
+    }
+
+    @Test
+    void build_allIncludesManuallyAddedCameras() {
+        LocalDate day = LocalDate.of(2026, 7, 27);
+        when(cameraRepository.findAll()).thenReturn(List.of(
+                primary("1000004$1$0$0", "Cam_Compteuse_Entree_Akanda"),
+                camera("1000009$1$0$0", "Hall principal", true)
+        ));
+        when(hourlyRepository.findForReportByChannels(any(), any(), any(), any(), any()))
+                .thenReturn(List.of(slot("1000009$1$0$0", day, LocalTime.of(9, 0), 8, 2)));
+
+        service.build(day, day, LocalTime.of(9, 0), LocalTime.of(11, 0), "all", "Jour");
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<java.util.Collection<String>> idsCaptor =
+                ArgumentCaptor.forClass(java.util.Collection.class);
+        verify(hourlyRepository).findForReportByChannels(any(), any(), any(), any(), idsCaptor.capture());
+        assertThat(idsCaptor.getValue()).containsExactly(
+                "1000004$1$0$0",
+                "1000009$1$0$0"
+        );
     }
 
     @Test

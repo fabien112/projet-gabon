@@ -35,13 +35,13 @@ import lombok.RequiredArgsConstructor;
  * Agrège les créneaux horaires pour le rapport.
  * <p>
  * Règle de comptage : somme des entrées/sorties des caméras sélectionnées uniquement.
- * « Toutes » = les 3 compteuses principales ({@code $1$}), jamais les doublons {@code $3$}.
+ * « Toutes » = toutes les caméras actives configurées (canaux {@code $1$}), jamais les doublons {@code $3$}.
  */
 @Service
 @RequiredArgsConstructor
 public class PersonalizedReportService {
 
-    public static final int MAX_CAMERAS = 3;
+    public static final int MAX_CAMERAS = 50;
 
     private static final DateTimeFormatter DAY_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final Locale FR = Locale.FRENCH;
@@ -137,7 +137,7 @@ public class PersonalizedReportService {
         );
     }
 
-    /** « Toutes » → ids des 3 compteuses principales ; sinon les ids demandés (filtrés). */
+    /** « Toutes » → ids des caméras configurées ; sinon les ids demandés (filtrés). */
     private List<String> resolveChannelIds(CameraSelection selection) {
         List<String> primary = primaryChannelIds();
         if (selection.includeAll()) {

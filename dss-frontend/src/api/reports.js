@@ -24,7 +24,7 @@ export async function fetchPersonalizedReport(params) {
   const cameraParam =
     cleaned.length === 0 || cleaned.includes('all')
       ? 'all'
-      : cleaned.slice(0, 3).join(',')
+      : cleaned.join(',')
 
   const { data } = await api.get('/reports/personalized', {
     params: { ...rest, camera: cameraParam },

@@ -2,7 +2,7 @@
 setlocal EnableExtensions
 cd /d "%~dp0"
 
-set "JAVA_HOME=C:\Program Files\Java\jdk-21.0.12"
+set "JAVA_HOME=C:\Program Files\Java\jdk-21.0.11"
 
 echo [1/3] Build frontend...
 cd dss-frontend
