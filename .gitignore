@@ -11,5 +11,6 @@ installer/out/
 installer/image/
 installer/jpackage-in/
 installer/payload.zip
+livraison/PeopleCounting/
 *.log
 .DS_Store

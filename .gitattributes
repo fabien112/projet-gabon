@@ -1,0 +1,2 @@
+livraison/*.zip filter=lfs diff=lfs merge=lfs -text
+livraison/*.exe filter=lfs diff=lfs merge=lfs -text
