@@ -20,6 +20,17 @@ public interface PeopleCountingHourlyRepository extends JpaRepository<PeopleCoun
             LocalTime hourStart
     );
 
+    @Query("""
+            select h from PeopleCountingHourlyEntity h
+            join fetch h.camera c
+            where h.slotDate in :dates
+              and c.id in :cameraIds
+            """)
+    List<PeopleCountingHourlyEntity> findForUpsert(
+            @Param("dates") Collection<LocalDate> dates,
+            @Param("cameraIds") Collection<Long> cameraIds
+    );
+
     /**
      * Toutes les caméras — tranche [timeFrom, timeTo) sur {@code hourStart}.
      * Méthode séparée de {@link #findForReportByChannels} : éviter le motif
@@ -63,4 +74,16 @@ public interface PeopleCountingHourlyRepository extends JpaRepository<PeopleCoun
 
     @Query("select max(h.slotDate) from PeopleCountingHourlyEntity h")
     Optional<LocalDate> findMaxSlotDate();
+
+    @Query("""
+            select h from PeopleCountingHourlyEntity h
+            join fetch h.camera c
+            where h.slotDate between :fromDate and :toDate
+              and c.channelId in :channelIds
+            """)
+    List<PeopleCountingHourlyEntity> findForReconcile(
+            @Param("fromDate") LocalDate fromDate,
+            @Param("toDate") LocalDate toDate,
+            @Param("channelIds") Collection<String> channelIds
+    );
 }

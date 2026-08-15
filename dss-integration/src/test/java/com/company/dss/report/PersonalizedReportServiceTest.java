@@ -48,10 +48,10 @@ class PersonalizedReportServiceTest {
     }
 
     @Test
-    void parseCameraSelection_rejectsMoreThanThree() {
-        assertThatThrownBy(() -> PersonalizedReportService.parseCameraSelection("a,b,c,d"))
+    void parseCameraSelection_rejectsMoreThanMax() {
+        assertThatThrownBy(() -> PersonalizedReportService.parseCameraSelection("a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u"))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Maximum 3");
+                .hasMessageContaining("Maximum 20");
     }
 
     @Test
@@ -65,20 +65,20 @@ class PersonalizedReportServiceTest {
     void build_sumsOnlySelectedCamerasWithoutDoubleCounting() {
         LocalDate day = LocalDate.of(2026, 7, 27);
         when(cameraRepository.findAll()).thenReturn(List.of(
-                primary("cam-A", "Compteuse A"),
-                primary("cam-B", "Compteuse B")
+                primary("1000001$1$0$0", "Compteuse A"),
+                primary("1000002$1$0$0", "Compteuse B")
         ));
         when(hourlyRepository.findForReportByChannels(
                 eq(day), eq(day), eq(LocalTime.of(9, 0)), eq(LocalTime.of(11, 0)), any()
         )).thenReturn(List.of(
-                slot("cam-A", day, LocalTime.of(9, 0), 10, 3),
-                slot("cam-B", day, LocalTime.of(9, 0), 5, 2),
-                slot("cam-A", day, LocalTime.of(10, 0), 7, 4),
-                slot("cam-B", day, LocalTime.of(10, 0), 1, 1)
+                slot("1000001$1$0$0", day, LocalTime.of(9, 0), 10, 3),
+                slot("1000002$1$0$0", day, LocalTime.of(9, 0), 5, 2),
+                slot("1000001$1$0$0", day, LocalTime.of(10, 0), 7, 4),
+                slot("1000002$1$0$0", day, LocalTime.of(10, 0), 1, 1)
         ));
 
         var report = service.build(
-                day, day, LocalTime.of(9, 0), LocalTime.of(11, 0), "cam-A,cam-B", "Jour"
+                day, day, LocalTime.of(9, 0), LocalTime.of(11, 0), "1000001$1$0$0,1000002$1$0$0", "Jour"
         );
 
         assertThat(report.kpis().totalEntries()).isEqualTo(23);
@@ -92,16 +92,17 @@ class PersonalizedReportServiceTest {
                 eq(day), eq(day), eq(LocalTime.of(9, 0)), eq(LocalTime.of(11, 0)),
                 idsCaptor.capture()
         );
-        assertThat(idsCaptor.getValue()).containsExactly("cam-A", "cam-B");
+        assertThat(idsCaptor.getValue()).containsExactly("1000001$1$0$0", "1000002$1$0$0");
     }
 
     @Test
-    void build_allUsesOnlyPrimaryCameras() {
+    void build_allUsesConfiguredActiveCamerasIncludingManual() {
         LocalDate day = LocalDate.of(2026, 7, 27);
         when(cameraRepository.findAll()).thenReturn(List.of(
                 primary("1000004$1$0$0", "Cam_Compteuse_Entree_Akanda"),
                 primary("1000005$1$0$0", "Cam_Compteuse_Entree_Oloumi"),
                 primary("1000005$1$0$1", "Cam_Compteuse_Sortie_Oloumi"),
+                camera("1000006$1$0$0", "Entree Parking", true),
                 // doublon technique — exclu
                 camera("1000004$3$1$0", "Cam_Compteuse_Entree_Akanda_1", true)
         ));
@@ -117,7 +118,8 @@ class PersonalizedReportServiceTest {
         ArgumentCaptor<java.util.Collection<String>> idsCaptor =
                 ArgumentCaptor.forClass(java.util.Collection.class);
         verify(hourlyRepository).findForReportByChannels(any(), any(), any(), any(), idsCaptor.capture());
-        assertThat(idsCaptor.getValue()).hasSize(3);
+        assertThat(idsCaptor.getValue()).hasSize(4);
+        assertThat(idsCaptor.getValue()).contains("1000006$1$0$0");
         assertThat(idsCaptor.getValue()).noneMatch(id -> id.contains("$3$"));
     }
 

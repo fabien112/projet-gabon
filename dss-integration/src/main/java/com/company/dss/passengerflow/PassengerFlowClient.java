@@ -29,7 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 public class PassengerFlowClient {
 
     private static final ZoneId GABON = ZoneId.of("Africa/Libreville");
-    private static final int PAGE_SIZE = 200;
+    private static final int PAGE_SIZE = 500;
     private static final int MAX_PAGES = 100;
 
     private final DssClient dssClient;
@@ -45,6 +45,17 @@ public class PassengerFlowClient {
      * Filtre case-insensitive sur le nom (Compteuse / People Count / Passenger).
      */
     public List<CompteuseChannel> discoverCompteuseChannels() {
+        List<CompteuseChannel> channels = discoverMainVideoChannels().stream()
+                .filter(c -> isCompteuseVideoChannel(c.name(), c.channelId()))
+                .toList();
+        log.info(">>> [FLOW] {} caméra(s) compteuse(s) découverte(s)", channels.size());
+        return channels;
+    }
+
+    /**
+     * Tous les canaux vidéo principaux DSS ({@code $1$}), pour l'ajout manuel en Config.
+     */
+    public List<CompteuseChannel> discoverMainVideoChannels() {
         JsonNode tree = dssClient.post(DssApiPaths.TREE_DEVICES, Map.of(), JsonNode.class);
         List<CompteuseChannel> channels = new ArrayList<>();
         Set<String> seen = new LinkedHashSet<>();
@@ -66,14 +77,14 @@ public class PassengerFlowClient {
                 for (JsonNode channel : unitChannels) {
                     String name = channel.path("channelName").asText("");
                     String code = channel.path("channelCode").asText("");
-                    if (!isCompteuseVideoChannel(name, code) || !seen.add(code)) {
+                    if (!isMainVideoChannelCode(code) || !seen.add(code)) {
                         continue;
                     }
                     channels.add(new CompteuseChannel(code, name, deviceName));
                 }
             }
         }
-        log.info(">>> [FLOW] {} caméra(s) compteuse(s) découverte(s)", channels.size());
+        log.info(">>> [FLOW] {} canal(aux) vidéo principal(aux) découvert(s)", channels.size());
         return channels;
     }
 

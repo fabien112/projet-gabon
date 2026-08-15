@@ -32,7 +32,7 @@ import lombok.RequiredArgsConstructor;
 public class ReportController {
 
     private static final LocalTime END_OF_DAY = LocalTime.of(23, 59, 59);
-    private static final int MAX_CAMERAS = 3;
+    private static final int MAX_CAMERAS = PersonalizedReportService.MAX_CAMERAS;
 
     private final PersonalizedReportService reportService;
     private final CameraRepository cameraRepository;
@@ -105,15 +105,13 @@ public class ReportController {
     }
 
     /**
-     * Caméras compteuses principales uniquement (canal {@code $1$}),
-     * sans les doublons techniques {@code $3$} / {@code *_1}.
+     * Caméras actives configurées (canal {@code $1$}), y compris celles ajoutées manuellement.
      */
     @GetMapping("/cameras")
     public ResponseEntity<?> cameras() {
         return ResponseEntity.ok(cameraRepository.findAll().stream()
-                .filter(c -> CompteuseCameraRules.isPrimary(c.getChannelId(), c.getName(), c.isActive()))
+                .filter(c -> CompteuseCameraRules.isConfigured(c.getChannelId(), c.isActive()))
                 .sorted(Comparator.comparing(CameraEntity::getName, String.CASE_INSENSITIVE_ORDER))
-                .limit(MAX_CAMERAS)
                 .map(this::toCameraDto)
                 .toList());
     }
@@ -121,11 +119,10 @@ public class ReportController {
     @GetMapping("/status")
     public ResponseEntity<Map<String, Object>> status() {
         Map<String, Object> body = new LinkedHashMap<>();
-        long primaryCams = cameraRepository.findAll().stream()
-                .filter(c -> CompteuseCameraRules.isPrimary(c.getChannelId(), c.getName(), c.isActive()))
-                .limit(MAX_CAMERAS)
+        long configured = cameraRepository.findAll().stream()
+                .filter(c -> CompteuseCameraRules.isConfigured(c.getChannelId(), c.isActive()))
                 .count();
-        body.put("cameras", primaryCams);
+        body.put("cameras", configured);
         body.put("hourlySlots", hourlyRepository.count());
         return ResponseEntity.ok(body);
     }

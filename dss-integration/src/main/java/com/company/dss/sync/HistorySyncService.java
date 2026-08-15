@@ -2,6 +2,7 @@ package com.company.dss.sync;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
@@ -13,9 +14,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.springframework.stereotype.Service;
 
 import com.company.dss.authentication.TokenHolder;
+import com.company.dss.camera.CameraService;
 import com.company.dss.exception.DssClientException;
-import com.company.dss.passengerflow.CompteuseCameraRules;
-import com.company.dss.passengerflow.CompteuseChannel;
 import com.company.dss.passengerflow.PassengerFlowClient;
 import com.company.dss.persistence.PeopleCountingSyncService;
 import com.company.dss.persistence.entity.SyncMetaEntity;
@@ -39,9 +39,9 @@ import lombok.extern.slf4j.Slf4j;
 public class HistorySyncService {
 
     private static final long META_ID = 1L;
+    private static final ZoneId GABON = ZoneId.of("Africa/Libreville");
     /** Pause entre deux jours — DSS refuse trop de requêtes rapides (429). */
     private static final long PAUSE_MS_BETWEEN_DAYS = 1_500L;
-    private static final int MAX_CAMERAS = 3;
     private static final int MAX_RETRIES = 5;
     private static final long[] RETRY_BACKOFF_MS = {2_000L, 5_000L, 12_000L, 25_000L, 45_000L};
 
@@ -51,6 +51,7 @@ public class HistorySyncService {
     private final AuthenticationService authenticationService;
     private final SyncMetaRepository syncMetaRepository;
     private final PeopleCountingHourlyRepository hourlyRepository;
+    private final CameraService cameraService;
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor(r -> {
         Thread t = new Thread(r, "history-sync");
@@ -108,6 +109,17 @@ public class HistorySyncService {
         SyncMetaEntity meta = syncMetaRepository.findById(META_ID).orElse(null);
         LocalDate maxInDb = hourlyRepository.findMaxSlotDate().orElse(null);
 
+        Instant lastPollAt = moreRecent(
+                meta != null ? meta.getLastPollAt() : null,
+                poll != null ? poll.lastAt() : null
+        );
+        CatchUpAdvisor.Advice catchUp = CatchUpAdvisor.of(
+                LocalDate.now(GABON),
+                maxInDb,
+                lastPollAt,
+                Instant.now()
+        );
+
         return new HistorySyncStatus(
                 live.running(),
                 live.phase(),
@@ -121,7 +133,7 @@ public class HistorySyncService {
                 live.startedAt(),
                 live.finishedAt(),
                 meta != null && meta.getLastFinishedAt() != null
-                        ? meta.getLastFinishedAt().atZone(java.time.ZoneId.of("Africa/Libreville")).toLocalDate()
+                        ? meta.getLastFinishedAt().atZone(GABON).toLocalDate()
                         : null,
                 maxInDb,
                 meta != null ? meta.getLastFinishedAt() : null,
@@ -134,13 +146,36 @@ public class HistorySyncService {
                 poll != null && poll.inProgress(),
                 poll != null && poll.suspended(),
                 poll != null ? poll.interval() : null,
-                poll != null ? poll.lastAt() : null,
+                lastPollAt,
                 poll != null ? poll.lastStatus() : null,
                 poll != null ? poll.lastMessage() : null,
                 poll != null ? poll.lastRowsUpserted() : 0,
                 poll != null ? poll.lastActiveSlots() : 0,
-                poll != null ? poll.lastDate() : null
+                poll != null ? poll.lastDate() : (meta != null ? meta.getLastPollDate() : null),
+                catchUp.needed(),
+                catchUp.kind(),
+                catchUp.from(),
+                catchUp.to(),
+                catchUp.message()
         );
+    }
+
+    public void rememberPollSuccess(Instant at, LocalDate date) {
+        SyncMetaEntity meta = syncMetaRepository.findById(META_ID).orElseGet(SyncMetaEntity::new);
+        meta.setId(META_ID);
+        meta.setLastPollAt(at);
+        meta.setLastPollDate(date);
+        syncMetaRepository.save(meta);
+    }
+
+    private static Instant moreRecent(Instant a, Instant b) {
+        if (a == null) {
+            return b;
+        }
+        if (b == null) {
+            return a;
+        }
+        return a.isAfter(b) ? a : b;
     }
 
     private void runJob(LocalDate from, LocalDate to, int daysTotal, Instant startedAt) {
@@ -149,17 +184,14 @@ public class HistorySyncService {
         LocalDate current = from;
         try {
             authenticationService.ensureLoggedIn();
-            List<CompteuseChannel> channels = passengerFlowClient.discoverCompteuseChannels().stream()
-                    .filter(c -> CompteuseCameraRules.isPrimary(c.channelId(), c.name(), true))
-                    .limit(MAX_CAMERAS)
-                    .toList();
-            if (channels.isEmpty()) {
-                throw new IllegalStateException("Aucun canal Compteuse principal trouvé dans DSS");
+            List<String> channelIds = cameraService.channelIdsForSync();
+            if (channelIds.isEmpty()) {
+                throw new IllegalStateException(
+                        "Aucune caméra configurée. Ajoutez-en une dans Config, ou vérifiez la session DSS."
+                );
             }
-            int camerasSaved = syncService.upsertCameras(channels);
-            List<String> channelIds = channels.stream().map(CompteuseChannel::channelId).toList();
-            log.info(">>> [SYNC] Début sync manuelle {} → {} ({} jours, {} canaux, cameras upsert={})",
-                    from, to, daysTotal, channelIds.size(), camerasSaved);
+            log.info(">>> [SYNC] Début sync manuelle {} → {} ({} jours, {} canaux)",
+                    from, to, daysTotal, channelIds.size());
 
             while (!current.isAfter(to)) {
                 progress.set(new LiveProgress(
@@ -316,6 +348,10 @@ public class HistorySyncService {
         meta.setLastMessage(message);
         meta.setLastDaysProcessed(daysDone);
         meta.setLastRowsUpserted(rows);
+        if ("SUCCESS".equals(status)) {
+            meta.setLastPollAt(finishedAt);
+            meta.setLastPollDate(to);
+        }
         syncMetaRepository.save(meta);
     }
 

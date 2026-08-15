@@ -36,6 +36,10 @@ public class CameraEntity {
     @Column(nullable = false)
     private boolean active = true;
 
+    /** Ajoutée depuis la page Config (nom/site conservés, pas écrasés par DSS). */
+    @Column(nullable = false, columnDefinition = "boolean default false not null")
+    private boolean manual = false;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 

@@ -35,13 +35,13 @@ import lombok.RequiredArgsConstructor;
  * Agrège les créneaux horaires pour le rapport.
  * <p>
  * Règle de comptage : somme des entrées/sorties des caméras sélectionnées uniquement.
- * « Toutes » = les 3 compteuses principales ({@code $1$}), jamais les doublons {@code $3$}.
+ * « Toutes » = toutes les caméras actives configurées (canal {@code $1$}).
  */
 @Service
 @RequiredArgsConstructor
 public class PersonalizedReportService {
 
-    public static final int MAX_CAMERAS = 3;
+    public static final int MAX_CAMERAS = 20;
 
     private static final DateTimeFormatter DAY_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final Locale FR = Locale.FRENCH;
@@ -137,25 +137,23 @@ public class PersonalizedReportService {
         );
     }
 
-    /** « Toutes » → ids des 3 compteuses principales ; sinon les ids demandés (filtrés). */
+    /** « Toutes » → ids des caméras actives configurées ; sinon les ids demandés. */
     private List<String> resolveChannelIds(CameraSelection selection) {
-        List<String> primary = primaryChannelIds();
+        List<String> configured = configuredChannelIds();
         if (selection.includeAll()) {
-            return primary;
+            return configured;
         }
-        Set<String> primarySet = new LinkedHashSet<>(primary);
+        Set<String> configuredSet = new LinkedHashSet<>(configured);
         return selection.channelIds().stream()
-                .filter(primarySet::contains)
-                .limit(MAX_CAMERAS)
+                .filter(configuredSet::contains)
                 .toList();
     }
 
-    private List<String> primaryChannelIds() {
+    private List<String> configuredChannelIds() {
         return cameraRepository.findAll().stream()
-                .filter(c -> CompteuseCameraRules.isPrimary(c.getChannelId(), c.getName(), c.isActive()))
+                .filter(c -> CompteuseCameraRules.isConfigured(c.getChannelId(), c.isActive()))
                 .sorted(Comparator.comparing(CameraEntity::getName, String.CASE_INSENSITIVE_ORDER))
                 .map(CameraEntity::getChannelId)
-                .limit(MAX_CAMERAS)
                 .toList();
     }
 

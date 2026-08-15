@@ -19,4 +19,9 @@ public class AppSecurityProperties {
      * Mot de passe unique partagé.
      */
     private String password = "changeme";
+
+    /** Compte superadmin : seul à accéder à la page Config. */
+    private String superadminUsername = "superadmin";
+
+    private String superadminPassword = "SuperAdmin2026";
 }

@@ -12,6 +12,14 @@ export async function startHistorySync({ from, to }) {
   return data
 }
 
+export async function compareDssDb({ from, to }) {
+  const { data } = await api.get('/sync/compare', {
+    params: { from, to },
+    timeout: 180000,
+  })
+  return data
+}
+
 export async function reconnectDss() {
   const { data } = await api.post('/sync/dss-reconnect')
   return data

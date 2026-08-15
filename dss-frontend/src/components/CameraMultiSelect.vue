@@ -126,12 +126,13 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onDocPointer))
 
 .ms-trigger {
   width: 100%;
+  height: 44px;
   min-height: 44px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 10px 12px;
+  padding: 0 12px;
   border: 1px solid var(--line);
   border-radius: 10px;
   background: #fff;
@@ -141,6 +142,7 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onDocPointer))
   font-size: 0.88rem;
   color: var(--ink);
   text-align: left;
+  box-sizing: border-box;
 }
 
 .ms-trigger:hover {

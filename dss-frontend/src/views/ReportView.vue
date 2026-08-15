@@ -3,7 +3,7 @@
     <header class="topbar">
       <div class="title-wrap">
         <span class="logo" aria-hidden="true">👥</span>
-        <h1>People Counting – Rapport personnalisé</h1>
+        <h1>DataExpert – Rapport personnalisé</h1>
       </div>
       <div class="top-actions">
         <button
@@ -22,19 +22,35 @@
         >
           ⤓ Exporter PDF
         </button>
-        <button type="button" class="btn-icon" title="Aujourd'hui" @click="setToday">📅</button>
+        <RouterLink v-if="session.superAdmin" class="btn-outline" to="/config">⚙ Config</RouterLink>
         <button type="button" class="btn-outline" @click="doLogout">Déconnexion</button>
       </div>
     </header>
 
+    <section v-if="session.superAdmin && catchUp?.catchUpNeeded" class="catchup-bar">
+      <div>
+        <p class="catchup-title">Données incomplètes</p>
+        <p class="catchup-msg">{{ catchUp.catchUpMessage }}</p>
+      </div>
+      <RouterLink v-if="session.superAdmin" class="btn-outline" to="/config?tab=sync">Rattraper</RouterLink>
+    </section>
+
     <section class="filters">
-      <label class="filter-item">
+      <label class="filter-item period-item">
         <span class="label">Période</span>
         <div class="combo">
           <span class="combo-ico">📅</span>
           <input v-model="filters.from" type="date" :max="filters.to" @change="onPeriodChange" />
           <span class="arrow">→</span>
           <input v-model="filters.to" type="date" :min="filters.from" @change="onPeriodChange" />
+        </div>
+        <div class="period-shortcuts">
+          <button type="button" class="chip" :class="{ active: isToday }" @click="setToday">
+            Aujourd’hui
+          </button>
+          <button type="button" class="chip" :class="{ active: isYesterday }" @click="setYesterday">
+            Hier
+          </button>
         </div>
       </label>
 
@@ -69,17 +85,13 @@
         />
       </label>
 
-      <label class="filter-item">
-        <span class="label">Groupe par</span>
-        <select v-model="filters.groupBy" class="single">
-          <option value="Jour">Jour</option>
-        </select>
-      </label>
-
-      <button class="generate" :disabled="loading || !filtersValid" @click="loadReport">
-        <span v-if="loading" class="spinner" aria-hidden="true"></span>
-        {{ loading ? 'Exploration…' : 'Explorer' }}
-      </button>
+      <div class="filter-item generate-wrap">
+        <span class="label generate-spacer" aria-hidden="true">&nbsp;</span>
+        <button class="generate" :disabled="loading || !filtersValid" @click="loadReport">
+          <span v-if="loading" class="spinner" aria-hidden="true"></span>
+          {{ loading ? 'Exploration…' : 'Explorer' }}
+        </button>
+      </div>
     </section>
 
     <p v-if="filterError" class="error">{{ filterError }}</p>
@@ -191,15 +203,17 @@
 
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 import { logoutApp } from '../api/auth'
 import { fetchCameras, fetchPersonalizedReport, fetchReportStatus } from '../api/reports'
+import { fetchSyncStatus } from '../api/sync'
 import DailyLineChart from '../components/DailyLineChart.vue'
 import WeekdayBarChart from '../components/WeekdayBarChart.vue'
 import CameraMultiSelect from '../components/CameraMultiSelect.vue'
 import { exportExcel, exportPdf } from '../utils/exportReport'
+import { clearSession, session } from '../auth/session'
 
-const MAX_CAMERAS = 3
+const MAX_CAMERAS = 20
 
 const today = new Date()
 const router = useRouter()
@@ -209,14 +223,12 @@ const iso = (d) => {
   const day = String(d.getDate()).padStart(2, '0')
   return `${y}-${m}-${day}`
 }
-const monthAgo = new Date(today)
-monthAgo.setDate(today.getDate() - 30)
 
 const filters = reactive({
-  from: iso(monthAgo),
+  from: iso(today),
   to: iso(today),
-  timeFrom: '09:00',
-  timeTo: '11:00',
+  timeFrom: '00:00',
+  timeTo: '24:00',
   groupBy: 'Jour',
 })
 
@@ -235,12 +247,25 @@ const exporting = ref(false)
 const error = ref('')
 const filterError = ref('')
 const dbStatus = reactive({ cameras: 0, hourlySlots: 0 })
+const catchUp = ref(null)
 
 const displayTimeTo = computed(() => (filters.timeTo === '24:00' ? '00:00' : filters.timeTo))
 
 const cameraSelectionValid = computed(
   () => selectedCameras.value.length >= 1 && selectedCameras.value.length <= MAX_CAMERAS,
 )
+
+const isToday = computed(() => {
+  const t = iso(new Date())
+  return filters.from === t && filters.to === t
+})
+
+const isYesterday = computed(() => {
+  const y = new Date()
+  y.setDate(y.getDate() - 1)
+  const day = iso(y)
+  return filters.from === day && filters.to === day
+})
 
 const allCamerasSelected = computed(
   () =>
@@ -307,12 +332,24 @@ function setToday() {
   filterError.value = ''
 }
 
+function setYesterday() {
+  const y = new Date()
+  y.setDate(y.getDate() - 1)
+  const day = iso(y)
+  filters.from = day
+  filters.to = day
+  filters.timeFrom = '00:00'
+  filters.timeTo = '24:00'
+  filterError.value = ''
+}
+
 async function doLogout() {
   try {
     await logoutApp()
   } catch {
     // ignore
   }
+  clearSession()
   router.replace('/login')
 }
 
@@ -361,10 +398,15 @@ function formatDate(isoDate) {
 
 async function refreshMeta() {
   try {
-    const [cams, status] = await Promise.all([fetchCameras(), fetchReportStatus()])
+    const [cams, status, sync] = await Promise.all([
+      fetchCameras(),
+      fetchReportStatus(),
+      fetchSyncStatus().catch(() => null),
+    ])
     cameras.value = cams
     dbStatus.cameras = status.cameras
     dbStatus.hourlySlots = status.hourlySlots
+    catchUp.value = sync
     const known = new Set(cams.map((c) => c.channelId))
     const kept = selectedCameras.value.filter((id) => known.has(id)).slice(0, MAX_CAMERAS)
     selectedCameras.value = kept.length > 0 ? kept : defaultCameraSelection(cams)
@@ -391,7 +433,7 @@ async function loadReport() {
       timeFrom: filters.timeFrom,
       timeTo: filters.timeTo === '23:59' ? '24:00' : filters.timeTo,
       cameras: cams === 'all' ? ['all'] : cams,
-      groupBy: filters.groupBy,
+      groupBy: 'Jour',
     })
     await refreshMeta()
   } catch (e) {
@@ -423,6 +465,34 @@ onMounted(async () => {
   align-items: center;
   gap: 16px;
   margin-bottom: 16px;
+}
+
+.catchup-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  border: 1px solid #fdba74;
+  background: #fff7ed;
+  margin-bottom: 16px;
+}
+
+.catchup-title {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #9a3412;
+}
+
+.catchup-msg {
+  margin: 4px 0 0;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--ink);
 }
 
 .title-wrap {
@@ -490,9 +560,9 @@ h1 {
 
 .filters {
   display: grid;
-  grid-template-columns: 1.35fr 1.1fr 0.95fr 0.7fr auto;
+  grid-template-columns: minmax(280px, 1.6fr) minmax(220px, 1.1fr) minmax(180px, 0.95fr) auto;
   gap: 12px;
-  align-items: end;
+  align-items: start;
   background: #eef2f6;
   border: 1px solid var(--line);
   border-radius: 14px;
@@ -504,6 +574,29 @@ h1 {
   flex-direction: column;
   gap: 6px;
   min-width: 0;
+}
+
+.period-shortcuts {
+  display: flex;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.chip {
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--ink);
+}
+
+.chip.active {
+  background: #0f172a;
+  border-color: #0f172a;
+  color: #fff;
 }
 
 .label {
@@ -520,8 +613,9 @@ h1 {
   background: #fff;
   border: 1px solid var(--line);
   border-radius: 10px;
-  padding: 6px 8px;
-  min-height: 44px;
+  padding: 0 8px;
+  height: 44px;
+  box-sizing: border-box;
 }
 
 .combo-ico {
@@ -538,11 +632,14 @@ h1 {
 .combo select,
 .single {
   width: 100%;
+  height: 100%;
   border: 0;
   background: transparent;
-  padding: 6px 4px;
+  padding: 0 4px;
   min-width: 0;
   outline: none;
+  font: inherit;
+  line-height: 1;
 }
 
 .single {
@@ -559,7 +656,8 @@ h1 {
   background: var(--blue);
   color: #fff;
   font-weight: 700;
-  padding: 12px 16px;
+  padding: 0 16px;
+  height: 44px;
   min-height: 44px;
   cursor: pointer;
   white-space: nowrap;
@@ -847,6 +945,11 @@ tfoot td {
   .topbar {
     flex-direction: column;
     align-items: start;
+  }
+
+  .catchup-bar {
+    flex-direction: column;
+    align-items: stretch;
   }
 }
 </style>

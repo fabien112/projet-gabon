@@ -7,5 +7,7 @@
 **/dist/
 dist-client/data/
 dist-client/*.jar
+dist-installer/
+packaging/windows/site.env
 *.log
 .DS_Store

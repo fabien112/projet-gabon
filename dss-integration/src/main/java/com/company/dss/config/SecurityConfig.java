@@ -15,9 +15,10 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.factory.PasswordEncoderFactories;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
@@ -25,6 +26,8 @@ import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import com.company.dss.persistence.repository.AppUserRepository;
 
 @Configuration
 @EnableWebSecurity
@@ -40,6 +43,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(
                                 "/api/app/login",
+                                "/api/app/me",
                                 "/",
                                 "/index.html",
                                 "/assets/**",
@@ -48,11 +52,19 @@ public class SecurityConfig {
                                 "/favicon.ico",
                                 "/error"
                         ).permitAll()
+                        .requestMatchers("/api/sync/status").authenticated()
+                        .requestMatchers("/api/app/users/**").hasRole("SUPERADMIN")
+                        .requestMatchers("/api/cameras/**", "/api/sync/**").hasRole("SUPERADMIN")
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().permitAll()
                 )
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            response.setStatus(HttpStatus.FORBIDDEN.value());
+                            response.setContentType("application/json");
+                            response.getWriter().write("{\"message\":\"Accès réservé au superadmin\"}");
+                        })
                 )
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
@@ -75,12 +87,24 @@ public class SecurityConfig {
     }
 
     @Bean
-    UserDetailsService userDetailsService(AppSecurityProperties props) {
-        UserDetails user = User.withUsername(props.getUsername())
-                .password("{noop}" + props.getPassword())
-                .roles("USER")
-                .build();
-        return new InMemoryUserDetailsManager(user);
+    PasswordEncoder passwordEncoder() {
+        return PasswordEncoderFactories.createDelegatingPasswordEncoder();
+    }
+
+    @Bean
+    UserDetailsService userDetailsService(AppUserRepository users) {
+        return username -> users.findByUsernameIgnoreCase(username)
+                .map(user -> {
+                    String[] roles = "SUPERADMIN".equalsIgnoreCase(user.getRole())
+                            ? new String[] { "SUPERADMIN", "USER" }
+                            : new String[] { "USER" };
+                    return User.withUsername(user.getUsername())
+                            .password(user.getPasswordHash())
+                            .roles(roles)
+                            .disabled(!user.isEnabled())
+                            .build();
+                })
+                .orElseThrow(() -> new UsernameNotFoundException(username));
     }
 
     @Bean

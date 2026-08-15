@@ -28,10 +28,10 @@ spring:
 
 dss:
   protocol: ${DSS_PROTOCOL:https}
-  host: ${DSS_HOST:}
+  host: ${DSS_HOST:192.168.10.21}
   port: ${DSS_PORT:443}
-  username: ${DSS_USERNAME:}
-  password: ${DSS_PASSWORD:}
+  username: ${DSS_USERNAME:Fabien}
+  password: ${DSS_PASSWORD:Libreville2026}
   verify-ssl: ${DSS_VERIFY_SSL:false}
   connect-timeout: ${DSS_CONNECT_TIMEOUT:10s}
   read-timeout: ${DSS_READ_TIMEOUT:15s}
@@ -40,13 +40,15 @@ dss:
   login-type: ${DSS_LOGIN_TYPE:2}
   auto-login: ${DSS_AUTO_LOGIN:true}
   passenger-flow-poll-enabled: ${DSS_PASSENGER_FLOW_POLL_ENABLED:true}
-  passenger-flow-poll-interval: ${DSS_PASSENGER_FLOW_POLL_INTERVAL:45s}
+  passenger-flow-poll-interval: ${DSS_PASSENGER_FLOW_POLL_INTERVAL:60s}
 
 # Login unique partagé pour l'UI (tous les utilisateurs)
 app:
   security:
     username: ${APP_LOGIN_USER:admin}
-    password: ${APP_LOGIN_PASSWORD:changeme}
+    password: ${APP_LOGIN_PASSWORD:PeopleCounting2026}
+    superadmin-username: ${APP_SUPERADMIN_USER:superadmin}
+    superadmin-password: ${APP_SUPERADMIN_PASSWORD:SuperAdmin2026}
 
 logging:
   level:

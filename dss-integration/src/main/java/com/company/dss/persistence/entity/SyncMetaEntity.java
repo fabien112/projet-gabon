@@ -36,4 +36,8 @@ public class SyncMetaEntity {
 
     private int lastDaysProcessed;
     private int lastRowsUpserted;
+
+    /** Dernier poll automatique réussi (survit à un arrêt du logiciel). */
+    private Instant lastPollAt;
+    private LocalDate lastPollDate;
 }

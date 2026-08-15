@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS camera (
     name          VARCHAR(255) NOT NULL,
     site          VARCHAR(128) NULL,
     active        BOOLEAN      NOT NULL DEFAULT TRUE,
+    manual        BOOLEAN      NOT NULL DEFAULT FALSE,
     created_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT uk_camera_channel UNIQUE (channel_id)
@@ -28,3 +29,14 @@ CREATE TABLE IF NOT EXISTS people_counting_hourly (
 
 CREATE INDEX IF NOT EXISTS idx_counting_date ON people_counting_hourly (slot_date);
 CREATE INDEX IF NOT EXISTS idx_counting_date_hour ON people_counting_hourly (slot_date, hour_start);
+
+CREATE TABLE IF NOT EXISTS app_user (
+    id             BIGINT AUTO_INCREMENT PRIMARY KEY,
+    username       VARCHAR(64)  NOT NULL,
+    password_hash  VARCHAR(120) NOT NULL,
+    role           VARCHAR(20)  NOT NULL DEFAULT 'USER',
+    enabled        BOOLEAN      NOT NULL DEFAULT TRUE,
+    is_system      BOOLEAN      NOT NULL DEFAULT FALSE,
+    created_at     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uk_app_user_username UNIQUE (username)
+);

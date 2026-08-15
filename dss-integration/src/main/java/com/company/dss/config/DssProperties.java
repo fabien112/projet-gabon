@@ -34,7 +34,7 @@ public class DssProperties {
     private boolean autoLogin = true;
     /** Poll HTTP périodique des stats People Counting (comme l'UI/Excel DSS). */
     private boolean passengerFlowPollEnabled = true;
-    private Duration passengerFlowPollInterval = Duration.ofSeconds(45);
+    private Duration passengerFlowPollInterval = Duration.ofSeconds(60);
 
     public String getBaseUrl() {
         return protocol + "://" + host + ":" + port;

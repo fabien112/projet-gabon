@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.company.dss.passengerflow.PassengerFlowPollScheduler;
 import com.company.dss.service.AuthenticationService;
+import com.company.dss.sync.DssDbReconcileService;
 import com.company.dss.sync.HistorySyncService;
 import com.company.dss.sync.HistorySyncStatus;
 
@@ -27,6 +28,7 @@ public class SyncController {
     private final HistorySyncService historySyncService;
     private final PassengerFlowPollScheduler passengerFlowPollScheduler;
     private final AuthenticationService authenticationService;
+    private final DssDbReconcileService reconcileService;
 
     /**
      * Lance une sync manuelle (historique / rattrapage). Ne démarre jamais toute seule.
@@ -67,5 +69,17 @@ public class SyncController {
     @GetMapping("/status")
     public ResponseEntity<HistorySyncStatus> status() {
         return ResponseEntity.ok(historySyncService.status(passengerFlowPollScheduler.status()));
+    }
+
+    /**
+     * Compare l'historique DSS (live) avec la base locale, grain horaire, caméras configurées.
+     * Lecture seule — n'écrit rien. Max 7 jours.
+     */
+    @GetMapping("/compare")
+    public ResponseEntity<DssDbReconcileService.ReconcileReport> compare(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to
+    ) {
+        return ResponseEntity.ok(reconcileService.compare(from, to));
     }
 }

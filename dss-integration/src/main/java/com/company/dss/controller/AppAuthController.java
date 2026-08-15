@@ -5,8 +5,10 @@ import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
@@ -62,7 +64,11 @@ public class AppAuthController {
             Map<String, Object> payload = new LinkedHashMap<>();
             payload.put("authenticated", true);
             payload.put("username", authentication.getName());
+            payload.put("superAdmin", isSuperAdmin(authentication));
             return ResponseEntity.ok(payload);
+        } catch (DisabledException ex) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Compte désactivé"));
         } catch (BadCredentialsException ex) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "Identifiant ou mot de passe incorrect"));
@@ -71,13 +77,24 @@ public class AppAuthController {
 
     @GetMapping("/me")
     public ResponseEntity<?> me(Authentication authentication) {
-        if (authentication == null || !authentication.isAuthenticated()) {
+        if (authentication == null
+                || !authentication.isAuthenticated()
+                || authentication instanceof AnonymousAuthenticationToken) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("authenticated", false));
         }
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("authenticated", true);
         payload.put("username", authentication.getName());
+        payload.put("superAdmin", isSuperAdmin(authentication));
         return ResponseEntity.ok(payload);
+    }
+
+    static boolean isSuperAdmin(Authentication authentication) {
+        if (authentication == null || authentication.getAuthorities() == null) {
+            return false;
+        }
+        return authentication.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_SUPERADMIN".equals(a.getAuthority()));
     }
 }

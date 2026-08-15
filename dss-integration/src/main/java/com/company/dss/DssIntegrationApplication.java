@@ -5,6 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
+import com.company.dss.config.DotenvLoader;
 import com.company.dss.config.DssProperties;
 
 @SpringBootApplication
@@ -13,6 +14,7 @@ import com.company.dss.config.DssProperties;
 public class DssIntegrationApplication {
 
     public static void main(String[] args) {
+        DotenvLoader.load();
         SpringApplication.run(DssIntegrationApplication.class, args);
     }
 }

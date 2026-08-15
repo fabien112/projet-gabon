@@ -16,7 +16,7 @@ if exist "%ROOT%dist-client\.env" (
 )
 
 echo.
-echo === People Counting DEV ===
+echo === DataExpert DEV ===
 echo Backend : http://localhost:8080
 echo Frontend: http://localhost:5173
 echo DB      : %DB_URL%

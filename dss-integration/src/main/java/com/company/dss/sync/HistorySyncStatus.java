@@ -33,6 +33,11 @@ public record HistorySyncStatus(
         String pollLastMessage,
         int pollLastRowsUpserted,
         int pollLastActiveSlots,
-        LocalDate pollLastDate
+        LocalDate pollLastDate,
+        boolean catchUpNeeded,
+        String catchUpKind,
+        LocalDate catchUpFrom,
+        LocalDate catchUpTo,
+        String catchUpMessage
 ) {
 }

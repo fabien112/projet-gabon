@@ -4,15 +4,22 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import com.company.dss.passengerflow.CompteuseChannel;
+import com.company.dss.passengerflow.PassengerFlowClient;
 import com.company.dss.persistence.entity.CameraEntity;
 import com.company.dss.persistence.entity.PeopleCountingHourlyEntity;
 import com.company.dss.persistence.repository.CameraRepository;
@@ -23,6 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * Upsert des créneaux horaires DSS → MySQL/H2 pour le rapport personnalisé.
+ * Chargement groupé (caméras + créneaux du jour) : pas de N+1, pas d'UPDATE si inchangé.
  */
 @Slf4j
 @Service
@@ -36,13 +44,71 @@ public class PeopleCountingSyncService {
 
     @Transactional
     public int upsertRows(List<Map<String, Object>> rows) {
-        int saved = 0;
+        if (rows == null || rows.isEmpty()) {
+            return 0;
+        }
+
+        List<ParsedSlot> parsed = new ArrayList<>();
+        Set<String> channelIds = new LinkedHashSet<>();
+        Set<LocalDate> dates = new LinkedHashSet<>();
         for (Map<String, Object> row : rows) {
-            if (upsertOne(row)) {
-                saved++;
+            ParsedSlot slot = parseSlot(row);
+            if (slot == null) {
+                continue;
+            }
+            parsed.add(slot);
+            channelIds.add(slot.channelId());
+            dates.add(slot.slotDate());
+        }
+        if (parsed.isEmpty()) {
+            return 0;
+        }
+
+        Map<String, CameraEntity> cameras = loadOrCreateCameras(parsed, channelIds);
+        List<Long> cameraIds = cameras.values().stream()
+                .map(CameraEntity::getId)
+                .filter(id -> id != null)
+                .toList();
+        if (cameraIds.isEmpty()) {
+            return 0;
+        }
+
+        Map<String, PeopleCountingHourlyEntity> existing = new HashMap<>();
+        for (PeopleCountingHourlyEntity entity : hourlyRepository.findForUpsert(dates, cameraIds)) {
+            existing.put(slotKey(entity.getCamera().getId(), entity.getSlotDate(), entity.getHourStart()), entity);
+        }
+
+        List<PeopleCountingHourlyEntity> toSave = new ArrayList<>();
+        for (ParsedSlot slot : parsed) {
+            CameraEntity camera = cameras.get(slot.channelId());
+            if (camera == null || camera.getId() == null) {
+                continue;
+            }
+            String key = slotKey(camera.getId(), slot.slotDate(), slot.hourStart());
+            PeopleCountingHourlyEntity entity = existing.get(key);
+            if (entity == null) {
+                entity = new PeopleCountingHourlyEntity();
+                entity.setCamera(camera);
+                entity.setSlotDate(slot.slotDate());
+                entity.setHourStart(slot.hourStart());
+                entity.setHourEnd(slot.hourEnd());
+                entity.setEntries(slot.entries());
+                entity.setExits(slot.exits());
+                entity.setOccupancy(slot.occupancy());
+                existing.put(key, entity);
+                toSave.add(entity);
+            } else if (needsUpdate(entity, slot)) {
+                entity.setHourEnd(slot.hourEnd());
+                entity.setEntries(slot.entries());
+                entity.setExits(slot.exits());
+                entity.setOccupancy(slot.occupancy());
+                toSave.add(entity);
             }
         }
-        return saved;
+        if (!toSave.isEmpty()) {
+            hourlyRepository.saveAll(toSave);
+        }
+        return toSave.size();
     }
 
     /**
@@ -65,8 +131,12 @@ public class PeopleCountingSyncService {
                 return created;
             });
             String name = StringUtils.hasText(channel.name()) ? channel.name() : channel.channelId();
-            camera.setName(name);
-            camera.setSite(guessSite(name));
+            if (!camera.isManual()) {
+                camera.setName(name);
+                camera.setSite(guessSite(name));
+            } else if (!StringUtils.hasText(camera.getName())) {
+                camera.setName(name);
+            }
             camera.setActive(true);
             cameraRepository.save(camera);
             saved++;
@@ -74,61 +144,83 @@ public class PeopleCountingSyncService {
         return saved;
     }
 
-    private boolean upsertOne(Map<String, Object> row) {
+    private Map<String, CameraEntity> loadOrCreateCameras(List<ParsedSlot> parsed, Collection<String> channelIds) {
+        Map<String, CameraEntity> cameras = new LinkedHashMap<>();
+        for (CameraEntity camera : cameraRepository.findByChannelIdIn(channelIds)) {
+            cameras.put(camera.getChannelId(), camera);
+        }
+
+        Map<String, String> dssNames = new LinkedHashMap<>();
+        for (ParsedSlot slot : parsed) {
+            dssNames.putIfAbsent(slot.channelId(), slot.cameraName());
+        }
+
+        List<CameraEntity> camerasToSave = new ArrayList<>();
+        for (String channelId : channelIds) {
+            CameraEntity camera = cameras.get(channelId);
+            String dssName = dssNames.get(channelId);
+            if (camera == null) {
+                camera = new CameraEntity();
+                camera.setChannelId(channelId);
+                camera.setName(StringUtils.hasText(dssName) ? dssName : channelId);
+                camera.setSite(guessSite(dssName));
+                camera.setActive(true);
+                cameras.put(channelId, camera);
+                camerasToSave.add(camera);
+            } else if (!camera.isManual()
+                    && StringUtils.hasText(dssName)
+                    && !dssName.equals(camera.getName())) {
+                camera.setName(dssName);
+                camera.setSite(guessSite(dssName));
+                camerasToSave.add(camera);
+            }
+        }
+        if (!camerasToSave.isEmpty()) {
+            cameraRepository.saveAll(camerasToSave);
+        }
+        return cameras;
+    }
+
+    private static boolean needsUpdate(PeopleCountingHourlyEntity entity, ParsedSlot slot) {
+        return entity.getEntries() != slot.entries()
+                || entity.getExits() != slot.exits()
+                || entity.getOccupancy() != slot.occupancy()
+                || !slot.hourEnd().equals(entity.getHourEnd());
+    }
+
+    private static String slotKey(Long cameraId, LocalDate date, LocalTime hourStart) {
+        return cameraId + "|" + date + "|" + hourStart;
+    }
+
+    private static ParsedSlot parseSlot(Map<String, Object> row) {
         String channelId = stringVal(row.get("channelId"));
         String cameraName = stringVal(row.get("camera"));
         String startTime = stringVal(row.get("startTime"));
         String endTime = stringVal(row.get("endTime"));
         if (!StringUtils.hasText(channelId) || !StringUtils.hasText(startTime) || !StringUtils.hasText(endTime)) {
-            return false;
+            return null;
         }
-
-        // Ignore les sous-canaux techniques ($3$ / *_1) — doublons DSS
-        if (!channelId.contains("$1$") || (StringUtils.hasText(cameraName) && cameraName.matches("(?i).*_1\\s*$"))) {
-            log.debug("Skip canal non principal {} ({})", channelId, cameraName);
-            return false;
+        if (!PassengerFlowClient.isMainVideoChannelCode(channelId)) {
+            return null;
         }
-
         LocalDateTime start = LocalDateTime.parse(startTime, DSS_DT);
         LocalDateTime end = LocalDateTime.parse(endTime, DSS_DT);
         LocalDate slotDate = start.toLocalDate();
         LocalTime hourStart = start.toLocalTime();
         LocalTime hourEnd = end.toLocalTime();
-        // créneau qui passe minuit (23:00 → 00:00)
         if (end.toLocalDate().isAfter(slotDate) && hourEnd.equals(LocalTime.MIDNIGHT)) {
             hourEnd = LocalTime.MIDNIGHT;
         }
-
-        CameraEntity camera = cameraRepository.findByChannelId(channelId).orElseGet(() -> {
-            CameraEntity created = new CameraEntity();
-            created.setChannelId(channelId);
-            created.setName(StringUtils.hasText(cameraName) ? cameraName : channelId);
-            created.setSite(guessSite(cameraName));
-            created.setActive(true);
-            return cameraRepository.save(created);
-        });
-        if (StringUtils.hasText(cameraName) && !cameraName.equals(camera.getName())) {
-            camera.setName(cameraName);
-            camera.setSite(guessSite(cameraName));
-            cameraRepository.save(camera);
-        }
-
-        int entries = intVal(row.get("in"));
-        int exits = intVal(row.get("out"));
-        int occupancy = intVal(row.get("occupancy"));
-
-        PeopleCountingHourlyEntity entity = hourlyRepository
-                .findByCameraIdAndSlotDateAndHourStart(camera.getId(), slotDate, hourStart)
-                .orElseGet(PeopleCountingHourlyEntity::new);
-        entity.setCamera(camera);
-        entity.setSlotDate(slotDate);
-        entity.setHourStart(hourStart);
-        entity.setHourEnd(hourEnd);
-        entity.setEntries(entries);
-        entity.setExits(exits);
-        entity.setOccupancy(occupancy);
-        hourlyRepository.save(entity);
-        return true;
+        return new ParsedSlot(
+                channelId,
+                cameraName,
+                slotDate,
+                hourStart,
+                hourEnd,
+                intVal(row.get("in")),
+                intVal(row.get("out")),
+                intVal(row.get("occupancy"))
+        );
     }
 
     private static String guessSite(String cameraName) {
@@ -161,5 +253,17 @@ public class PeopleCountingSyncService {
         } catch (NumberFormatException ex) {
             return 0;
         }
+    }
+
+    private record ParsedSlot(
+            String channelId,
+            String cameraName,
+            LocalDate slotDate,
+            LocalTime hourStart,
+            LocalTime hourEnd,
+            int entries,
+            int exits,
+            int occupancy
+    ) {
     }
 }

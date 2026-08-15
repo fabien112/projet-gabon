@@ -24,5 +24,5 @@ if not exist "dss-integration.jar" (
   exit /b 1
 )
 
-echo Demarrage People Counting sur http://localhost:%SERVER_PORT%/
+echo Demarrage DataExpert sur http://localhost:%SERVER_PORT%/
 java -jar dss-integration.jar
