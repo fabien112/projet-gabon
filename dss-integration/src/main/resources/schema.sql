@@ -27,6 +27,11 @@ CREATE TABLE IF NOT EXISTS people_counting_hourly (
     CONSTRAINT fk_counting_camera FOREIGN KEY (camera_id) REFERENCES camera(id)
 );
 
+-- Add columns for change-detection and finalization (safe if already present)
+ALTER TABLE people_counting_hourly ADD COLUMN IF NOT EXISTS row_hash VARCHAR(128);
+ALTER TABLE people_counting_hourly ADD COLUMN IF NOT EXISTS last_source_timestamp TIMESTAMP NULL;
+ALTER TABLE people_counting_hourly ADD COLUMN IF NOT EXISTS finalized BOOLEAN NOT NULL DEFAULT FALSE;
+
 CREATE INDEX IF NOT EXISTS idx_counting_date ON people_counting_hourly (slot_date);
 CREATE INDEX IF NOT EXISTS idx_counting_date_hour ON people_counting_hourly (slot_date, hour_start);
 

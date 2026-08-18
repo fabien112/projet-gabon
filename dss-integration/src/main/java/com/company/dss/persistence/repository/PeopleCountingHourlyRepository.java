@@ -75,6 +75,9 @@ public interface PeopleCountingHourlyRepository extends JpaRepository<PeopleCoun
     @Query("select max(h.slotDate) from PeopleCountingHourlyEntity h")
     Optional<LocalDate> findMaxSlotDate();
 
+        @Query("select min(h.slotDate) from PeopleCountingHourlyEntity h")
+        Optional<LocalDate> findMinSlotDate();
+
     @Query("""
             select h from PeopleCountingHourlyEntity h
             join fetch h.camera c
@@ -85,5 +88,17 @@ public interface PeopleCountingHourlyRepository extends JpaRepository<PeopleCoun
             @Param("fromDate") LocalDate fromDate,
             @Param("toDate") LocalDate toDate,
             @Param("channelIds") Collection<String> channelIds
+    );
+
+    @Query("""
+            select h from PeopleCountingHourlyEntity h
+            join fetch h.camera c
+            where h.finalized = false
+              and (h.slotDate < :date
+                   or (h.slotDate = :date and h.hourEnd <= :time))
+            """)
+    List<PeopleCountingHourlyEntity> findUnfinalizedBefore(
+            @Param("date") LocalDate date,
+            @Param("time") LocalTime time
     );
 }

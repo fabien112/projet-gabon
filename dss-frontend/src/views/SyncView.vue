@@ -6,6 +6,9 @@
         <h1>DataExpert – Configuration</h1>
       </div>
       <div class="top-actions">
+        <button type="button" class="btn-outline" :disabled="statusRefreshing" @click="refresh">
+          {{ statusRefreshing ? 'Actualisation…' : 'Actualiser' }}
+        </button>
         <RouterLink class="btn-outline" to="/">← Rapport</RouterLink>
         <button type="button" class="btn-outline" @click="doLogout">Déconnexion</button>
       </div>
@@ -29,37 +32,6 @@
         @click="doReconnect"
       >
         {{ reconnecting ? 'Reconnexion…' : status.dssSessionActive ? 'Connecté' : 'Reconnecter' }}
-      </button>
-    </section>
-
-    <section
-      v-if="status.catchUpNeeded || status.catchUpKind === 'OK'"
-      class="catchup-bar"
-      :class="status.catchUpNeeded ? 'warn' : 'ok'"
-    >
-      <div class="catchup-text">
-        <p class="catchup-title">{{ status.catchUpNeeded ? 'Rattrapage recommandé' : 'Données à jour' }}</p>
-        <p class="catchup-msg">{{ status.catchUpMessage }}</p>
-        <p v-if="status.catchUpNeeded && status.catchUpFrom && status.catchUpTo" class="catchup-period">
-          Période : {{ formatDate(status.catchUpFrom) }} → {{ formatDate(status.catchUpTo) }}
-        </p>
-      </div>
-      <button
-        v-if="status.catchUpNeeded && status.catchUpKind !== 'EMPTY'"
-        type="button"
-        class="btn-reconnect"
-        :disabled="status.running"
-        @click="startCatchUp"
-      >
-        {{ status.running ? 'Sync en cours…' : 'Rattraper maintenant' }}
-      </button>
-      <button
-        v-else-if="status.catchUpKind === 'EMPTY'"
-        type="button"
-        class="btn-reconnect"
-        @click="tab = 'sync'"
-      >
-        Aller à la synchronisation
       </button>
     </section>
 
@@ -286,31 +258,53 @@
     <div v-show="tab === 'sync'" class="layout">
       <!-- Action principale -->
       <section class="panel action-panel">
-        <h2>Lancer une synchronisation</h2>
+        <h2>Synchroniser les données manquantes</h2>
         <p class="lead">
-          Choisissez la période (7 jours max pour la comparaison). Relancer la même période
-          met à jour les données sans créer de doublons.
+          Récupère depuis le DSS tout ce qui n'est pas encore en base
+          (jours passés après coupure + créneaux horaires manquants du jour).
         </p>
-
-        <div class="form-grid">
-          <label class="field">
-            <span class="label">Du</span>
-            <input v-model="from" type="date" :max="to" :disabled="status.running" />
-          </label>
-          <label class="field">
-            <span class="label">Au</span>
-            <input v-model="to" type="date" :min="from" :max="today" :disabled="status.running" />
-          </label>
-        </div>
+        <p v-if="status.catchUpFrom && status.catchUpTo" class="pending-range">
+          Période calculée : {{ formatDate(status.catchUpFrom) }} → {{ formatDate(status.catchUpTo) }}
+          <span v-if="status.catchUpMessage" class="pending-hint">— {{ status.catchUpMessage }}</span>
+        </p>
+        <p v-if="status.lastCoveredDateInDb" class="pending-hint">
+          Dernier jour en base : {{ formatDate(status.lastCoveredDateInDb) }}
+        </p>
 
         <button
           class="generate"
-          :disabled="status.running || !canStart"
-          @click="startSync"
+          :disabled="status.running || !status.dssSessionActive"
+          @click="startMissingSync"
         >
           <span v-if="status.running" class="spinner" aria-hidden="true"></span>
-          {{ status.running ? 'Synchronisation en cours…' : 'Lancer la synchronisation' }}
+          {{ status.running ? 'Synchronisation en cours…' : 'Synchroniser les données manquantes' }}
         </button>
+
+        <details class="manual-sync">
+          <summary>Synchronisation manuelle (période personnalisée)</summary>
+          <p class="lead">
+            Choisissez une période précise (7 jours max pour la comparaison).
+            Relancer la même période met à jour sans doublons.
+          </p>
+          <div class="form-grid">
+            <label class="field">
+              <span class="label">Du</span>
+              <input v-model="from" type="date" :max="to" :disabled="status.running" />
+            </label>
+            <label class="field">
+              <span class="label">Au</span>
+              <input v-model="to" type="date" :min="from" :max="today" :disabled="status.running" />
+            </label>
+          </div>
+          <button
+            type="button"
+            class="btn-outline"
+            :disabled="status.running || !canStart"
+            @click="startSync"
+          >
+            Lancer sur la période choisie
+          </button>
+        </details>
         <button
           type="button"
           class="btn-outline compare-btn"
@@ -406,14 +400,11 @@
       <aside class="side-stack">
         <section class="panel side-panel poll-panel" :class="pollPanelClass">
           <div class="poll-head">
-            <h2>Poll automatique</h2>
-            <span class="poll-live" :class="{ on: status.pollInProgress || pollRecent }">
-              <span class="poll-pulse" aria-hidden="true" />
-              {{ pollLiveLabel }}
-            </span>
+            <h2>Poll automatique (serveur)</h2>
           </div>
           <p class="poll-lead">
-            Récupération automatique du jour en cours depuis DSS vers la base locale.
+            Tourne en arrière-plan toutes les {{ status.pollInterval || '60s' }}.
+            Cette page se met à jour automatiquement quand le serveur reçoit de nouvelles données.
           </p>
           <dl class="facts">
             <div>
@@ -483,7 +474,7 @@ import {
   fetchConfiguredCameras,
   updateCamera,
 } from '../api/cameras'
-import { fetchSyncStatus, reconnectDss, startHistorySync, compareDssDb } from '../api/sync'
+import { fetchSyncStatus, reconnectDss, startHistorySync, startMissingDataSync, compareDssDb, subscribeSyncStatus } from '../api/sync'
 import { createAppUser, deleteAppUser, fetchAppUsers, updateAppUser } from '../api/users'
 
 const today = new Date().toISOString().slice(0, 10)
@@ -505,6 +496,7 @@ const addingCam = ref(false)
 const camError = ref('')
 const camOk = ref('')
 const comparing = ref(false)
+const statusRefreshing = ref(false)
 const compareError = ref('')
 const compareResult = ref(null)
 const newCam = reactive({
@@ -561,29 +553,13 @@ const status = reactive({
   catchUpMessage: '',
 })
 
-let timer = null
-const nowTick = ref(Date.now())
-let tickTimer = null
+let unsubscribeSyncEvents = null
 
 const canStart = computed(() => from.value && to.value && to.value >= from.value)
 
 const progressPct = computed(() => {
   if (!status.daysTotal) return 0
   return Math.min(100, Math.round((status.daysDone / status.daysTotal) * 100))
-})
-
-const pollRecent = computed(() => {
-  if (!status.pollLastAt) return false
-  const age = nowTick.value - new Date(status.pollLastAt).getTime()
-  return age >= 0 && age < 12_000
-})
-
-const pollLiveLabel = computed(() => {
-  if (status.pollInProgress) return 'En cours…'
-  if (status.pollSuspended) return 'Suspendu'
-  if (!status.pollEnabled) return 'Désactivé'
-  if (pollRecent.value) return 'Signalé'
-  return 'En attente'
 })
 
 const pollStateLabel = computed(() => {
@@ -605,7 +581,6 @@ const pollStatusClass = computed(() => {
 })
 
 const pollPanelClass = computed(() => {
-  if (status.pollInProgress || pollRecent.value) return 'live'
   if (status.pollLastStatus === 'FAILED') return 'fail'
   if (!status.pollEnabled || status.pollSuspended) return 'muted'
   return ''
@@ -648,20 +623,30 @@ function statusClass(s) {
 }
 
 async function refresh() {
+  if (statusRefreshing.value) return
+  statusRefreshing.value = true
   try {
     applyStatus(await fetchSyncStatus())
-    // Ne pas effacer une erreur de sync récente si refresh périodique
   } catch (e) {
     apiError.value = e?.response?.data?.message || e.message || 'Impossible de lire le statut sync'
+  } finally {
+    statusRefreshing.value = false
   }
 }
 
-async function startCatchUp() {
-  if (!status.catchUpFrom || !status.catchUpTo || status.running) return
-  tab.value = 'sync'
-  from.value = status.catchUpFrom
-  to.value = status.catchUpTo
-  await startSync()
+async function startMissingSync() {
+  formError.value = ''
+  apiError.value = ''
+  compareError.value = ''
+  if (!status.dssSessionActive) {
+    apiError.value = 'Session DSS inactive — reconnectez-vous d\'abord.'
+    return
+  }
+  try {
+    applyStatus(await startMissingDataSync())
+  } catch (e) {
+    apiError.value = e?.response?.data?.message || e.message || 'Échec démarrage sync'
+  }
 }
 
 async function startSync() {
@@ -903,7 +888,6 @@ onMounted(async () => {
     tab.value = 'users'
   }
   await Promise.all([
-    refresh(),
     refreshCameras().catch((e) => {
       camError.value = e?.response?.data?.message || e.message || 'Impossible de charger les caméras'
     }),
@@ -911,15 +895,19 @@ onMounted(async () => {
       userError.value = e?.response?.data?.message || e.message || 'Impossible de charger les utilisateurs'
     }),
   ])
-  timer = setInterval(refresh, 2000)
-  tickTimer = setInterval(() => {
-    nowTick.value = Date.now()
-  }, 1000)
+  unsubscribeSyncEvents = subscribeSyncStatus({
+    onStatus: (data) => {
+      applyStatus(data)
+    },
+    onError: () => {
+      // EventSource se reconnecte seul ; refresh manuel possible via le bouton
+    },
+  })
 })
 
 onUnmounted(() => {
-  if (timer) clearInterval(timer)
-  if (tickTimer) clearInterval(tickTimer)
+  unsubscribeSyncEvents?.()
+  unsubscribeSyncEvents = null
 })
 </script>
 
@@ -1089,6 +1077,35 @@ h1 {
 
 .catchup-bar.ok .catchup-period {
   color: #0f766e;
+}
+
+.pending-range {
+  margin: 0 0 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #0f766e;
+}
+
+.pending-hint {
+  font-weight: 400;
+  color: #64748b;
+}
+
+.manual-sync {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--line, #e2e8f0);
+}
+
+.manual-sync summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 12px;
+}
+
+.manual-sync .btn-outline {
+  margin-top: 12px;
 }
 
 .session-bar {
@@ -1563,41 +1580,6 @@ h1 {
   line-height: 1.4;
 }
 
-.poll-live {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: #64748b;
-  background: #f1f5f9;
-  padding: 4px 8px;
-  border-radius: 999px;
-}
-
-.poll-live.on {
-  color: #0f766e;
-  background: #ccfbf1;
-}
-
-.poll-pulse {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #94a3b8;
-}
-
-.poll-live.on .poll-pulse {
-  background: #0d9488;
-  box-shadow: 0 0 0 0 rgba(13, 148, 136, 0.55);
-  animation: pulse 1.4s ease-out infinite;
-}
-
-.poll-panel.live {
-  border-color: #99f6e4;
-  background: #f0fdfa;
-}
-
 .poll-panel.fail {
   border-color: #fecaca;
   background: #fff7f7;
@@ -1605,12 +1587,6 @@ h1 {
 
 .poll-panel.muted {
   opacity: 0.92;
-}
-
-@keyframes pulse {
-  0% { box-shadow: 0 0 0 0 rgba(13, 148, 136, 0.45); }
-  70% { box-shadow: 0 0 0 8px rgba(13, 148, 136, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(13, 148, 136, 0); }
 }
 
 .last-sync-panel {

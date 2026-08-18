@@ -1,4 +1,7 @@
-﻿People Counting — pack client (JAR)
+﻿People Counting — pack client (JAR, mode alternatif)
+
+Ce pack reste disponible en parallèle du déploiement Docker.
+Pour la production, préférer Docker Compose (voir DEPLOY.md à la racine du repo).
 
 Prérequis : Java 21 (https://adoptium.net/)
 

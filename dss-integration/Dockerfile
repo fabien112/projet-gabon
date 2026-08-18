@@ -9,8 +9,13 @@ RUN mvn -q -DskipTests package \
 # Runtime only — no source, no Maven
 FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
-RUN useradd -r -u 10001 appuser
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd -r -u 10001 appuser
 COPY --from=build /build/app.jar /app/app.jar
 USER appuser
 EXPOSE 8080
+HEALTHCHECK --interval=15s --timeout=5s --start-period=90s --retries=8 \
+    CMD curl -fsS http://localhost:8080/actuator/health/readiness || exit 1
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]

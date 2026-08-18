@@ -1,5 +1,10 @@
 #define AppName "DataExpert"
-#define AppVersion "0.1.0"
+#ifndef AppVersion
+#  define AppVersion "0.1.0"
+#endif
+#ifndef OutputBaseFilename
+#  define OutputBaseFilename "DataExpert-Setup"
+#endif
 #ifndef AppImageDir
   #define AppImageDir "..\..\dist-installer\app-image\DataExpert"
 #endif
@@ -12,7 +17,7 @@ AppPublisher=DataExpert
 DefaultDirName={localappdata}\Programs\{#AppName}
 DefaultGroupName={#AppName}
 OutputDir=..\..\dist-installer
-OutputBaseFilename=DataExpert-Setup
+OutputBaseFilename={#OutputBaseFilename}
 Compression=lzma2
 SolidCompression=yes
 PrivilegesRequired=lowest

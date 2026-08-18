@@ -14,6 +14,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
+import java.time.Instant;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.Getter;
@@ -60,6 +61,19 @@ public class PeopleCountingHourlyEntity {
 
     @Column(nullable = false)
     private int occupancy;
+
+    @Column(name = "row_hash", length = 128)
+    private String rowHash;
+
+    @Column(name = "last_source_timestamp")
+    private Instant lastSourceTimestamp;
+
+    @Column(name = "finalized")
+    private Boolean finalized;
+
+    public boolean isFinalized() {
+        return Boolean.TRUE.equals(finalized);
+    }
 
     @Column(name = "synced_at", nullable = false)
     private Instant syncedAt;

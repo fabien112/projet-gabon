@@ -31,3 +31,25 @@ export async function fetchPersonalizedReport(params) {
   })
   return data
 }
+
+/**
+ * Abonnement SSE — reçoit un événement quand de nouvelles données sont écrites en base.
+ * @returns {() => void} fonction pour fermer la connexion
+ */
+export function subscribeReportDataChanges({ onDataChanged, onError } = {}) {
+  const es = new EventSource('/api/reports/events', { withCredentials: true })
+
+  es.addEventListener('data-changed', (event) => {
+    try {
+      onDataChanged?.(JSON.parse(event.data))
+    } catch (e) {
+      onError?.(e)
+    }
+  })
+
+  es.onerror = () => {
+    onError?.(new Error('Connexion temps réel interrompue'))
+  }
+
+  return () => es.close()
+}

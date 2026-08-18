@@ -51,6 +51,15 @@ public final class DotenvLoader {
             applied++;
         }
         System.out.println(">>> [ENV] " + applied + " paramètre(s) chargés depuis " + envFile.toAbsolutePath());
+        mapSpringBootAliases();
+    }
+
+    /** .env utilise souvent SPRING_PROFILES_ACTIVE ; Spring attend spring.profiles.active en system property. */
+    private static void mapSpringBootAliases() {
+        String profiles = System.getProperty("SPRING_PROFILES_ACTIVE");
+        if (profiles != null && !profiles.isBlank() && blankProperty("spring.profiles.active")) {
+            System.setProperty("spring.profiles.active", profiles.trim());
+        }
     }
 
     private static void applyAppHomeDefaults(Path appHome) {

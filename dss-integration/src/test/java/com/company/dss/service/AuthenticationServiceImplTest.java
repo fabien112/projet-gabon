@@ -11,6 +11,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.company.dss.authentication.AuthenticationClient;
+import com.company.dss.authentication.DssSessionPersistence;
 import com.company.dss.authentication.TokenHolder;
 import com.company.dss.config.DssProperties;
 import com.company.dss.dto.authentication.AuthLoginResponse;
@@ -27,6 +28,9 @@ class AuthenticationServiceImplTest {
   private TokenHolder tokenHolder;
 
   @Mock
+  private DssSessionPersistence sessionPersistence;
+
+  @Mock
   private MqConnectionService mqConnectionService;
 
   @Mock
@@ -37,14 +41,14 @@ class AuthenticationServiceImplTest {
 
   @Test
   void testLogin_returnsConnectedResponseWithToken() {
-    when(authenticationClient.login()).thenReturn(new AuthLoginResponse(
+    when(authenticationClient.loginWithRecovery(true)).thenReturn(new AuthLoginResponse(
         "abc-token", 30, null, null, "1", "system", "1", null, null));
 
     LoginTestResponse response = authenticationService.testLogin();
 
     assertThat(response.connected()).isTrue();
     assertThat(response.token()).isEqualTo("abc-token");
-    verify(authenticationClient).login();
+    verify(authenticationClient).loginWithRecovery(true);
   }
 
   @Test

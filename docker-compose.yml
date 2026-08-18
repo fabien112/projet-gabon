@@ -1,22 +1,87 @@
+# DataExpert — stack Docker complète
+#
+# Services : web (nginx + Vue) | api (Spring Boot) | db (PostgreSQL) | pgadmin
+#
+# Sync DSS : intégrée au service `api` (1 seule instance — voir DEPLOY.md).
+# Ne pas scaler `api` à plusieurs replicas sans architecture worker dédiée.
+
+name: dataexpert
+
+x-api-environment: &api-environment
+  SERVER_PORT: "8080"
+  SPRING_PROFILES_ACTIVE: postgres,docker
+  H2_CONSOLE: "false"
+  FLYWAY_ENABLED: "true"
+  DB_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-dss}
+  DB_USER: ${POSTGRES_USER:-dss_user}
+  DB_PASSWORD: ${POSTGRES_PASSWORD}
+  DB_DRIVER: org.postgresql.Driver
+  DSS_PROTOCOL: ${DSS_PROTOCOL:-https}
+  DSS_HOST: ${DSS_HOST:?DSS_HOST requis — IP du serveur Dahua DSS}
+  DSS_PORT: ${DSS_PORT:-443}
+  DSS_USERNAME: ${DSS_USERNAME:?DSS_USERNAME requis}
+  DSS_PASSWORD: ${DSS_PASSWORD:?DSS_PASSWORD requis}
+  DSS_VERIFY_SSL: ${DSS_VERIFY_SSL:-false}
+  DSS_CONNECT_TIMEOUT: ${DSS_CONNECT_TIMEOUT:-10s}
+  DSS_READ_TIMEOUT: ${DSS_READ_TIMEOUT:-15s}
+  DSS_KEEP_ALIVE_INTERVAL: ${DSS_KEEP_ALIVE_INTERVAL:-25s}
+  DSS_MQ_ENABLED: ${DSS_MQ_ENABLED:-true}
+  DSS_LOGIN_TYPE: ${DSS_LOGIN_TYPE:-2}
+  DSS_AUTO_LOGIN: ${DSS_AUTO_LOGIN:-true}
+  DSS_PASSENGER_FLOW_POLL_ENABLED: ${DSS_PASSENGER_FLOW_POLL_ENABLED:-true}
+  DSS_PASSENGER_FLOW_POLL_INTERVAL: ${DSS_PASSENGER_FLOW_POLL_INTERVAL:-60s}
+  DSS_STARTUP_FULL_SYNC_ENABLED: ${DSS_STARTUP_FULL_SYNC_ENABLED:-false}
+  DSS_STARTUP_FULL_SYNC_DAYS: ${DSS_STARTUP_FULL_SYNC_DAYS:-30}
+  DSS_LOG_LEVEL: ${DSS_LOG_LEVEL:-INFO}
+  DSS_HTTP_LOG_LEVEL: ${DSS_HTTP_LOG_LEVEL:-WARN}
+  APP_LOGIN_USER: ${APP_LOGIN_USER:-admin}
+  APP_LOGIN_PASSWORD: ${APP_LOGIN_PASSWORD:-changeme}
+  APP_SUPERADMIN_USER: ${APP_SUPERADMIN_USER:-superadmin}
+  APP_SUPERADMIN_PASSWORD: ${APP_SUPERADMIN_PASSWORD:-SuperAdmin2026}
+
 services:
   db:
-    image: mysql:8.4
+    image: postgres:16-alpine
     container_name: dss-db
     restart: unless-stopped
     environment:
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-appdb}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-dss}
+      POSTGRES_USER: ${POSTGRES_USER:-dss_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD requis dans .env}
+      TZ: Africa/Libreville
     volumes:
-      - dss_mysql_data:/var/lib/mysql
+      - dss_pg_data:/var/lib/postgresql/data
+    networks:
+      - dss-net
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p$$MYSQL_ROOT_PASSWORD"]
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 10s
       timeout: 5s
       retries: 10
-      start_period: 30s
-    # Port non exposé par défaut (accès interne Docker seulement)
-    # ports:
-    #   - "3306:3306"
+      start_period: 20s
+    # Exposé sur localhost pour migration H2 et outils locaux (scripts/migrate-h2-to-postgres.ps1)
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+
+  pgadmin:
+    image: dpage/pgadmin4:8.14
+    container_name: dss-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@dataexpert.local}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:?PGADMIN_PASSWORD requis dans .env}
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    volumes:
+      - dss_pgadmin_data:/var/lib/pgadmin
+      - ./docker/pgadmin/servers.json:/pgadmin4/servers.json:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - dss-net
 
   api:
     build:
@@ -25,39 +90,22 @@ services:
     image: dss-people-counting-api:0.1.0
     container_name: dss-api
     restart: unless-stopped
+    environment:
+      <<: *api-environment
     depends_on:
       db:
         condition: service_healthy
-    environment:
-      SERVER_PORT: 8080
-      H2_CONSOLE: "false"
-      DB_URL: jdbc:mysql://db:3306/${MYSQL_DATABASE:-appdb}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Africa/Libreville
-      DB_USER: root
-      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      DB_DRIVER: com.mysql.cj.jdbc.Driver
-      DSS_PROTOCOL: ${DSS_PROTOCOL:-https}
-      DSS_HOST: ${DSS_HOST}
-      DSS_PORT: ${DSS_PORT:-443}
-      DSS_USERNAME: ${DSS_USERNAME}
-      DSS_PASSWORD: ${DSS_PASSWORD}
-      DSS_VERIFY_SSL: ${DSS_VERIFY_SSL:-false}
-      DSS_CONNECT_TIMEOUT: ${DSS_CONNECT_TIMEOUT:-10s}
-      DSS_READ_TIMEOUT: ${DSS_READ_TIMEOUT:-15s}
-      DSS_KEEP_ALIVE_INTERVAL: ${DSS_KEEP_ALIVE_INTERVAL:-25s}
-      DSS_MQ_ENABLED: ${DSS_MQ_ENABLED:-true}
-      DSS_LOGIN_TYPE: ${DSS_LOGIN_TYPE:-2}
-      DSS_AUTO_LOGIN: ${DSS_AUTO_LOGIN:-true}
-      DSS_PASSENGER_FLOW_POLL_ENABLED: ${DSS_PASSENGER_FLOW_POLL_ENABLED:-true}
-      DSS_PASSENGER_FLOW_POLL_INTERVAL: ${DSS_PASSENGER_FLOW_POLL_INTERVAL:-60s}
-      DSS_LOG_LEVEL: ${DSS_LOG_LEVEL:-INFO}
-      DSS_HTTP_LOG_LEVEL: ${DSS_HTTP_LOG_LEVEL:-WARN}
-      APP_LOGIN_USER: ${APP_LOGIN_USER:-admin}
-      APP_LOGIN_PASSWORD: ${APP_LOGIN_PASSWORD:-changeme}
-      APP_SUPERADMIN_USER: ${APP_SUPERADMIN_USER:-superadmin}
-      APP_SUPERADMIN_PASSWORD: ${APP_SUPERADMIN_PASSWORD:-SuperAdmin2026}
-    # API accessible en interne ; le front nginx expose le port public
+    networks:
+      - dss-net
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/actuator/health/readiness"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 90s
+    # API non exposée publiquement — nginx (web) reverse-proxy /api
     # ports:
-    #   - "8080:8080"
+    #   - "${API_PORT:-8080}:8080"
 
   web:
     build:
@@ -67,9 +115,38 @@ services:
     container_name: dss-web
     restart: unless-stopped
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     ports:
       - "${WEB_PORT:-80}:80"
+    networks:
+      - dss-net
+
+  # --- Worker sync (optionnel, phase 2) ---
+  # Même image que `api`, profil Spring `worker` : poll DSS + MQ sans HTTP public.
+  # Nécessite un compte DSS dédié (sinon conflit session code 2004 avec `api`).
+  # Décommenter + `docker compose --profile worker up -d`
+  #
+  # worker:
+  #   profiles: ["worker"]
+  #   image: dss-people-counting-api:0.1.0
+  #   container_name: dss-worker
+  #   restart: unless-stopped
+  #   environment:
+  #     <<: *api-environment
+  #     SPRING_PROFILES_ACTIVE: postgres,docker,worker
+  #     DSS_USERNAME: ${DSS_WORKER_USERNAME}
+  #     DSS_PASSWORD: ${DSS_WORKER_PASSWORD}
+  #   depends_on:
+  #     db:
+  #       condition: service_healthy
+  #   networks:
+  #     - dss-net
+
+networks:
+  dss-net:
+    driver: bridge
 
 volumes:
-  dss_mysql_data:
+  dss_pg_data:
+  dss_pgadmin_data:

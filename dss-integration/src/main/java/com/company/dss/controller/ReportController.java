@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,8 +24,10 @@ import com.company.dss.persistence.repository.CameraRepository;
 import com.company.dss.persistence.repository.PeopleCountingHourlyRepository;
 import com.company.dss.report.PersonalizedReportResponse;
 import com.company.dss.report.PersonalizedReportService;
+import com.company.dss.report.ReportEventService;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 @RestController
 @RequestMapping("/api/reports")
@@ -37,6 +40,7 @@ public class ReportController {
     private final PersonalizedReportService reportService;
     private final CameraRepository cameraRepository;
     private final PeopleCountingHourlyRepository hourlyRepository;
+    private final ReportEventService reportEventService;
 
     /**
      * Rapport personnalisé pour l'UI People Counting.
@@ -124,7 +128,15 @@ public class ReportController {
                 .count();
         body.put("cameras", configured);
         body.put("hourlySlots", hourlyRepository.count());
+        hourlyRepository.findMinSlotDate().ifPresent(d -> body.put("minSlotDate", d));
+        hourlyRepository.findMaxSlotDate().ifPresent(d -> body.put("maxSlotDate", d));
         return ResponseEntity.ok(body);
+    }
+
+    /** Flux SSE : le frontend recharge le rapport quand de nouvelles données arrivent en base. */
+    @GetMapping(value = "/events", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter reportEvents() {
+        return reportEventService.subscribe();
     }
 
     private Map<String, Object> toCameraDto(CameraEntity camera) {

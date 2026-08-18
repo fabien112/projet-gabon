@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,8 +18,10 @@ import com.company.dss.service.AuthenticationService;
 import com.company.dss.sync.DssDbReconcileService;
 import com.company.dss.sync.HistorySyncService;
 import com.company.dss.sync.HistorySyncStatus;
+import com.company.dss.sync.SyncStatusEventService;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 @RestController
 @RequestMapping("/api/sync")
@@ -29,6 +32,7 @@ public class SyncController {
     private final PassengerFlowPollScheduler passengerFlowPollScheduler;
     private final AuthenticationService authenticationService;
     private final DssDbReconcileService reconcileService;
+    private final SyncStatusEventService syncStatusEventService;
 
     /**
      * Lance une sync manuelle (historique / rattrapage). Ne démarre jamais toute seule.
@@ -46,14 +50,24 @@ public class SyncController {
         }
     }
 
-    /** Force un relogin DSS (utile si la session a expiré). */
+    /**
+     * Récupère tout ce qui manque en base (jours passés + créneaux du jour en cours).
+     */
+    @PostMapping("/missing")
+    public ResponseEntity<?> startMissing() {
+        try {
+            historySyncService.startMissingDataSync();
+            return ResponseEntity.accepted().body(historySyncService.status(passengerFlowPollScheduler.status()));
+        } catch (IllegalStateException | IllegalArgumentException ex) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", ex.getMessage()));
+        }
+    }
+
+    /** Force un relogin DSS (prend la main si le compte est déjà connecté ailleurs). */
     @PostMapping("/dss-reconnect")
     public ResponseEntity<?> reconnectDss() {
         try {
-            authenticationService.ensureLoggedIn();
-            if (!authenticationService.isConnected()) {
-                authenticationService.login();
-            }
+            authenticationService.forceReconnect();
             return ResponseEntity.ok(Map.of(
                     "message", "Session DSS active",
                     "dssSessionActive", true
@@ -69,6 +83,12 @@ public class SyncController {
     @GetMapping("/status")
     public ResponseEntity<HistorySyncStatus> status() {
         return ResponseEntity.ok(historySyncService.status(passengerFlowPollScheduler.status()));
+    }
+
+    /** Flux SSE : le frontend reçoit un événement « status » à chaque changement sync/poll. */
+    @GetMapping(value = "/events", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter syncEvents() {
+        return syncStatusEventService.subscribe();
     }
 
     /**

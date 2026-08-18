@@ -9,6 +9,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -16,7 +19,9 @@ import com.company.dss.authentication.TokenHolder;
 import com.company.dss.camera.CameraService;
 import com.company.dss.config.DssProperties;
 import com.company.dss.persistence.PeopleCountingSyncService;
+import com.company.dss.service.AuthenticationService;
 import com.company.dss.sync.HistorySyncService;
+import com.company.dss.sync.SyncStatusChangedEvent;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +41,11 @@ public class PassengerFlowPollScheduler {
     private final PeopleCountingSyncService syncService;
     private final HistorySyncService historySyncService;
     private final CameraService cameraService;
+    private final ApplicationEventPublisher eventPublisher;
+
+    @Lazy
+    @Autowired
+    private AuthenticationService authenticationService;
 
     private final AtomicReference<String> lastFingerprint = new AtomicReference<>("");
     private final AtomicBoolean inProgress = new AtomicBoolean(false);
@@ -71,12 +81,21 @@ public class PassengerFlowPollScheduler {
             return;
         }
         if (!tokenHolder.hasValidToken()) {
+            try {
+                authenticationService.ensureLoggedIn();
+            } catch (Exception ex) {
+                remember("SKIPPED", "Session DSS inactive — " + ex.getMessage(), 0, 0, null);
+                return;
+            }
+        }
+        if (!tokenHolder.hasValidToken()) {
             remember("SKIPPED", "Session DSS inactive", 0, 0, null);
             return;
         }
         if (!inProgress.compareAndSet(false, true)) {
             return;
         }
+        notifyStatusChanged();
         try {
             List<String> ids = cameraService.channelIdsForSync();
             if (ids.isEmpty()) {
@@ -86,21 +105,23 @@ public class PassengerFlowPollScheduler {
             }
 
             LocalDate date = passengerFlowClient.todayInGabon();
+            
+
             List<Map<String, Object>> rows = passengerFlowClient.fetchHistoryForDate(date, ids);
             int activeSlots = (int) rows.stream()
                     .filter(r -> ((Number) r.getOrDefault("total", 0)).intValue() > 0)
                     .count();
 
-            String fingerprint = fingerprint(rows);
-            if (fingerprint.equals(lastFingerprint.get())) {
-                log.debug(">>> [FLOW] Poll OK — date={}, créneaux={}, inchangé (pas d'écriture SQL)",
+            // Filtrer uniquement les créneaux absents en base et n'insérer que ceux-là
+            List<Map<String, Object>> missing = syncService.filterMissingRowsForDate(date, rows);
+            if (missing.isEmpty()) {
+                log.debug(">>> [FLOW] Poll OK — date={}, créneaux={}, aucun créneau manquant (pas d'écriture SQL)",
                         date, rows.size());
                 remember("OK", "Poll OK — données inchangées", 0, activeSlots, date);
                 return;
             }
 
-            int saved = syncService.upsertRows(rows);
-            lastFingerprint.set(fingerprint);
+            int saved = syncService.upsertRows(missing);
             log.info(">>> [FLOW] Poll OK — date={} — DSS={} ligne(s) — écrites={} — actifs={}",
                     date, rows.size(), saved, activeSlots);
             remember("OK", "Poll OK — " + saved + " ligne(s) écrite(s), " + activeSlots + " créneau(x) actif(s)",
@@ -110,6 +131,7 @@ public class PassengerFlowPollScheduler {
             remember("FAILED", "Échec : " + ex.getMessage(), 0, 0, null);
         } finally {
             inProgress.set(false);
+            notifyStatusChanged();
         }
     }
 
@@ -146,6 +168,11 @@ public class PassengerFlowPollScheduler {
         if ("OK".equals(status) && date != null) {
             historySyncService.rememberPollSuccess(Instant.now(), date);
         }
+        notifyStatusChanged();
+    }
+
+    private void notifyStatusChanged() {
+        eventPublisher.publishEvent(new SyncStatusChangedEvent());
     }
 
     private static String formatInterval(Duration interval) {

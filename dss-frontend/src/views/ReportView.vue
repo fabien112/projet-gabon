@@ -27,14 +27,6 @@
       </div>
     </header>
 
-    <section v-if="session.superAdmin && catchUp?.catchUpNeeded" class="catchup-bar">
-      <div>
-        <p class="catchup-title">Données incomplètes</p>
-        <p class="catchup-msg">{{ catchUp.catchUpMessage }}</p>
-      </div>
-      <RouterLink v-if="session.superAdmin" class="btn-outline" to="/config?tab=sync">Rattraper</RouterLink>
-    </section>
-
     <section class="filters">
       <label class="filter-item period-item">
         <span class="label">Période</span>
@@ -50,6 +42,12 @@
           </button>
           <button type="button" class="chip" :class="{ active: isYesterday }" @click="setYesterday">
             Hier
+          </button>
+          <button type="button" class="chip" :class="{ active: isDayBeforeYesterday }" @click="setDayBeforeYesterday">
+            Avant‑hier
+          </button>
+          <button type="button" class="chip" :class="{ active: isThisWeek }" @click="setThisWeek">
+            Cette semaine
           </button>
         </div>
       </label>
@@ -107,6 +105,7 @@
       Résultat de {{ formatDate(filters.from) }} à {{ formatDate(filters.to) }}
       pour la tranche horaire {{ filters.timeFrom }} - {{ displayTimeTo }}
       · {{ selectedCameraLabel }}
+      <span v-if="liveUpdating" class="live-badge">Mise à jour…</span>
     </p>
 
     <section v-if="report" class="kpis">
@@ -202,11 +201,10 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { logoutApp } from '../api/auth'
-import { fetchCameras, fetchPersonalizedReport, fetchReportStatus } from '../api/reports'
-import { fetchSyncStatus } from '../api/sync'
+import { fetchCameras, fetchPersonalizedReport, fetchReportStatus, subscribeReportDataChanges } from '../api/reports'
 import DailyLineChart from '../components/DailyLineChart.vue'
 import WeekdayBarChart from '../components/WeekdayBarChart.vue'
 import CameraMultiSelect from '../components/CameraMultiSelect.vue'
@@ -243,11 +241,13 @@ const hourOptionsEnd = [
 const cameras = ref([])
 const report = ref(null)
 const loading = ref(false)
+const liveUpdating = ref(false)
 const exporting = ref(false)
 const error = ref('')
 const filterError = ref('')
 const dbStatus = reactive({ cameras: 0, hourlySlots: 0 })
-const catchUp = ref(null)
+
+let unsubscribeReportEvents = null
 
 const displayTimeTo = computed(() => (filters.timeTo === '24:00' ? '00:00' : filters.timeTo))
 
@@ -265,6 +265,23 @@ const isYesterday = computed(() => {
   y.setDate(y.getDate() - 1)
   const day = iso(y)
   return filters.from === day && filters.to === day
+})
+
+const isDayBeforeYesterday = computed(() => {
+  const d = new Date()
+  d.setDate(d.getDate() - 2)
+  const day = iso(d)
+  return filters.from === day && filters.to === day
+})
+
+const isThisWeek = computed(() => {
+  const now = new Date()
+  const monday = new Date(now)
+  const day = now.getDay() || 7
+  monday.setDate(now.getDate() - (day - 1))
+  const fromIso = iso(monday)
+  const toIso = iso(now)
+  return filters.from === fromIso && filters.to === toIso
 })
 
 const allCamerasSelected = computed(
@@ -343,6 +360,29 @@ function setYesterday() {
   filterError.value = ''
 }
 
+function setDayBeforeYesterday() {
+  const d = new Date()
+  d.setDate(d.getDate() - 2)
+  const day = iso(d)
+  filters.from = day
+  filters.to = day
+  filters.timeFrom = '00:00'
+  filters.timeTo = '24:00'
+  filterError.value = ''
+}
+
+function setThisWeek() {
+  const now = new Date()
+  const monday = new Date(now)
+  const day = now.getDay() || 7
+  monday.setDate(now.getDate() - (day - 1))
+  filters.from = iso(monday)
+  filters.to = iso(now)
+  filters.timeFrom = '00:00'
+  filters.timeTo = '24:00'
+  filterError.value = ''
+}
+
 async function doLogout() {
   try {
     await logoutApp()
@@ -398,20 +438,55 @@ function formatDate(isoDate) {
 
 async function refreshMeta() {
   try {
-    const [cams, status, sync] = await Promise.all([
+    const [cams, status] = await Promise.all([
       fetchCameras(),
       fetchReportStatus(),
-      fetchSyncStatus().catch(() => null),
     ])
     cameras.value = cams
     dbStatus.cameras = status.cameras
     dbStatus.hourlySlots = status.hourlySlots
-    catchUp.value = sync
     const known = new Set(cams.map((c) => c.channelId))
     const kept = selectedCameras.value.filter((id) => known.has(id)).slice(0, MAX_CAMERAS)
     selectedCameras.value = kept.length > 0 ? kept : defaultCameraSelection(cams)
   } catch (e) {
     error.value = 'Backend inaccessible. Démarrez dss-integration sur le port 8080.'
+  }
+}
+
+async function fetchReportPayload() {
+  const cams =
+    allCamerasSelected.value && cameras.value.length > 0
+      ? 'all'
+      : [...selectedCameras.value]
+  return fetchPersonalizedReport({
+    from: filters.from,
+    to: filters.to,
+    timeFrom: filters.timeFrom,
+    timeTo: filters.timeTo === '23:59' ? '24:00' : filters.timeTo,
+    cameras: cams === 'all' ? ['all'] : cams,
+    groupBy: 'Jour',
+  })
+}
+
+function periodOverlapsChange(fromDate, toDate) {
+  if (!fromDate || !toDate) return false
+  return filters.from <= toDate && fromDate <= filters.to
+}
+
+async function reloadReportSilently(payload) {
+  if (!report.value || loading.value || liveUpdating.value || !filtersValid.value) return
+  if (!periodOverlapsChange(payload?.fromDate, payload?.toDate)) return
+
+  liveUpdating.value = true
+  try {
+    report.value = await fetchReportPayload()
+    if (payload?.rowsUpserted) {
+      dbStatus.hourlySlots += payload.rowsUpserted
+    }
+  } catch {
+    // Ne pas effacer le rapport affiché en cas d'échec réseau ponctuel
+  } finally {
+    liveUpdating.value = false
   }
 }
 
@@ -423,18 +498,7 @@ async function loadReport() {
   loading.value = true
   error.value = ''
   try {
-    const cams =
-      allCamerasSelected.value && cameras.value.length > 0
-        ? 'all'
-        : [...selectedCameras.value]
-    report.value = await fetchPersonalizedReport({
-      from: filters.from,
-      to: filters.to,
-      timeFrom: filters.timeFrom,
-      timeTo: filters.timeTo === '23:59' ? '24:00' : filters.timeTo,
-      cameras: cams === 'all' ? ['all'] : cams,
-      groupBy: 'Jour',
-    })
+    report.value = await fetchReportPayload()
     await refreshMeta()
   } catch (e) {
     error.value = e?.response?.data?.message || e.message || 'Erreur chargement rapport'
@@ -449,6 +513,16 @@ onMounted(async () => {
   if (dbStatus.hourlySlots > 0) {
     await loadReport()
   }
+  unsubscribeReportEvents = subscribeReportDataChanges({
+    onDataChanged: (payload) => {
+      reloadReportSilently(payload)
+    },
+  })
+})
+
+onUnmounted(() => {
+  unsubscribeReportEvents?.()
+  unsubscribeReportEvents = null
 })
 </script>
 
@@ -742,10 +816,21 @@ h1 {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
   margin: 12px 0 0;
   color: var(--blue);
   font-size: 0.9rem;
   font-weight: 500;
+}
+
+.live-badge {
+  margin-left: auto;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #0f766e;
+  background: #ccfbf1;
+  padding: 2px 8px;
+  border-radius: 999px;
 }
 
 .info-ico {

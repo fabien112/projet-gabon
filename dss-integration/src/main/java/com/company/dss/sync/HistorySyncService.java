@@ -11,10 +11,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import com.company.dss.authentication.TokenHolder;
 import com.company.dss.camera.CameraService;
+import com.company.dss.config.DssProperties;
 import com.company.dss.exception.DssClientException;
 import com.company.dss.passengerflow.PassengerFlowClient;
 import com.company.dss.persistence.PeopleCountingSyncService;
@@ -52,6 +54,8 @@ public class HistorySyncService {
     private final SyncMetaRepository syncMetaRepository;
     private final PeopleCountingHourlyRepository hourlyRepository;
     private final CameraService cameraService;
+    private final DssProperties dssProperties;
+    private final ApplicationEventPublisher eventPublisher;
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor(r -> {
         Thread t = new Thread(r, "history-sync");
@@ -94,10 +98,48 @@ public class HistorySyncService {
                 true, "RUNNING", from, to, from, daysTotal, 0, 0,
                 "Démarrage…", startedAt, null
         ));
+        notifyStatusChanged();
         persistStart(from, to, startedAt);
 
         executor.submit(() -> runJob(from, to, daysTotal, startedAt));
         return status();
+    }
+
+    /**
+     * Synchronise automatiquement tout ce qui manque en base (jours passés + créneaux du jour).
+     */
+    public HistorySyncStatus startMissingDataSync() {
+        LocalDate today = LocalDate.now(GABON);
+        LocalDate maxInDb = hourlyRepository.findMaxSlotDate().orElse(null);
+        SyncMetaEntity meta = syncMetaRepository.findById(META_ID).orElse(null);
+        Instant lastPollAt = meta != null ? meta.getLastPollAt() : null;
+
+        CatchUpAdvisor.SyncPlan plan = CatchUpAdvisor.resolveSyncRange(
+                today,
+                maxInDb,
+                lastPollAt,
+                Instant.now(),
+                dssProperties.getStartupFullSyncDays()
+        );
+        log.info(">>> [SYNC] Données manquantes — {} ({})", plan.message(), plan.kind());
+        return start(plan.from(), plan.to());
+    }
+
+    public CatchUpAdvisor.SyncPlan pendingSyncPlan() {
+        LocalDate today = LocalDate.now(GABON);
+        LocalDate maxInDb = hourlyRepository.findMaxSlotDate().orElse(null);
+        SyncMetaEntity meta = syncMetaRepository.findById(META_ID).orElse(null);
+        Instant lastPollAt = moreRecent(
+                meta != null ? meta.getLastPollAt() : null,
+                null
+        );
+        return CatchUpAdvisor.resolveSyncRange(
+                today,
+                maxInDb,
+                lastPollAt,
+                Instant.now(),
+                dssProperties.getStartupFullSyncDays()
+        );
     }
 
     public HistorySyncStatus status() {
@@ -113,11 +155,12 @@ public class HistorySyncService {
                 meta != null ? meta.getLastPollAt() : null,
                 poll != null ? poll.lastAt() : null
         );
-        CatchUpAdvisor.Advice catchUp = CatchUpAdvisor.of(
+        CatchUpAdvisor.SyncPlan pending = CatchUpAdvisor.resolveSyncRange(
                 LocalDate.now(GABON),
                 maxInDb,
                 lastPollAt,
-                Instant.now()
+                Instant.now(),
+                dssProperties.getStartupFullSyncDays()
         );
 
         return new HistorySyncStatus(
@@ -152,12 +195,19 @@ public class HistorySyncService {
                 poll != null ? poll.lastRowsUpserted() : 0,
                 poll != null ? poll.lastActiveSlots() : 0,
                 poll != null ? poll.lastDate() : (meta != null ? meta.getLastPollDate() : null),
-                catchUp.needed(),
-                catchUp.kind(),
-                catchUp.from(),
-                catchUp.to(),
-                catchUp.message()
+                !"TODAY".equals(pending.kind()) || isStalePoll(lastPollAt),
+                pending.kind(),
+                pending.from(),
+                pending.to(),
+                pending.message()
         );
+    }
+
+    private static boolean isStalePoll(Instant lastPollAt) {
+        if (lastPollAt == null) {
+            return false;
+        }
+        return java.time.Duration.between(lastPollAt, Instant.now()).compareTo(CatchUpAdvisor.STALE_AFTER) > 0;
     }
 
     public void rememberPollSuccess(Instant at, LocalDate date) {
@@ -199,6 +249,7 @@ public class HistorySyncService {
                         "Sync du " + current + " (" + (daysDone + 1) + "/" + daysTotal + ")",
                         startedAt, null
                 ));
+                notifyStatusChanged();
 
                 List<Map<String, Object>> rows = fetchDayWithRetry(
                         current, channelIds, from, to, daysTotal, daysDone, rowsTotal, startedAt
@@ -230,6 +281,7 @@ public class HistorySyncService {
                     false, "SUCCESS", from, to, to, daysTotal, daysDone, rowsTotal,
                     msg, startedAt, finishedAt
             ));
+            notifyStatusChanged();
             persistFinish("SUCCESS", from, to, finishedAt, daysDone, rowsTotal, msg);
             log.info(">>> [SYNC] {}", msg);
         } catch (InterruptedException ie) {
@@ -240,6 +292,7 @@ public class HistorySyncService {
             log.warn(">>> [SYNC] Échec : {}", ex.getMessage());
         } finally {
             running.set(false);
+            notifyStatusChanged();
         }
     }
 
@@ -269,6 +322,7 @@ public class HistorySyncService {
                             true, "RUNNING", from, to, day, daysTotal, daysDone, rowsTotal,
                             "Session expirée — reconnexion DSS…", startedAt, null
                     ));
+                    notifyStatusChanged();
                     authenticationService.ensureLoggedIn();
                     Thread.sleep(1_000L);
                     continue;
@@ -282,6 +336,7 @@ public class HistorySyncService {
                             "DSS saturé (HTTP " + code + ") — pause " + (wait / 1000) + "s…",
                             startedAt, null
                     ));
+                    notifyStatusChanged();
                     Thread.sleep(wait);
                     continue;
                 }
@@ -319,7 +374,12 @@ public class HistorySyncService {
                 progress.get().currentDate(), daysTotal, daysDone, rowsTotal,
                 msg, startedAt, finishedAt
         ));
+        notifyStatusChanged();
         persistFinish("FAILED", from, to, finishedAt, daysDone, rowsTotal, msg);
+    }
+
+    private void notifyStatusChanged() {
+        eventPublisher.publishEvent(new SyncStatusChangedEvent());
     }
 
     private void persistStart(LocalDate from, LocalDate to, Instant startedAt) {

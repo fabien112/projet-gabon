@@ -1,7 +1,9 @@
 package com.company.dss.dto.authentication;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public record AuthCredentialsRequest(
         String mac,
         String deviceSN,
@@ -14,6 +16,8 @@ public record AuthCredentialsRequest(
         String userType,
         String secretKey,
         String secretVector,
-        String loginType
+        String loginType,
+        /** 1 = reprendre / forcer la session si le compte est déjà connecté côté DSS. */
+        String reused
 ) {
 }

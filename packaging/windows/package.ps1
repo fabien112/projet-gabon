@@ -108,7 +108,11 @@ $Iscc = $IsccCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
 
 if ($Iscc) {
     Write-Host "Inno Setup : $Iscc"
-    & $Iscc "/DAppImageDir=$AppDir" $Iss
+    # pass versioned filename to Inno Setup
+    $timeSuffix = (Get-Date).ToString('yyyyMMdd-HHmm')
+    $versionSuffix = "v$((Get-Date).ToString('yyyy.MM.dd'))-$timeSuffix"
+    $outBase = "DataExpert-Setup-$timeSuffix"
+    & $Iscc "/DAppImageDir=$AppDir" "/DAppVersion=$versionSuffix" "/DOutputBaseFilename=$outBase" $Iss
     if ($LASTEXITCODE -ne 0) { throw "ISCC a echoue" }
     Write-Host "Installeur : $(Join-Path $Out 'DataExpert-Setup.exe')"
 } else {

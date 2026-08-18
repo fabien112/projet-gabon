@@ -21,10 +21,17 @@ spring:
       hibernate:
         jdbc:
           time_zone: Africa/Libreville
+  flyway:
+    enabled: ${FLYWAY_ENABLED:false}
+    baseline-on-migrate: true
+    locations: classpath:db/migration
   h2:
     console:
       enabled: ${H2_CONSOLE:true}
       path: /h2-console
+
+# Profil postgres (SPRING_PROFILES_ACTIVE=postgres) : voir application-postgres.yml
+# — Flyway activé, ddl-auto=validate, pas de console H2
 
 dss:
   protocol: ${DSS_PROTOCOL:https}
@@ -41,6 +48,9 @@ dss:
   auto-login: ${DSS_AUTO_LOGIN:true}
   passenger-flow-poll-enabled: ${DSS_PASSENGER_FLOW_POLL_ENABLED:true}
   passenger-flow-poll-interval: ${DSS_PASSENGER_FLOW_POLL_INTERVAL:60s}
+  # Startup full sync: enable a one-time historical import when DB is empty
+  startup-full-sync-enabled: ${DSS_STARTUP_FULL_SYNC_ENABLED:false}
+  startup-full-sync-days: ${DSS_STARTUP_FULL_SYNC_DAYS:30}
 
 # Login unique partagé pour l'UI (tous les utilisateurs)
 app:

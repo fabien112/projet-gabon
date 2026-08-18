@@ -110,6 +110,46 @@ public class TokenHolder {
         log.info(">>> [LOGIN] Token DSS supprimé");
     }
 
+    public Optional<TokenSnapshot> snapshot() {
+        return currentValid().map(s -> new TokenSnapshot(
+                s.token(),
+                s.expiresAt(),
+                s.userId(),
+                s.userGroupId(),
+                s.aesSecretKey(),
+                s.aesSecretVector()
+        ));
+    }
+
+    public boolean restore(TokenSnapshot snapshot) {
+        if (snapshot == null || snapshot.token() == null || snapshot.token().isBlank()) {
+            return false;
+        }
+        if (snapshot.expiresAt() != null && Instant.now().isAfter(snapshot.expiresAt())) {
+            return false;
+        }
+        session.set(new TokenSession(
+                snapshot.token(),
+                snapshot.expiresAt() != null ? snapshot.expiresAt() : Instant.now().plusSeconds(1800),
+                snapshot.userId(),
+                snapshot.userGroupId(),
+                snapshot.aesSecretKey(),
+                snapshot.aesSecretVector()
+        ));
+        log.info(">>> [LOGIN] Session DSS restaurée depuis le disque (expire={})", snapshot.expiresAt());
+        return true;
+    }
+
+    public record TokenSnapshot(
+            String token,
+            Instant expiresAt,
+            String userId,
+            String userGroupId,
+            String aesSecretKey,
+            String aesSecretVector
+    ) {
+    }
+
     private Optional<TokenSession> currentValid() {
         TokenSession current = session.get();
         if (current == null) {

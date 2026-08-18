@@ -13,12 +13,14 @@ import com.company.dss.service.AuthenticationService;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Maintient la session DSS active via keep-alive périodique.
- * En cas d'échec (ex. token expiré côté DSS), relogin automatique si activé.
+ * Maintient la session DSS active via keep-alive + renouvellement périodique du token.
+ * Ne lâche jamais : relogin automatique en cas d'échec.
  */
 @Slf4j
 @Component
 public class TokenKeepAliveScheduler {
+
+    private static final long UPDATE_TOKEN_EVERY_N = 48;
 
     private final AuthenticationClient authenticationClient;
     private final TokenHolder tokenHolder;
@@ -41,25 +43,29 @@ public class TokenKeepAliveScheduler {
         this.dssProperties = dssProperties;
     }
 
-    @Scheduled(fixedDelayString = "${dss.keep-alive-interval:25s}")
+    @Scheduled(initialDelayString = "30s", fixedDelayString = "${dss.keep-alive-interval:25s}")
     public void sendKeepAlive() {
-        if (!tokenHolder.hasValidToken()) {
-            // Pas de session : tenter un relogin pour ne pas rester bloqué
-            if (dssProperties.isAutoLogin() && dssProperties.isConfigured()) {
-                try {
-                    authenticationService.ensureLoggedIn();
-                    log.info(">>> [KEEP-ALIVE] Relogin OK après session vide");
-                } catch (Exception ex) {
-                    log.warn(">>> [KEEP-ALIVE] Relogin impossible : {}", ex.getMessage());
-                }
-            }
+        if (!authenticationService.isSessionReady()) {
             return;
         }
+        if (!dssProperties.isAutoLogin() || !dssProperties.isConfigured()) {
+            return;
+        }
+
+        if (!tokenHolder.hasValidToken()) {
+            reloginQuietly("session vide");
+            return;
+        }
+
         long n = keepAliveCount.incrementAndGet();
         try {
-            authenticationClient.keepAlive();
-            // Keep-alive DSS prolonge la session côté serveur : on aligne l'expiration locale.
-            tokenHolder.extendExpiry(30);
+            if (n % UPDATE_TOKEN_EVERY_N == 0) {
+                authenticationClient.updateToken();
+                log.info(">>> [KEEP-ALIVE] Token DSS renouvelé (#{})", n);
+            } else {
+                authenticationClient.keepAlive();
+                tokenHolder.extendExpiry(30);
+            }
             log.info(">>> [KEEP-ALIVE] OK #{} — expire={} | MQ connected={} events={}",
                     n,
                     tokenHolder.getExpiresAt().orElse(null),
@@ -67,15 +73,23 @@ public class TokenKeepAliveScheduler {
                     mqConnectionService.capturedEventCount());
         } catch (Exception ex) {
             log.warn(">>> [KEEP-ALIVE] ÉCHEC #{} — {}", n, ex.getMessage());
-            tokenHolder.clear();
-            if (dssProperties.isAutoLogin()) {
-                try {
-                    authenticationService.ensureLoggedIn();
-                    log.info(">>> [KEEP-ALIVE] Relogin OK après échec #{}", n);
-                } catch (Exception reloginEx) {
-                    log.warn(">>> [KEEP-ALIVE] Relogin échoué après #{} : {}", n, reloginEx.getMessage());
-                }
+            try {
+                authenticationClient.updateToken();
+                tokenHolder.extendExpiry(30);
+                log.info(">>> [KEEP-ALIVE] Récupéré via updateToken après échec #{}", n);
+            } catch (Exception updateEx) {
+                tokenHolder.clear();
+                reloginQuietly("échec keep-alive #" + n);
             }
+        }
+    }
+
+    private void reloginQuietly(String reason) {
+        try {
+            authenticationService.ensureLoggedIn();
+            log.info(">>> [KEEP-ALIVE] Relogin OK ({})", reason);
+        } catch (Exception ex) {
+            log.warn(">>> [KEEP-ALIVE] Relogin impossible ({}) : {}", reason, ex.getMessage());
         }
     }
 }

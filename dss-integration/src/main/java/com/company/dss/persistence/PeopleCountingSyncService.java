@@ -14,18 +14,23 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import com.company.dss.passengerflow.CompteuseChannel;
 import com.company.dss.passengerflow.PassengerFlowClient;
+import com.company.dss.report.ReportDataChangedEvent;
 import com.company.dss.persistence.entity.CameraEntity;
 import com.company.dss.persistence.entity.PeopleCountingHourlyEntity;
 import com.company.dss.persistence.repository.CameraRepository;
 import com.company.dss.persistence.repository.PeopleCountingHourlyRepository;
 
 import lombok.RequiredArgsConstructor;
+import java.security.MessageDigest;
+import java.util.HexFormat;
+import java.time.Instant;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -41,6 +46,7 @@ public class PeopleCountingSyncService {
 
     private final CameraRepository cameraRepository;
     private final PeopleCountingHourlyRepository hourlyRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public int upsertRows(List<Map<String, Object>> rows) {
@@ -95,6 +101,9 @@ public class PeopleCountingSyncService {
                 entity.setEntries(slot.entries());
                 entity.setExits(slot.exits());
                 entity.setOccupancy(slot.occupancy());
+                entity.setRowHash(slot.rowHash());
+                entity.setLastSourceTimestamp(Instant.now());
+                entity.setFinalized(false);
                 existing.put(key, entity);
                 toSave.add(entity);
             } else if (needsUpdate(entity, slot)) {
@@ -102,13 +111,87 @@ public class PeopleCountingSyncService {
                 entity.setEntries(slot.entries());
                 entity.setExits(slot.exits());
                 entity.setOccupancy(slot.occupancy());
+                entity.setRowHash(slot.rowHash());
+                entity.setLastSourceTimestamp(Instant.now());
                 toSave.add(entity);
             }
         }
         if (!toSave.isEmpty()) {
             hourlyRepository.saveAll(toSave);
+            LocalDate minDate = null;
+            LocalDate maxDate = null;
+            for (PeopleCountingHourlyEntity entity : toSave) {
+                LocalDate slotDate = entity.getSlotDate();
+                if (minDate == null || slotDate.isBefore(minDate)) {
+                    minDate = slotDate;
+                }
+                if (maxDate == null || slotDate.isAfter(maxDate)) {
+                    maxDate = slotDate;
+                }
+            }
+            eventPublisher.publishEvent(new ReportDataChangedEvent(minDate, maxDate, toSave.size()));
         }
         return toSave.size();
+    }
+
+    /**
+     * Retourne pour chaque channelId les heures déjà présentes en base pour une date donnée.
+     */
+    @Transactional(readOnly = true)
+    public java.util.Map<String, java.util.Set<java.time.LocalTime>> existingHourStarts(
+            java.time.LocalDate date,
+            java.util.Collection<String> channelIds
+    ) {
+        java.util.Map<String, java.util.Set<java.time.LocalTime>> result = new java.util.HashMap<>();
+        if (channelIds == null || channelIds.isEmpty()) {
+            return result;
+        }
+        java.util.List<PeopleCountingHourlyEntity> entities = hourlyRepository.findForReconcile(date, date, channelIds);
+        for (PeopleCountingHourlyEntity e : entities) {
+            if (e.getCamera() == null || e.getCamera().getChannelId() == null) {
+                continue;
+            }
+            result.computeIfAbsent(e.getCamera().getChannelId(), k -> new java.util.LinkedHashSet<>())
+                    .add(e.getHourStart());
+        }
+        return result;
+    }
+
+    /**
+     * Filtre et retourne uniquement les rows correspondant à des créneaux absents
+     * en base pour la date fournie.
+     */
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> filterMissingRowsForDate(LocalDate date, List<Map<String, Object>> rows) {
+        List<Map<String, Object>> result = new ArrayList<>();
+        if (rows == null || rows.isEmpty() || date == null) {
+            return result;
+        }
+        // Collect channelIds
+        Set<String> channelIds = new LinkedHashSet<>();
+        for (Map<String, Object> row : rows) {
+            String ch = stringVal(row.get("channelId"));
+            if (StringUtils.hasText(ch)) {
+                channelIds.add(ch);
+            }
+        }
+        if (channelIds.isEmpty()) {
+            return result;
+        }
+
+        Map<String, java.util.Set<java.time.LocalTime>> existing = existingHourStarts(date, channelIds);
+
+        for (Map<String, Object> row : rows) {
+            ParsedSlot slot = parseSlot(row);
+            if (slot == null) {
+                continue;
+            }
+            java.util.Set<java.time.LocalTime> hours = existing.get(slot.channelId());
+            if (hours == null || !hours.contains(slot.hourStart())) {
+                result.add(row);
+            }
+        }
+        return result;
     }
 
     /**
@@ -182,10 +265,17 @@ public class PeopleCountingSyncService {
     }
 
     private static boolean needsUpdate(PeopleCountingHourlyEntity entity, ParsedSlot slot) {
-        return entity.getEntries() != slot.entries()
-                || entity.getExits() != slot.exits()
-                || entity.getOccupancy() != slot.occupancy()
-                || !slot.hourEnd().equals(entity.getHourEnd());
+        if (entity.isFinalized()) {
+            return false;
+        }
+        String existingHash = entity.getRowHash();
+        if (existingHash == null) {
+            return entity.getEntries() != slot.entries()
+                    || entity.getExits() != slot.exits()
+                    || entity.getOccupancy() != slot.occupancy()
+                    || !entity.getHourEnd().equals(slot.hourEnd());
+        }
+        return !existingHash.equals(slot.rowHash());
     }
 
     private static String slotKey(Long cameraId, LocalDate date, LocalTime hourStart) {
@@ -211,6 +301,8 @@ public class PeopleCountingSyncService {
         if (end.toLocalDate().isAfter(slotDate) && hourEnd.equals(LocalTime.MIDNIGHT)) {
             hourEnd = LocalTime.MIDNIGHT;
         }
+        String hash = computeHash(intVal(row.get("in")), intVal(row.get("out")), intVal(row.get("occupancy")), hourEnd);
+
         return new ParsedSlot(
                 channelId,
                 cameraName,
@@ -220,7 +312,19 @@ public class PeopleCountingSyncService {
                 intVal(row.get("in")),
                 intVal(row.get("out")),
                 intVal(row.get("occupancy"))
+                , hash
         );
+    }
+
+    private static String computeHash(int entries, int exits, int occupancy, LocalTime hourEnd) {
+        try {
+            String input = entries + ":" + exits + ":" + occupancy + ":" + hourEnd.toString();
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] digest = md.digest(input.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(digest);
+        } catch (Exception ex) {
+            return null;
+        }
     }
 
     private static String guessSite(String cameraName) {
@@ -255,7 +359,7 @@ public class PeopleCountingSyncService {
         }
     }
 
-    private record ParsedSlot(
+        private record ParsedSlot(
             String channelId,
             String cameraName,
             LocalDate slotDate,
@@ -264,6 +368,7 @@ public class PeopleCountingSyncService {
             int entries,
             int exits,
             int occupancy
+            , String rowHash
     ) {
     }
 }

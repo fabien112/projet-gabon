@@ -19,6 +19,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import com.company.dss.persistence.entity.CameraEntity;
 import com.company.dss.persistence.entity.PeopleCountingHourlyEntity;
@@ -34,11 +35,14 @@ class PeopleCountingSyncServiceTest {
     @Mock
     private PeopleCountingHourlyRepository hourlyRepository;
 
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
     private PeopleCountingSyncService service;
 
     @BeforeEach
     void setUp() {
-        service = new PeopleCountingSyncService(cameraRepository, hourlyRepository);
+        service = new PeopleCountingSyncService(cameraRepository, hourlyRepository, eventPublisher);
     }
 
     @Test

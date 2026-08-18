@@ -68,7 +68,7 @@ public class PersonalizedReportService {
 
         // Agrégation journalière — une seule passe.
         // Présence = Σin − Σout (= Σ(in−out) par caméra). Créneau unique en DB.
-        Map<LocalDate, long[]> byDay = new TreeMap<>();
+        Map<LocalDate, long[]> byDay = new TreeMap<>(Comparator.reverseOrder());
         for (PeopleCountingHourlyEntity row : rows) {
             long[] agg = byDay.computeIfAbsent(row.getSlotDate(), d -> new long[2]);
             agg[0] += Math.max(0, row.getEntries());

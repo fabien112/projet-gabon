@@ -36,6 +36,16 @@ public class DssProperties {
     private boolean passengerFlowPollEnabled = true;
     private Duration passengerFlowPollInterval = Duration.ofSeconds(60);
 
+    /** Intervalle d'exécution du job qui finalise les créneaux (ex : 60s). */
+    private Duration slotFinalizerInterval = Duration.ofSeconds(60);
+    /** Marge (en minutes) après la fin du créneau avant de le marquer finalisé. */
+    private int slotFinalizerGraceMinutes = 2;
+
+    /** Exécute une sync complète au démarrage (une seule fois) pour peupler la base. */
+    private boolean startupFullSyncEnabled = false;
+    /** Nombre de jours à synchroniser au démarrage si enabled=true. */
+    private int startupFullSyncDays = 30;
+
     public String getBaseUrl() {
         return protocol + "://" + host + ":" + port;
     }
