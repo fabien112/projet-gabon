@@ -112,19 +112,18 @@ public class PassengerFlowPollScheduler {
                     .filter(r -> ((Number) r.getOrDefault("total", 0)).intValue() > 0)
                     .count();
 
-            // Filtrer uniquement les créneaux absents en base et n'insérer que ceux-là
-            List<Map<String, Object>> missing = syncService.filterMissingRowsForDate(date, rows);
-            if (missing.isEmpty()) {
-                log.debug(">>> [FLOW] Poll OK — date={}, créneaux={}, aucun créneau manquant (pas d'écriture SQL)",
+            // Upsert complet : met à jour les créneaux existants si DSS a changé (via rowHash)
+            int saved = syncService.upsertRows(rows);
+            if (saved == 0) {
+                log.debug(">>> [FLOW] Poll OK — date={}, créneaux={}, aucune modification DSS",
                         date, rows.size());
-                remember("OK", "Poll OK — données inchangées", 0, activeSlots, date);
+                remember("OK", "Poll OK — données alignées DSS", 0, activeSlots, date);
                 return;
             }
 
-            int saved = syncService.upsertRows(missing);
             log.info(">>> [FLOW] Poll OK — date={} — DSS={} ligne(s) — écrites={} — actifs={}",
                     date, rows.size(), saved, activeSlots);
-            remember("OK", "Poll OK — " + saved + " ligne(s) écrite(s), " + activeSlots + " créneau(x) actif(s)",
+            remember("OK", "Poll OK — " + saved + " ligne(s) mise(s) à jour, " + activeSlots + " créneau(x) actif(s)",
                     saved, activeSlots, date);
         } catch (Exception ex) {
             log.warn(">>> [FLOW] Échec poll : {}", ex.getMessage());

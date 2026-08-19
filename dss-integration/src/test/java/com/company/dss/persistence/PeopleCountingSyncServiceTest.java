@@ -82,6 +82,21 @@ class PeopleCountingSyncServiceTest {
     }
 
     @Test
+    void upsertRows_updatesFinalizedSlotWhenDssChanged() {
+        CameraEntity camera = camera(4L, "1000004$1$0$0", "Entree", false);
+        PeopleCountingHourlyEntity existing = slot(camera, LocalDate.of(2026, 8, 15), LocalTime.of(10, 0), 12, 3, 9);
+        existing.setFinalized(true);
+
+        when(cameraRepository.findByChannelIdIn(anyCollection())).thenReturn(List.of(camera));
+        when(hourlyRepository.findForUpsert(anyCollection(), anyCollection())).thenReturn(List.of(existing));
+        when(hourlyRepository.saveAll(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        int saved = service.upsertRows(List.of(dssRow("1000004$1$0$0", "Entree", "2026-08-15 10:00:00", "2026-08-15 11:00:00", 20, 4, 16)));
+
+        assertThat(saved).isEqualTo(1);
+    }
+
+    @Test
     void upsertRows_doesNotRenameManualCamera() {
         CameraEntity camera = camera(4L, "1000004$1$0$0", "Nom perso", true);
         when(cameraRepository.findByChannelIdIn(anyCollection())).thenReturn(List.of(camera));

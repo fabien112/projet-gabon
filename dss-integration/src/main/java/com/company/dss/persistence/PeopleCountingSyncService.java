@@ -265,9 +265,6 @@ public class PeopleCountingSyncService {
     }
 
     private static boolean needsUpdate(PeopleCountingHourlyEntity entity, ParsedSlot slot) {
-        if (entity.isFinalized()) {
-            return false;
-        }
         String existingHash = entity.getRowHash();
         if (existingHash == null) {
             return entity.getEntries() != slot.entries()
