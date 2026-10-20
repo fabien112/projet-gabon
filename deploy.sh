@@ -110,9 +110,12 @@ resolve_images() {
 }
 
 prepare() {
+  local need_secrets="${1:-true}"
   ensure_env
   load_env
-  validate_env
+  if [[ "$need_secrets" == "true" ]]; then
+    validate_env
+  fi
   resolve_images
   require_docker
 }
@@ -129,15 +132,21 @@ publish_images() {
   echo
   echo "=== 2/4 Publication ==="
   if [[ -z "${DOCKER_REGISTRY:-}" ]]; then
+    if [[ "${PUBLISH_REQUIRED:-}" == "true" ]]; then
+      die "DOCKER_REGISTRY est vide. Exemple GHCR : DOCKER_REGISTRY=ghcr.io/fabien112"
+    fi
     echo "DOCKER_REGISTRY est vide : pas de push."
     echo "Les images locales seront déployées sur cette machine."
-    echo "Pour un registre : DOCKER_REGISTRY=docker.io/votrecompte dans .env, puis docker login."
+    echo "Pour GHCR : DOCKER_REGISTRY=ghcr.io/fabien112 dans .env, puis docker login ghcr.io."
     return 0
   fi
-  echo "Push $API_IMAGE"
+  echo "Images :"
+  echo "  $API_IMAGE"
+  echo "  $WEB_IMAGE"
+  echo "Connexion au registre (si ce n'est pas déjà fait)..."
   docker push "$API_IMAGE"
-  echo "Push $WEB_IMAGE"
   docker push "$WEB_IMAGE"
+  echo "Publication terminée."
 }
 
 pull_images() {
@@ -225,15 +234,17 @@ case "$cmd" in
     usage
     ;;
   build)
-    prepare
+    prepare false
     build_images
     ;;
   publish)
-    prepare
+    PUBLISH_REQUIRED=true
+    prepare false
+    build_images
     publish_images
     ;;
   pull)
-    prepare
+    prepare false
     pull_images
     ;;
   up|deploy)

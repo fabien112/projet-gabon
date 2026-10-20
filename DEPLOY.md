@@ -64,12 +64,25 @@ bash deploy.sh
 
 Avant le build, le script s'arrête si les mots de passe d'exemple sont encore dans `.env`.
 
-Publication vers un registre (Docker Hub, GHCR, registre privé), puis redéploiement par pull :
+Publication vers **GitHub Container Registry** :
 
 ```bash
-docker login
-# dans .env : DOCKER_REGISTRY=docker.io/votrecompte  et  IMAGE_TAG=1.0.0
-bash deploy.sh
+# Token GitHub : write:packages (build) / read:packages (VPS si images privées)
+echo TON_TOKEN | docker login ghcr.io -u fabien112 --password-stdin
+# dans .env :
+#   DOCKER_REGISTRY=ghcr.io/fabien112
+#   IMAGE_TAG=latest
+bash deploy.sh publish
+```
+
+Un workflow GitHub Actions (`.github/workflows/publish-ghcr.yml`) construit et pousse aussi les images à chaque push sur `deploy-docker-vps`.
+
+Puis sur le VPS :
+
+```bash
+echo TON_TOKEN | docker login ghcr.io -u fabien112 --password-stdin
+bash deploy.sh pull
+bash deploy.sh up
 ```
 
 Sur une autre machine qui a déjà les images dans le registre :
