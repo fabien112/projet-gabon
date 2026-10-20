@@ -1,0 +1,30 @@
+# Overrides production
+# Usage : docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# Le script deploy.sh applique déjà ces deux fichiers.
+
+services:
+  db:
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  api:
+    environment:
+      JAVA_OPTS: ${JAVA_OPTS:--Xms256m -Xmx512m}
+    deploy:
+      resources:
+        limits:
+          memory: 768M
+
+  web:
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+  pgadmin:
+    deploy:
+      resources:
+        limits:
+          memory: 256M

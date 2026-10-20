@@ -55,7 +55,12 @@ public final class H2ToPostgresMigrator {
             }
 
             Map<String, Long> counts = new LinkedHashMap<>();
-            counts.put("camera", copyCamera(h2, pg, config.dryRun()));
+            Map<String, Long> siteIdsByName = new LinkedHashMap<>();
+            boolean targetHasSites = tableExists(pg, "site");
+            if (targetHasSites) {
+                counts.put("site", copySites(h2, pg, config.dryRun(), siteIdsByName));
+            }
+            counts.put("camera", copyCamera(h2, pg, config.dryRun(), targetHasSites, siteIdsByName));
             counts.put("app_user", copyAppUser(h2, pg, config.dryRun()));
             counts.put("people_counting_hourly", copyPeopleCounting(h2, pg, config.dryRun()));
             counts.put("sync_meta", copySyncMeta(h2, pg, config.dryRun()));
@@ -201,32 +206,93 @@ public final class H2ToPostgresMigrator {
 
     private static void truncateTarget(Connection pg) throws SQLException {
         System.out.println("Vidage des tables PostgreSQL...");
+        String tables = tableExists(pg, "site")
+                ? "people_counting_hourly, app_user, camera, site, sync_meta"
+                : "people_counting_hourly, app_user, camera, sync_meta";
         try (Statement st = pg.createStatement()) {
-            st.execute("""
-                    TRUNCATE TABLE
-                        people_counting_hourly,
-                        app_user,
-                        camera,
-                        sync_meta
-                    RESTART IDENTITY CASCADE
-                    """);
+            st.execute("TRUNCATE TABLE " + tables + " RESTART IDENTITY CASCADE");
         }
     }
 
-    private static long copyCamera(Connection h2, Connection pg, boolean dryRun) throws SQLException {
+    /**
+     * Sites de la source : table {@code site} (H2 récente) ou noms distincts de l'ancienne colonne
+     * {@code camera.site}. Remplit {@code siteIdsByName} (clé en minuscules) pour lier les caméras.
+     */
+    private static long copySites(Connection h2, Connection pg, boolean dryRun, Map<String, Long> siteIdsByName)
+            throws SQLException {
+        String select;
+        if (tableExists(h2, "SITE")) {
+            select = "SELECT id, name FROM site ORDER BY id";
+        } else if (columnExists(h2, "CAMERA", "SITE")) {
+            select = """
+                    SELECT ROW_NUMBER() OVER (ORDER BY name) AS id, name FROM (
+                        SELECT DISTINCT TRIM(site) AS name FROM camera
+                        WHERE site IS NOT NULL AND TRIM(site) <> ''
+                    ) legacy
+                    """;
+        } else {
+            System.out.println("Aucun site dans la source H2.");
+            return 0;
+        }
+        String insert = "INSERT INTO site (id, name) VALUES (?, ?)";
+        return copyRows(h2, pg, dryRun, "site", select, insert, (rs, ps) -> {
+            long id = rs.getLong("id");
+            String name = rs.getString("name").trim();
+            siteIdsByName.put(name.toLowerCase(), id);
+            ps.setLong(1, id);
+            ps.setString(2, name);
+        });
+    }
+
+    /**
+     * Cible avec table {@code site} (V2 déjà appliquée) : écrit {@code site_id}.
+     * Cible V1 seule : écrit le nom dans {@code camera.site}, converti en table par Flyway V2 au démarrage.
+     */
+    private static long copyCamera(
+            Connection h2,
+            Connection pg,
+            boolean dryRun,
+            boolean targetHasSites,
+            Map<String, Long> siteIdsByName) throws SQLException {
+        String siteNameExpr;
+        String from;
+        if (columnExists(h2, "CAMERA", "SITE_ID") && tableExists(h2, "SITE")) {
+            siteNameExpr = "s.name";
+            from = "camera c LEFT JOIN site s ON s.id = c.site_id";
+        } else if (columnExists(h2, "CAMERA", "SITE")) {
+            siteNameExpr = "TRIM(c.site)";
+            from = "camera c";
+        } else {
+            siteNameExpr = "CAST(NULL AS VARCHAR(128))";
+            from = "camera c";
+        }
         String select = """
-                SELECT id, channel_id, name, site, active, manual, created_at, updated_at
-                FROM camera ORDER BY id
-                """;
+                SELECT c.id, c.channel_id, c.name, %s AS site_name, c.active, c.manual, c.created_at, c.updated_at
+                FROM %s ORDER BY c.id
+                """.formatted(siteNameExpr, from);
+        String siteColumn = targetHasSites ? "site_id" : "site";
         String insert = """
-                INSERT INTO camera (id, channel_id, name, site, active, manual, created_at, updated_at)
+                INSERT INTO camera (id, channel_id, name, %s, active, manual, created_at, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                """;
+                """.formatted(siteColumn);
         return copyRows(h2, pg, dryRun, "camera", select, insert, (rs, ps) -> {
+            String siteName = rs.getString("site_name");
+            boolean hasSite = siteName != null && !siteName.isBlank();
             ps.setLong(1, rs.getLong("id"));
             ps.setString(2, rs.getString("channel_id"));
             ps.setString(3, rs.getString("name"));
-            ps.setString(4, rs.getString("site"));
+            if (targetHasSites) {
+                Long siteId = hasSite ? siteIdsByName.get(siteName.trim().toLowerCase()) : null;
+                if (siteId == null) {
+                    ps.setNull(4, Types.BIGINT);
+                } else {
+                    ps.setLong(4, siteId);
+                }
+            } else if (hasSite) {
+                ps.setString(4, siteName.trim());
+            } else {
+                ps.setNull(4, Types.VARCHAR);
+            }
             ps.setBoolean(5, rs.getBoolean("active"));
             ps.setBoolean(6, rs.getBoolean("manual"));
             ps.setTimestamp(7, rs.getTimestamp("created_at"));
@@ -392,7 +458,9 @@ public final class H2ToPostgresMigrator {
     private static void resetSequences(Connection pg) throws SQLException {
         System.out.println("Réinitialisation des séquences PostgreSQL...");
         try (Statement st = pg.createStatement()) {
-            for (String table : new String[] { "camera", "app_user", "people_counting_hourly" }) {
+            for (String table : tableExists(pg, "site")
+                    ? new String[] { "site", "camera", "app_user", "people_counting_hourly" }
+                    : new String[] { "camera", "app_user", "people_counting_hourly" }) {
                 st.execute("""
                         SELECT setval(
                             pg_get_serial_sequence('%s', 'id'),
@@ -443,6 +511,19 @@ public final class H2ToPostgresMigrator {
         try (ResultSet rs = conn.getMetaData().getTables(null, null, other, new String[] { "TABLE" })) {
             return rs.next();
         }
+    }
+
+    private static boolean columnExists(Connection conn, String table, String column) throws SQLException {
+        for (String[] names : new String[][] {
+                { table.toUpperCase(), column.toUpperCase() },
+                { table.toLowerCase(), column.toLowerCase() } }) {
+            try (ResultSet rs = conn.getMetaData().getColumns(null, null, names[0], names[1])) {
+                if (rs.next()) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private static LocalDate readLocalDate(ResultSet rs, String column) throws SQLException {

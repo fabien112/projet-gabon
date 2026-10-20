@@ -27,12 +27,16 @@ function formatDate(isoDate) {
   return `${d}/${m}`
 }
 
+const pointsChronological = computed(() =>
+  [...props.points].sort((a, b) => String(a.date).localeCompare(String(b.date))),
+)
+
 const chartData = computed(() => ({
-  labels: props.points.map((p) => formatDate(p.date)),
+  labels: pointsChronological.value.map((p) => formatDate(p.date)),
   datasets: [
     {
       label: 'Entrées',
-      data: props.points.map((p) => p.entries),
+      data: pointsChronological.value.map((p) => p.entries),
       borderColor: '#0d9488',
       backgroundColor: 'rgba(13, 148, 136, 0.12)',
       tension: 0.3,
@@ -42,7 +46,7 @@ const chartData = computed(() => ({
     },
     {
       label: 'Sorties',
-      data: props.points.map((p) => p.exits),
+      data: pointsChronological.value.map((p) => p.exits),
       borderColor: '#7c3aed',
       backgroundColor: 'rgba(124, 58, 237, 0.12)',
       tension: 0.3,

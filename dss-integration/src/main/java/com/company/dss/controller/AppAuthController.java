@@ -2,6 +2,7 @@ package com.company.dss.controller;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +16,10 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.util.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
+
+import com.company.dss.passengerflow.PassengerFlowPollScheduler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -36,6 +41,10 @@ public class AppAuthController {
 
     private final AuthenticationManager authenticationManager;
     private final SecurityContextRepository securityContextRepository;
+
+    @Lazy
+    @Autowired
+    private PassengerFlowPollScheduler pollScheduler;
 
     public record LoginRequest(
             @NotBlank String username,
@@ -65,6 +74,7 @@ public class AppAuthController {
             payload.put("authenticated", true);
             payload.put("username", authentication.getName());
             payload.put("superAdmin", isSuperAdmin(authentication));
+            CompletableFuture.runAsync(() -> pollScheduler.pollAndLog());
             return ResponseEntity.ok(payload);
         } catch (DisabledException ex) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)

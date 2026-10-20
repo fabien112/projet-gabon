@@ -92,7 +92,7 @@ if (-not $H2BasePath -or -not (Test-Path "$H2BasePath.mv.db")) {
 
 $h2Resolved = (Resolve-Path $H2BasePath).Path
 Write-Host "Source H2 : $h2Resolved"
-Write-Host "Cible PG  : ${pgUser}@localhost:${pgPort}/${pgDb}"
+Write-Host "Cible PG  : ${pgUser}@${pgDb} (réseau Docker interne)"
 Write-Host ""
 
 Write-Host "[Prérequis]" -ForegroundColor Yellow
@@ -104,6 +104,7 @@ $confirm = Read-Host "Continuer ? (O/n)"
 if ($confirm -match "^[nN]") { exit 0 }
 
 # --- 1. PostgreSQL ---
+$migrateCompose = @("-f", "docker-compose.yml", "-f", "docker-compose.migrate-local.yml")
 if (-not $SkipDockerDb) {
     Write-Host ""
     Write-Host "[1/3] Démarrage PostgreSQL..." -ForegroundColor Yellow
@@ -111,7 +112,8 @@ if (-not $SkipDockerDb) {
         Write-Host "Docker introuvable." -ForegroundColor Red
         exit 1
     }
-    docker compose --env-file $EnvFile up -d db
+    # Ouverture temporaire 127.0.0.1:5432 pour la migration depuis l'hôte uniquement
+    docker compose --env-file $EnvFile @migrateCompose up -d db
     $deadline = (Get-Date).AddMinutes(2)
     $healthy = ""
     do {
@@ -122,19 +124,11 @@ if (-not $SkipDockerDb) {
         Write-Host "PostgreSQL non prêt. Logs : docker compose logs db" -ForegroundColor Red
         exit 1
     }
-    Write-Host "PostgreSQL OK" -ForegroundColor Green
-
-    # Exposer 5432 si pas déjà mappé (migration depuis l'hôte)
-    $mapped = docker port dss-db 5432 2>$null
-    if (-not $mapped) {
-        Write-Host "Note : Postgres n'est pas exposé sur l'hôte."
-        Write-Host "       Décommentez ports:5432 dans docker-compose.yml si la migration échoue à se connecter."
-    }
+    Write-Host "PostgreSQL OK (127.0.0.1:${pgPort} — temporaire pour migration)" -ForegroundColor Green
 } else {
     Write-Host "[1/3] PostgreSQL : -SkipDockerDb" -ForegroundColor Yellow
 }
 
-# --- 2. Migration Java ---
 Write-Host ""
 Write-Host "[2/3] Migration des données..." -ForegroundColor Yellow
 $mvnw = Join-Path $ProjectRoot "dss-integration\mvnw.cmd"
@@ -144,7 +138,7 @@ if (-not (Test-Path $mvnw)) {
 }
 
 $dryRunArg = if ($DryRun) { "--dry-run" } else { "" }
-$pgUrl = "jdbc:postgresql://localhost:${pgPort}/${pgDb}"
+$pgUrl = "jdbc:postgresql://127.0.0.1:${pgPort}/${pgDb}"
 
 Push-Location (Join-Path $ProjectRoot "dss-integration")
 try {
@@ -173,11 +167,13 @@ docker compose --env-file $EnvFile exec -T db psql -U $pgUser -d $pgDb -c `
     "SELECT 'people_counting_hourly' AS tbl, COUNT(*) AS n, MIN(slot_date)::text AS min_d, MAX(slot_date)::text AS max_d FROM people_counting_hourly UNION ALL SELECT 'camera', COUNT(*), NULL, NULL FROM camera;"
 
 if (-not $NoComposeUp) {
+    # Refermer le port 5432 : recréer db sans docker-compose.migrate-local.yml
+    docker compose --env-file $EnvFile up -d --force-recreate db
     docker compose --env-file $EnvFile up -d --build
     Write-Host ""
-    Write-Host "Migration terminée." -ForegroundColor Green
+    Write-Host "Migration terminée. PostgreSQL : réseau Docker interne uniquement (port 5432 fermé)." -ForegroundColor Green
     Write-Host "  Application : http://localhost:${webPort}/"
-    Write-Host "  pgAdmin       : http://localhost:${pgAdminPort}/"
+    Write-Host "  pgAdmin       : http://127.0.0.1:${pgAdminPort}/ (localhost)"
 } else {
     Write-Host ""
     Write-Host "Migration terminée. Lancez : docker compose up -d --build" -ForegroundColor Green

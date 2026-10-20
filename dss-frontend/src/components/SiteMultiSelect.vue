@@ -8,7 +8,7 @@
       @click="open = !open"
     >
       <span class="ms-trigger-text">{{ triggerLabel }}</span>
-      <span class="ms-caret" aria-hidden="true">▾</span>
+      <span class="ms-caret" aria-hidden="true"></span>
     </button>
 
     <div v-if="open" class="ms-panel" role="listbox" aria-multiselectable="true">
@@ -19,26 +19,27 @@
         @click="toggleAll"
       >
         <span class="ms-check" aria-hidden="true">{{ allSelected ? '✓' : '' }}</span>
-        <span>Toutes</span>
+        <span>Tous les sites</span>
       </button>
       <div class="ms-sep" />
       <button
-        v-for="cam in options"
-        :key="cam.channelId"
+        v-for="site in options"
+        :key="site.id"
         type="button"
         class="ms-option"
-        :class="{ checked: isSelected(cam.channelId), disabled: isDisabled(cam.channelId) }"
-        :disabled="isDisabled(cam.channelId)"
+        :class="{ checked: isSelected(site.id), disabled: isDisabled(site.id) }"
+        :disabled="isDisabled(site.id)"
         role="option"
-        :aria-selected="isSelected(cam.channelId)"
-        @click="toggle(cam.channelId)"
+        :aria-selected="isSelected(site.id)"
+        :title="cameraTitle(site)"
+        @click="toggle(site.id)"
       >
-        <span class="ms-check" aria-hidden="true">{{ isSelected(cam.channelId) ? '✓' : '' }}</span>
-        <span class="ms-name" :title="cam.name">{{ cam.name }}</span>
-        <span v-if="cam.site" class="ms-site">{{ cam.site }}</span>
+        <span class="ms-check" aria-hidden="true">{{ isSelected(site.id) ? '✓' : '' }}</span>
+        <span class="ms-name">{{ site.name }}</span>
+        <span class="ms-count">{{ cameraCountLabel(site) }}</span>
       </button>
-      <p v-if="options.length === 0" class="ms-empty">Aucune caméra</p>
-      <p class="ms-footer">{{ modelValue.length }}/{{ max }} sélectionnée(s)</p>
+      <p v-if="options.length === 0" class="ms-empty">Aucun site avec caméra active</p>
+      <p class="ms-footer">{{ modelValue.length }}/{{ max }} sélectionné(s)</p>
     </div>
   </div>
 </template>
@@ -47,9 +48,11 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 
 const props = defineProps({
+  /** [{ id, name, cameras: [noms] }] */
   options: { type: Array, default: () => [] },
+  /** ids de sites sélectionnés */
   modelValue: { type: Array, default: () => [] },
-  max: { type: Number, default: 3 },
+  max: { type: Number, default: 20 },
   invalid: { type: Boolean, default: false },
 })
 
@@ -62,19 +65,28 @@ const allSelected = computed(() => {
   const opts = props.options
   if (!opts.length) return false
   const selected = new Set(props.modelValue)
-  return opts.every((c) => selected.has(c.channelId))
+  return opts.every((s) => selected.has(s.id))
 })
 
 const triggerLabel = computed(() => {
   const n = props.modelValue.length
-  if (n === 0) return 'Choisir une caméra…'
-  if (allSelected.value) return `Toutes (${props.options.length})`
+  if (n === 0) return 'Choisir un site…'
+  if (allSelected.value) return `Tous les sites (${props.options.length})`
   if (n === 1) {
-    const cam = props.options.find((c) => c.channelId === props.modelValue[0])
-    return cam?.name || '1 caméra'
+    const site = props.options.find((s) => s.id === props.modelValue[0])
+    return site?.name || '1 site'
   }
-  return `${n} caméras`
+  return `${n} sites`
 })
+
+function cameraCountLabel(site) {
+  const n = site.cameras?.length || 0
+  return `${n} caméra${n > 1 ? 's' : ''}`
+}
+
+function cameraTitle(site) {
+  return (site.cameras || []).join('\n')
+}
 
 function isSelected(id) {
   return props.modelValue.includes(id)
@@ -102,7 +114,7 @@ function toggleAll() {
     setValue([])
     return
   }
-  setValue(props.options.slice(0, props.max).map((c) => c.channelId))
+  setValue(props.options.slice(0, props.max).map((s) => s.id))
 }
 
 function close() {
@@ -166,8 +178,11 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onDocPointer))
 
 .ms-caret {
   flex-shrink: 0;
-  color: var(--muted);
-  font-size: 0.75rem;
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid var(--muted);
   transition: transform 0.15s ease;
 }
 
@@ -251,7 +266,7 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onDocPointer))
   white-space: nowrap;
 }
 
-.ms-site {
+.ms-count {
   font-size: 0.72rem;
   color: var(--muted);
   font-weight: 600;

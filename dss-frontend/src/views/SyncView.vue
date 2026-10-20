@@ -2,15 +2,14 @@
   <div v-if="session.superAdmin" class="page">
     <header class="topbar">
       <div class="title-wrap">
-        <span class="logo" aria-hidden="true">🔄</span>
-        <h1>DataExpert – Configuration</h1>
+        <AppBrand subtitle="Configuration" />
       </div>
       <div class="top-actions">
-        <button type="button" class="btn-outline" :disabled="statusRefreshing" @click="refresh">
+        <button type="button" class="btn-export-solo" :disabled="statusRefreshing" @click="refresh">
           {{ statusRefreshing ? 'Actualisation…' : 'Actualiser' }}
         </button>
-        <RouterLink class="btn-outline" to="/">← Rapport</RouterLink>
-        <button type="button" class="btn-outline" @click="doLogout">Déconnexion</button>
+        <RouterLink class="text-link" to="/">Rapport</RouterLink>
+        <button type="button" class="text-link logout" @click="doLogout">Déconnexion</button>
       </div>
     </header>
 
@@ -39,6 +38,14 @@
       <button
         type="button"
         class="tab"
+        :class="{ active: tab === 'sites' }"
+        @click="tab = 'sites'"
+      >
+        Sites
+      </button>
+      <button
+        type="button"
+        class="tab"
         :class="{ active: tab === 'cameras' }"
         @click="tab = 'cameras'"
       >
@@ -63,13 +70,89 @@
       </button>
     </nav>
 
+    <section v-show="tab === 'sites'" class="panel cameras-panel">
+      <div class="cameras-head">
+        <div>
+          <h2>Sites</h2>
+          <p class="lead cameras-lead">
+            Un site regroupe une ou plusieurs caméras. Les rapports se font par site :
+            les entrées et sorties d’un site sont le total de ses caméras.
+          </p>
+        </div>
+      </div>
+
+      <form class="cam-form site-form" @submit.prevent="submitAddSite">
+        <label class="field">
+          <span class="label">Nom du site</span>
+          <input v-model="newSiteName" type="text" placeholder="Ex. Akanda" required maxlength="128" />
+        </label>
+        <button class="generate cam-add" type="submit" :disabled="addingSite">
+          {{ addingSite ? 'Ajout…' : 'Ajouter le site' }}
+        </button>
+      </form>
+      <p v-if="siteError" class="error">{{ siteError }}</p>
+      <p v-if="siteOk" class="ok-msg">{{ siteOk }}</p>
+
+      <div class="cam-table-wrap">
+        <table v-if="sites.length" class="cam-table">
+          <thead>
+            <tr>
+              <th>Site</th>
+              <th>Caméras liées</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="s in sites" :key="s.id">
+              <td>
+                <input
+                  v-if="editSiteId === s.id"
+                  v-model="editSiteName"
+                  class="inline-input"
+                  type="text"
+                  maxlength="128"
+                  @keyup.enter="saveSite(s)"
+                />
+                <strong v-else>{{ s.name }}</strong>
+              </td>
+              <td>
+                <span class="badge-mini">{{ s.cameraCount }}</span>
+                <span class="site-cams">{{ s.cameras.length ? s.cameras.join(', ') : 'Aucune caméra' }}</span>
+              </td>
+              <td class="cam-actions">
+                <template v-if="editSiteId === s.id">
+                  <button type="button" class="btn-outline" :disabled="savingSite" @click="saveSite(s)">
+                    {{ savingSite ? 'Enregistrement…' : 'Enregistrer' }}
+                  </button>
+                  <button type="button" class="btn-outline" @click="cancelSiteEdit">Annuler</button>
+                </template>
+                <template v-else>
+                  <button type="button" class="btn-outline" @click="startSiteEdit(s)">Renommer</button>
+                  <button
+                    type="button"
+                    class="btn-outline danger"
+                    :disabled="s.cameraCount > 0"
+                    :title="s.cameraCount > 0 ? 'Rattachez d’abord ses caméras à un autre site' : ''"
+                    @click="removeSite(s)"
+                  >
+                    Supprimer
+                  </button>
+                </template>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p v-else class="empty-cams">Aucun site pour le moment. Créez-en un pour pouvoir ajouter des caméras.</p>
+      </div>
+    </section>
+
     <section v-show="tab === 'cameras'" class="panel cameras-panel">
       <div class="cameras-head">
         <div>
           <h2>Caméras</h2>
           <p class="lead cameras-lead">
-            Ajoutez une caméra (identifiant DSS). Elle apparaît ensuite dans les rapports,
-            le poll automatique et la synchronisation, comme les autres.
+            Ajoutez une caméra (identifiant DSS) et rattachez-la à son site. Elle est ensuite
+            comptée dans les rapports de ce site, le poll automatique et la synchronisation.
           </p>
         </div>
         <button type="button" class="btn-outline" :disabled="discovering" @click="loadDiscover">
@@ -87,18 +170,34 @@
           <input v-model="newCam.channelId" type="text" placeholder="1000004$1$0$0" required />
         </label>
         <label class="field">
-          <span class="label">Site (optionnel)</span>
-          <input v-model="newCam.site" type="text" placeholder="Akanda" />
+          <span class="label">Site</span>
+          <select v-model="newCam.siteId" required>
+            <option :value="null" disabled>Choisir un site…</option>
+            <option v-for="s in sites" :key="s.id" :value="s.id">{{ s.name }}</option>
+          </select>
         </label>
-        <button class="generate cam-add" type="submit" :disabled="addingCam">
+        <button class="generate cam-add" type="submit" :disabled="addingCam || !newCam.siteId">
           {{ addingCam ? 'Ajout…' : 'Ajouter la caméra' }}
         </button>
       </form>
+      <p v-if="!sites.length" class="hint-msg">
+        Aucun site : créez d’abord un site dans l’onglet
+        <button type="button" class="link-btn" @click="tab = 'sites'">Sites</button>.
+      </p>
       <p v-if="camError" class="error">{{ camError }}</p>
       <p v-if="camOk" class="ok-msg">{{ camOk }}</p>
 
       <div v-if="discovered.length" class="discover-list">
-        <h3>Canaux DSS disponibles</h3>
+        <div class="discover-head">
+          <h3>Canaux DSS disponibles</h3>
+          <label class="discover-site">
+            <span class="label">Site des caméras importées</span>
+            <select v-model="discoverSiteId">
+              <option :value="null" disabled>Choisir un site…</option>
+              <option v-for="s in sites" :key="s.id" :value="s.id">{{ s.name }}</option>
+            </select>
+          </label>
+        </div>
         <ul>
           <li v-for="ch in discovered" :key="ch.channelId">
             <div class="discover-meta">
@@ -109,7 +208,8 @@
             <button
               type="button"
               class="btn-outline"
-              :disabled="ch.alreadyAdded || addingCam"
+              :disabled="ch.alreadyAdded || addingCam || !discoverSiteId"
+              :title="!ch.alreadyAdded && !discoverSiteId ? 'Choisissez d’abord le site' : ''"
               @click="addFromDiscover(ch)"
             >
               {{ ch.alreadyAdded ? 'Déjà ajoutée' : 'Ajouter' }}
@@ -136,7 +236,18 @@
                 <span v-if="cam.manual" class="badge-mini">manuelle</span>
               </td>
               <td class="mono">{{ cam.channelId }}</td>
-              <td>{{ cam.site || '—' }}</td>
+              <td>
+                <select
+                  class="inline-select"
+                  :class="{ missing: !cam.siteId }"
+                  :value="cam.siteId"
+                  :disabled="savingCamId === cam.id"
+                  @change="changeCameraSite(cam, $event.target.value)"
+                >
+                  <option v-if="!cam.siteId" :value="null" disabled selected>Sans site</option>
+                  <option v-for="s in sites" :key="s.id" :value="s.id">{{ s.name }}</option>
+                </select>
+              </td>
               <td>
                 <span class="badge" :class="cam.active ? 'ok' : 'ko'">
                   {{ cam.active ? 'Active' : 'Inactive' }}
@@ -258,17 +369,20 @@
     <div v-show="tab === 'sync'" class="layout">
       <!-- Action principale -->
       <section class="panel action-panel">
-        <h2>Synchroniser les données manquantes</h2>
+        <h2>Copie DSS (jours clos)</h2>
         <p class="lead">
-          Récupère depuis le DSS tout ce qui n'est pas encore en base
-          (jours passés après coupure + créneaux horaires manquants du jour).
+          Le jour en cours est alimenté toutes les {{ status.pollInterval || '5s' }}.
+          Les jours déjà validés ne sont plus relus. Minuit et le démarrage rattrapent
+          automatiquement jusqu’à hier. Ce bouton lance le même rattrapage si besoin.
         </p>
-        <p v-if="status.catchUpFrom && status.catchUpTo" class="pending-range">
-          Période calculée : {{ formatDate(status.catchUpFrom) }} → {{ formatDate(status.catchUpTo) }}
-          <span v-if="status.catchUpMessage" class="pending-hint">— {{ status.catchUpMessage }}</span>
+        <p v-if="status.verifiedThrough" class="pending-hint">
+          Dernier jour validé : {{ formatDate(status.verifiedThrough) }}
         </p>
-        <p v-if="status.lastCoveredDateInDb" class="pending-hint">
-          Dernier jour en base : {{ formatDate(status.lastCoveredDateInDb) }}
+        <p v-if="status.catchUpNeeded && status.catchUpFrom && status.catchUpTo" class="pending-range">
+          Jours clos à aligner : {{ formatDate(status.catchUpFrom) }} → {{ formatDate(status.catchUpTo) }}
+        </p>
+        <p v-else-if="!status.running" class="pending-hint">
+          Aucun jour clos en attente.
         </p>
 
         <button
@@ -277,7 +391,7 @@
           @click="startMissingSync"
         >
           <span v-if="status.running" class="spinner" aria-hidden="true"></span>
-          {{ status.running ? 'Synchronisation en cours…' : 'Synchroniser les données manquantes' }}
+          {{ status.running ? 'Alignement DSS en cours…' : 'Rattraper les jours clos' }}
         </button>
 
         <details class="manual-sync">
@@ -400,11 +514,11 @@
       <aside class="side-stack">
         <section class="panel side-panel poll-panel" :class="pollPanelClass">
           <div class="poll-head">
-            <h2>Poll automatique (serveur)</h2>
+            <h2>Données DSS automatiques</h2>
           </div>
           <p class="poll-lead">
-            Tourne en arrière-plan toutes les {{ status.pollInterval || '60s' }}.
-            Cette page se met à jour automatiquement quand le serveur reçoit de nouvelles données.
+            À la connexion, puis toutes les {{ status.pollInterval || '5s' }}, l’application
+            récupère le jour en cours depuis DSS. Aucune synchronisation manuelle n’est nécessaire.
           </p>
           <dl class="facts">
             <div>
@@ -468,11 +582,16 @@ import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { logoutApp } from '../api/auth'
 import { clearSession, session } from '../auth/session'
+import AppBrand from '../components/AppBrand.vue'
 import {
   addCamera,
+  createSite,
+  deleteSite,
   discoverDssCameras,
   fetchConfiguredCameras,
+  fetchSites,
   updateCamera,
+  updateSite,
 } from '../api/cameras'
 import { fetchSyncStatus, reconnectDss, startHistorySync, startMissingDataSync, compareDssDb, subscribeSyncStatus } from '../api/sync'
 import { createAppUser, deleteAppUser, fetchAppUsers, updateAppUser } from '../api/users'
@@ -502,8 +621,18 @@ const compareResult = ref(null)
 const newCam = reactive({
   name: '',
   channelId: '',
-  site: '',
+  siteId: null,
 })
+const discoverSiteId = ref(null)
+const savingCamId = ref(null)
+const sites = ref([])
+const newSiteName = ref('')
+const addingSite = ref(false)
+const savingSite = ref(false)
+const siteError = ref('')
+const siteOk = ref('')
+const editSiteId = ref(null)
+const editSiteName = ref('')
 const users = ref([])
 const addingUser = ref(false)
 const savingUser = ref(false)
@@ -539,7 +668,7 @@ const status = reactive({
   pollEnabled: true,
   pollInProgress: false,
   pollSuspended: false,
-  pollInterval: '60s',
+  pollInterval: '5s',
   pollLastAt: null,
   pollLastStatus: null,
   pollLastMessage: null,
@@ -551,6 +680,7 @@ const status = reactive({
   catchUpFrom: null,
   catchUpTo: null,
   catchUpMessage: '',
+  verifiedThrough: null,
 })
 
 let unsubscribeSyncEvents = null
@@ -699,6 +829,97 @@ async function refreshCameras() {
   cameras.value = await fetchConfiguredCameras()
 }
 
+async function refreshSites() {
+  sites.value = await fetchSites()
+  const known = new Set(sites.value.map((s) => s.id))
+  if (newCam.siteId != null && !known.has(newCam.siteId)) newCam.siteId = null
+  if (discoverSiteId.value != null && !known.has(discoverSiteId.value)) discoverSiteId.value = null
+  if (sites.value.length === 1) {
+    newCam.siteId ??= sites.value[0].id
+    discoverSiteId.value ??= sites.value[0].id
+  }
+}
+
+async function submitAddSite() {
+  siteError.value = ''
+  siteOk.value = ''
+  addingSite.value = true
+  try {
+    const created = await createSite(newSiteName.value)
+    newSiteName.value = ''
+    siteOk.value = `Site « ${created.name} » ajouté. Vous pouvez y rattacher des caméras.`
+    await refreshSites()
+  } catch (e) {
+    siteError.value = e?.response?.data?.message || e.message || 'Impossible d’ajouter le site'
+  } finally {
+    addingSite.value = false
+  }
+}
+
+function startSiteEdit(site) {
+  editSiteId.value = site.id
+  editSiteName.value = site.name
+  siteError.value = ''
+  siteOk.value = ''
+}
+
+function cancelSiteEdit() {
+  editSiteId.value = null
+  editSiteName.value = ''
+}
+
+async function saveSite(site) {
+  siteError.value = ''
+  siteOk.value = ''
+  if (!editSiteName.value.trim() || editSiteName.value.trim() === site.name) {
+    cancelSiteEdit()
+    return
+  }
+  savingSite.value = true
+  try {
+    await updateSite(site.id, editSiteName.value)
+    siteOk.value = 'Site renommé'
+    cancelSiteEdit()
+    await Promise.all([refreshSites(), refreshCameras()])
+  } catch (e) {
+    siteError.value = e?.response?.data?.message || e.message || 'Impossible de renommer le site'
+  } finally {
+    savingSite.value = false
+  }
+}
+
+async function removeSite(site) {
+  if (!window.confirm(`Supprimer le site « ${site.name} » ?`)) return
+  siteError.value = ''
+  siteOk.value = ''
+  try {
+    await deleteSite(site.id)
+    if (editSiteId.value === site.id) cancelSiteEdit()
+    siteOk.value = 'Site supprimé'
+    await refreshSites()
+  } catch (e) {
+    siteError.value = e?.response?.data?.message || e.message || 'Impossible de supprimer le site'
+  }
+}
+
+async function changeCameraSite(cam, rawSiteId) {
+  const siteId = Number(rawSiteId)
+  if (!siteId || siteId === cam.siteId) return
+  camError.value = ''
+  camOk.value = ''
+  savingCamId.value = cam.id
+  try {
+    await updateCamera(cam.id, { siteId })
+    await Promise.all([refreshCameras(), refreshSites()])
+    camOk.value = `« ${cam.name} » rattachée au site ${sites.value.find((s) => s.id === siteId)?.name || ''}.`
+  } catch (e) {
+    camError.value = e?.response?.data?.message || e.message || 'Impossible de changer le site'
+    await refreshCameras()
+  } finally {
+    savingCamId.value = null
+  }
+}
+
 async function refreshUsers() {
   users.value = await fetchAppUsers()
 }
@@ -794,22 +1015,25 @@ async function removeUser(user) {
 function resetNewCam() {
   newCam.name = ''
   newCam.channelId = ''
-  newCam.site = ''
 }
 
 async function submitAdd() {
   camError.value = ''
   camOk.value = ''
+  if (!newCam.siteId) {
+    camError.value = 'Choisissez le site de la caméra.'
+    return
+  }
   addingCam.value = true
   try {
     await addCamera({
       channelId: newCam.channelId,
       name: newCam.name,
-      site: newCam.site,
+      siteId: newCam.siteId,
     })
     resetNewCam()
-    await refreshCameras()
-    camOk.value = 'Caméra ajoutée. Elle est disponible dans les rapports. Lancez une sync pour l’historique.'
+    await Promise.all([refreshCameras(), refreshSites()])
+    camOk.value = 'Caméra ajoutée et rattachée à son site. Lancez une sync pour l’historique.'
   } catch (e) {
     camError.value = e?.response?.data?.message || e.message || 'Impossible d’ajouter la caméra'
   } finally {
@@ -820,16 +1044,21 @@ async function submitAdd() {
 async function addFromDiscover(ch) {
   camError.value = ''
   camOk.value = ''
+  if (!discoverSiteId.value) {
+    camError.value = 'Choisissez le site des caméras importées.'
+    return
+  }
   addingCam.value = true
   try {
     await addCamera({
       channelId: ch.channelId,
       name: ch.name || ch.channelId,
-      site: '',
+      siteId: discoverSiteId.value,
     })
     ch.alreadyAdded = true
-    await refreshCameras()
-    camOk.value = `« ${ch.name || ch.channelId} » ajoutée.`
+    await Promise.all([refreshCameras(), refreshSites()])
+    const siteName = sites.value.find((s) => s.id === discoverSiteId.value)?.name || ''
+    camOk.value = `« ${ch.name || ch.channelId} » ajoutée au site ${siteName}.`
   } catch (e) {
     camError.value = e?.response?.data?.message || e.message || 'Impossible d’ajouter la caméra'
   } finally {
@@ -854,7 +1083,7 @@ async function toggleActive(cam) {
   camOk.value = ''
   try {
     await updateCamera(cam.id, { active: !cam.active })
-    await refreshCameras()
+    await Promise.all([refreshCameras(), refreshSites()])
   } catch (e) {
     camError.value = e?.response?.data?.message || e.message || 'Mise à jour impossible'
   }
@@ -886,10 +1115,15 @@ onMounted(async () => {
     tab.value = 'sync'
   } else if (route.query.tab === 'users') {
     tab.value = 'users'
+  } else if (route.query.tab === 'sites') {
+    tab.value = 'sites'
   }
   await Promise.all([
     refreshCameras().catch((e) => {
       camError.value = e?.response?.data?.message || e.message || 'Impossible de charger les caméras'
+    }),
+    refreshSites().catch((e) => {
+      siteError.value = e?.response?.data?.message || e.message || 'Impossible de charger les sites'
     }),
     refreshUsers().catch((e) => {
       userError.value = e?.response?.data?.message || e.message || 'Impossible de charger les utilisateurs'
@@ -929,17 +1163,6 @@ onUnmounted(() => {
 .title-wrap {
   display: flex;
   align-items: center;
-  gap: 10px;
-}
-
-.logo {
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
-  background: var(--blue-soft, #dbeafe);
-  display: grid;
-  place-items: center;
-  font-size: 1rem;
 }
 
 h1 {
@@ -951,8 +1174,45 @@ h1 {
 
 .top-actions {
   display: flex;
-  gap: 8px;
   align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.btn-export-solo {
+  border: 1px solid var(--line, #e2e8f0);
+  background: #fff;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--ink, #0f172a);
+  cursor: pointer;
+}
+
+.btn-export-solo:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.text-link {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: #475569;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.text-link:hover {
+  color: var(--ink, #0f172a);
+}
+
+.text-link.logout {
+  color: #64748b;
 }
 
 .btn-outline {
@@ -1225,6 +1485,77 @@ h1 {
   grid-template-columns: 1fr 1fr auto;
 }
 
+.site-form {
+  grid-template-columns: minmax(0, 420px) auto;
+  justify-content: start;
+}
+
+.site-cams {
+  margin-left: 8px;
+  color: #475569;
+  font-size: 0.86rem;
+}
+
+.inline-select {
+  min-width: 140px;
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: 8px;
+  padding: 6px 8px;
+  font: inherit;
+  font-size: 0.86rem;
+  background: #fff;
+}
+
+.inline-select.missing {
+  border-color: #f97066;
+  color: #b42318;
+}
+
+.hint-msg {
+  margin: 0 0 12px;
+  color: #b45309;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.link-btn {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: var(--blue, #2563eb);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.discover-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.discover-head h3 {
+  margin: 0;
+}
+
+.discover-site {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.discover-site select {
+  min-width: 200px;
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font: inherit;
+  background: #fff;
+}
+
 .cam-add {
   width: auto;
   min-width: 180px;
@@ -1390,7 +1721,8 @@ h1 {
   color: var(--muted, #64748b);
 }
 
-.field input {
+.field input,
+.field select {
   border: 1px solid var(--line, #e2e8f0);
   border-radius: 10px;
   padding: 10px 12px;
@@ -1716,7 +2048,8 @@ h1 {
 
   .form-grid,
   .cam-form,
-  .user-form {
+  .user-form,
+  .site-form {
     grid-template-columns: 1fr;
   }
 }

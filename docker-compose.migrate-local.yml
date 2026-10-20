@@ -1,0 +1,11 @@
+# Usage PONCTUEL uniquement — migration H2 depuis la machine hôte.
+# Ne pas utiliser en production permanente.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.migrate-local.yml up -d db
+#   .\scripts\migrate-h2-to-postgres.ps1 -SkipDockerDb
+#   docker compose up -d --force-recreate db   # referme le port 5432
+
+services:
+  db:
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"

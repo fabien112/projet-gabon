@@ -8,14 +8,16 @@ public record PersonalizedReportResponse(
         ReportKpis kpis,
         List<DailyDetailRow> dailyDetails,
         List<DailyEvolutionPoint> dailyEvolution,
-        List<WeekdayDistributionRow> weekdayDistribution
+        List<WeekdayDistributionRow> weekdayDistribution,
+        List<DailyBreakdownRow> dailyBreakdown,
+        List<HourlySlotAverageRow> hourlySlotAverages
 ) {
     public record ReportFilters(
             LocalDate fromDate,
             LocalDate toDate,
             String timeFrom,
             String timeTo,
-            String camera,
+            String site,
             String groupBy
     ) {
     }
@@ -51,5 +53,69 @@ public record PersonalizedReportResponse(
             long entries,
             long exits
     ) {
+    }
+
+    /** Tous les jours calendaires de la période, avec détail par créneau horaire. */
+    public record DailyBreakdownRow(
+            LocalDate date,
+            long entries,
+            long exits,
+            long presenceEndOfSlot,
+            List<HourlySlotDetailRow> hourlySlots
+    ) {
+    }
+
+    public record HourlySlotDetailRow(
+            String hourStart,
+            String hourEnd,
+            long entries,
+            long exits,
+            long presence,
+            double averageEntries,
+            double averageExits,
+            double averagePresence,
+            List<SiteCountRow> sites
+    ) {
+        public HourlySlotDetailRow {
+            sites = sites == null ? List.of() : List.copyOf(sites);
+        }
+    }
+
+    /** Totaux d'un site (somme de ses caméras) sur une tranche (jour) ou sur la période (global). */
+    public record SiteCountRow(
+            Long siteId,
+            String siteName,
+            long entries,
+            long exits,
+            long presence,
+            double averageEntries,
+            double averageExits
+    ) {
+        public SiteCountRow(
+                Long siteId,
+                String siteName,
+                long entries,
+                long exits,
+                long presence
+        ) {
+            this(siteId, siteName, entries, exits, presence, 0, 0);
+        }
+    }
+
+    /** Moyennes par tranche sur l'ensemble des jours calendaires de la période. */
+    public record HourlySlotAverageRow(
+            String hourStart,
+            String hourEnd,
+            long totalEntries,
+            long totalExits,
+            long totalPresence,
+            double averageEntries,
+            double averageExits,
+            double averagePresence,
+            List<SiteCountRow> sites
+    ) {
+        public HourlySlotAverageRow {
+            sites = sites == null ? List.of() : List.copyOf(sites);
+        }
     }
 }

@@ -26,6 +26,7 @@ import com.company.dss.persistence.entity.CameraEntity;
 import com.company.dss.persistence.entity.PeopleCountingHourlyEntity;
 import com.company.dss.persistence.repository.CameraRepository;
 import com.company.dss.persistence.repository.PeopleCountingHourlyRepository;
+import com.company.dss.site.SiteService;
 
 import lombok.RequiredArgsConstructor;
 import java.security.MessageDigest;
@@ -47,6 +48,7 @@ public class PeopleCountingSyncService {
     private final CameraRepository cameraRepository;
     private final PeopleCountingHourlyRepository hourlyRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final SiteService siteService;
 
     @Transactional
     public int upsertRows(List<Map<String, Object>> rows) {
@@ -216,7 +218,7 @@ public class PeopleCountingSyncService {
             String name = StringUtils.hasText(channel.name()) ? channel.name() : channel.channelId();
             if (!camera.isManual()) {
                 camera.setName(name);
-                camera.setSite(guessSite(name));
+                assignGuessedSiteIfMissing(camera, name);
             } else if (!StringUtils.hasText(camera.getName())) {
                 camera.setName(name);
             }
@@ -246,7 +248,7 @@ public class PeopleCountingSyncService {
                 camera = new CameraEntity();
                 camera.setChannelId(channelId);
                 camera.setName(StringUtils.hasText(dssName) ? dssName : channelId);
-                camera.setSite(guessSite(dssName));
+                assignGuessedSiteIfMissing(camera, dssName);
                 camera.setActive(true);
                 cameras.put(channelId, camera);
                 camerasToSave.add(camera);
@@ -254,7 +256,7 @@ public class PeopleCountingSyncService {
                     && StringUtils.hasText(dssName)
                     && !dssName.equals(camera.getName())) {
                 camera.setName(dssName);
-                camera.setSite(guessSite(dssName));
+                assignGuessedSiteIfMissing(camera, dssName);
                 camerasToSave.add(camera);
             }
         }
@@ -324,7 +326,18 @@ public class PeopleCountingSyncService {
         }
     }
 
-    private static String guessSite(String cameraName) {
+    /** Caméra découverte automatiquement : rattachée au site deviné d'après son nom, sans écraser un choix existant. */
+    private void assignGuessedSiteIfMissing(CameraEntity camera, String cameraName) {
+        if (camera.getSite() != null) {
+            return;
+        }
+        String guessed = guessSite(cameraName);
+        if (guessed != null) {
+            camera.setSite(siteService.findOrCreate(guessed));
+        }
+    }
+
+    static String guessSite(String cameraName) {
         if (!StringUtils.hasText(cameraName)) {
             return null;
         }

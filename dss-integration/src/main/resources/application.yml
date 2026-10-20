@@ -47,10 +47,14 @@ dss:
   login-type: ${DSS_LOGIN_TYPE:2}
   auto-login: ${DSS_AUTO_LOGIN:true}
   passenger-flow-poll-enabled: ${DSS_PASSENGER_FLOW_POLL_ENABLED:true}
-  passenger-flow-poll-interval: ${DSS_PASSENGER_FLOW_POLL_INTERVAL:60s}
-  # Startup full sync: enable a one-time historical import when DB is empty
+  passenger-flow-poll-interval: ${DSS_PASSENGER_FLOW_POLL_INTERVAL:5s}
+  # Import historique au 1er démarrage seulement si la base est vide
   startup-full-sync-enabled: ${DSS_STARTUP_FULL_SYNC_ENABLED:false}
+  auto-missing-sync-on-startup: ${DSS_AUTO_MISSING_SYNC_ON_STARTUP:true}
   startup-full-sync-days: ${DSS_STARTUP_FULL_SYNC_DAYS:30}
+  recent-refresh-days: ${DSS_RECENT_REFRESH_DAYS:7}
+  closed-day-sync-enabled: ${DSS_CLOSED_DAY_SYNC_ENABLED:true}
+  closed-day-sync-cron: ${DSS_CLOSED_DAY_SYNC_CRON:0 5 0 * * *}
 
 # Login unique partagé pour l'UI (tous les utilisateurs)
 app:

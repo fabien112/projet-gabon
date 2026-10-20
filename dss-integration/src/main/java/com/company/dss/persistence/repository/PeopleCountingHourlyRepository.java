@@ -32,7 +32,7 @@ public interface PeopleCountingHourlyRepository extends JpaRepository<PeopleCoun
     );
 
     /**
-     * Toutes les caméras — tranche [timeFrom, timeTo) sur {@code hourStart}.
+     * Toutes les caméras — même borne horaire inclusive que {@link #findForReportByChannels}.
      * Méthode séparée de {@link #findForReportByChannels} : éviter le motif
      * {@code :flag = true OR x IN :ids} (bug de binding Hibernate / H2 → 0 ligne).
      */
@@ -41,26 +41,27 @@ public interface PeopleCountingHourlyRepository extends JpaRepository<PeopleCoun
             join fetch h.camera c
             where h.slotDate between :fromDate and :toDate
               and h.hourStart >= :timeFrom
-              and h.hourStart < :timeTo
+              and h.hourStart <= :lastHourStart
             order by h.slotDate, h.hourStart, c.name
             """)
     List<PeopleCountingHourlyEntity> findForReportAll(
             @Param("fromDate") LocalDate fromDate,
             @Param("toDate") LocalDate toDate,
             @Param("timeFrom") LocalTime timeFrom,
-            @Param("timeTo") LocalTime timeTo
+            @Param("lastHourStart") LocalTime lastHourStart
     );
 
     /**
      * Uniquement les channelIds demandés (IN).
-     * Tranche [timeFrom, timeTo) sur {@code hourStart}.
+     * Tranche inclusive sur {@code hourStart} : du premier créneau au dernier de la liste UI
+     * (ex. 09:00–11:00 → 09:00 et 10:00 ; journée complète → 00:00 à 23:00).
      */
     @Query("""
             select h from PeopleCountingHourlyEntity h
             join fetch h.camera c
             where h.slotDate between :fromDate and :toDate
               and h.hourStart >= :timeFrom
-              and h.hourStart < :timeTo
+              and h.hourStart <= :lastHourStart
               and c.channelId in :channelIds
             order by h.slotDate, h.hourStart, c.name
             """)
@@ -68,15 +69,26 @@ public interface PeopleCountingHourlyRepository extends JpaRepository<PeopleCoun
             @Param("fromDate") LocalDate fromDate,
             @Param("toDate") LocalDate toDate,
             @Param("timeFrom") LocalTime timeFrom,
-            @Param("timeTo") LocalTime timeTo,
+            @Param("lastHourStart") LocalTime lastHourStart,
             @Param("channelIds") Collection<String> channelIds
     );
 
     @Query("select max(h.slotDate) from PeopleCountingHourlyEntity h")
     Optional<LocalDate> findMaxSlotDate();
 
-        @Query("select min(h.slotDate) from PeopleCountingHourlyEntity h")
-        Optional<LocalDate> findMinSlotDate();
+    @Query("select min(h.slotDate) from PeopleCountingHourlyEntity h")
+    Optional<LocalDate> findMinSlotDate();
+
+    /** Dates distinctes ayant au moins un créneau en base (inclusives). */
+    @Query("""
+            select distinct h.slotDate from PeopleCountingHourlyEntity h
+            where h.slotDate between :fromDate and :toDate
+            order by h.slotDate
+            """)
+    List<LocalDate> findDistinctSlotDatesBetween(
+            @Param("fromDate") LocalDate fromDate,
+            @Param("toDate") LocalDate toDate
+    );
 
     @Query("""
             select h from PeopleCountingHourlyEntity h

@@ -9,5 +9,8 @@ dist-client/data/
 dist-client/*.jar
 dist-installer/
 packaging/windows/site.env
+backups/
 *.log
+packaging_log.txt
 .DS_Store
+.vscode/

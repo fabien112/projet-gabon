@@ -2,14 +2,25 @@
 #
 # Services : web (nginx + Vue) | api (Spring Boot) | db (PostgreSQL) | pgadmin
 #
+# Déploiement VPS : bash deploy.sh
+#   1. build   2. publish (si DOCKER_REGISTRY)   3. pull   4. up
+#
 # Sync DSS : intégrée au service `api` (1 seule instance — voir DEPLOY.md).
 # Ne pas scaler `api` à plusieurs replicas sans architecture worker dédiée.
 
 name: dataexpert
 
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
 x-api-environment: &api-environment
+  TZ: ${TZ:-Africa/Libreville}
   SERVER_PORT: "8080"
   SPRING_PROFILES_ACTIVE: postgres,docker
+  JAVA_OPTS: ${JAVA_OPTS:--Xms256m -Xmx512m}
   H2_CONSOLE: "false"
   FLYWAY_ENABLED: "true"
   DB_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-dss}
@@ -29,9 +40,10 @@ x-api-environment: &api-environment
   DSS_LOGIN_TYPE: ${DSS_LOGIN_TYPE:-2}
   DSS_AUTO_LOGIN: ${DSS_AUTO_LOGIN:-true}
   DSS_PASSENGER_FLOW_POLL_ENABLED: ${DSS_PASSENGER_FLOW_POLL_ENABLED:-true}
-  DSS_PASSENGER_FLOW_POLL_INTERVAL: ${DSS_PASSENGER_FLOW_POLL_INTERVAL:-60s}
+  DSS_PASSENGER_FLOW_POLL_INTERVAL: ${DSS_PASSENGER_FLOW_POLL_INTERVAL:-5s}
   DSS_STARTUP_FULL_SYNC_ENABLED: ${DSS_STARTUP_FULL_SYNC_ENABLED:-false}
   DSS_STARTUP_FULL_SYNC_DAYS: ${DSS_STARTUP_FULL_SYNC_DAYS:-30}
+  DSS_AUTO_MISSING_SYNC_ON_STARTUP: ${DSS_AUTO_MISSING_SYNC_ON_STARTUP:-true}
   DSS_LOG_LEVEL: ${DSS_LOG_LEVEL:-INFO}
   DSS_HTTP_LOG_LEVEL: ${DSS_HTTP_LOG_LEVEL:-WARN}
   APP_LOGIN_USER: ${APP_LOGIN_USER:-admin}
@@ -44,11 +56,14 @@ services:
     image: postgres:16-alpine
     container_name: dss-db
     restart: unless-stopped
+    logging: *default-logging
+    env_file: .env
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-dss}
       POSTGRES_USER: ${POSTGRES_USER:-dss_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD requis dans .env}
-      TZ: Africa/Libreville
+      TZ: ${TZ:-Africa/Libreville}
+      PGTZ: ${TZ:-Africa/Libreville}
     volumes:
       - dss_pg_data:/var/lib/postgresql/data
     networks:
@@ -59,21 +74,22 @@ services:
       timeout: 5s
       retries: 10
       start_period: 20s
-    # Exposé sur localhost pour migration H2 et outils locaux (scripts/migrate-h2-to-postgres.ps1)
-    ports:
-      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    # Pas de ports: — PostgreSQL accessible uniquement sur le réseau Docker interne (service `db`).
+    # Migration H2 ponctuelle : docker compose -f docker-compose.yml -f docker-compose.migrate-local.yml up -d db
 
   pgadmin:
     image: dpage/pgadmin4:8.14
     container_name: dss-pgadmin
     restart: unless-stopped
+    logging: *default-logging
+    env_file: .env
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@dataexpert.local}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:?PGADMIN_PASSWORD requis dans .env}
       PGADMIN_CONFIG_SERVER_MODE: "False"
       PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
     ports:
-      - "${PGADMIN_PORT:-5050}:80"
+      - "127.0.0.1:${PGADMIN_PORT:-5050}:80"
     volumes:
       - dss_pgadmin_data:/var/lib/pgadmin
       - ./docker/pgadmin/servers.json:/pgadmin4/servers.json:ro
@@ -87,11 +103,19 @@ services:
     build:
       context: ./dss-integration
       dockerfile: Dockerfile
-    image: dss-people-counting-api:0.1.0
+    image: ${API_IMAGE:-dataexpert-api:latest}
     container_name: dss-api
     restart: unless-stopped
+    init: true
+    logging: *default-logging
+    env_file: .env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       <<: *api-environment
+    volumes:
+      # Session DSS (dss-session.json) — même persistance fichier qu'en local, survit aux recréations.
+      - dss_api_data:/app/data
     depends_on:
       db:
         condition: service_healthy
@@ -104,16 +128,16 @@ services:
       retries: 8
       start_period: 90s
     # API non exposée publiquement — nginx (web) reverse-proxy /api
-    # ports:
-    #   - "${API_PORT:-8080}:8080"
 
   web:
     build:
       context: ./dss-frontend
       dockerfile: Dockerfile
-    image: dss-people-counting-web:0.1.0
+    image: ${WEB_IMAGE:-dataexpert-web:latest}
     container_name: dss-web
     restart: unless-stopped
+    logging: *default-logging
+    env_file: .env
     depends_on:
       api:
         condition: service_healthy
@@ -121,6 +145,12 @@ services:
       - "${WEB_PORT:-80}:80"
     networks:
       - dss-net
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   # --- Worker sync (optionnel, phase 2) ---
   # Même image que `api`, profil Spring `worker` : poll DSS + MQ sans HTTP public.
@@ -129,7 +159,7 @@ services:
   #
   # worker:
   #   profiles: ["worker"]
-  #   image: dss-people-counting-api:0.1.0
+  #   image: ${API_IMAGE:-dataexpert-api:latest}
   #   container_name: dss-worker
   #   restart: unless-stopped
   #   environment:
@@ -137,6 +167,8 @@ services:
   #     SPRING_PROFILES_ACTIVE: postgres,docker,worker
   #     DSS_USERNAME: ${DSS_WORKER_USERNAME}
   #     DSS_PASSWORD: ${DSS_WORKER_PASSWORD}
+  #   volumes:
+  #     - dss_worker_data:/app/data
   #   depends_on:
   #     db:
   #       condition: service_healthy
@@ -150,3 +182,4 @@ networks:
 volumes:
   dss_pg_data:
   dss_pgadmin_data:
+  dss_api_data:

@@ -106,40 +106,61 @@ public class HistorySyncService {
     }
 
     /**
-     * Synchronise automatiquement tout ce qui manque en base (jours passés + créneaux du jour).
+     * Rattrapage silencieux : jours clos après le curseur jusqu'à hier (upsert DSS).
+     * Aujourd'hui est géré par le poll. Si rien n'est dû, no-op.
      */
-    public HistorySyncStatus startMissingDataSync() {
-        LocalDate today = LocalDate.now(GABON);
-        LocalDate maxInDb = hourlyRepository.findMaxSlotDate().orElse(null);
-        SyncMetaEntity meta = syncMetaRepository.findById(META_ID).orElse(null);
-        Instant lastPollAt = meta != null ? meta.getLastPollAt() : null;
+    public HistorySyncStatus startCursorCatchUp() {
+        VerifiedCursor.Range range = pendingRange();
+        if (range.isEmpty()) {
+            log.info(">>> [SYNC] Curseur à jour (verifiedThrough={})", verifiedThrough());
+            return status();
+        }
+        log.info(">>> [SYNC] Rattrapage curseur {} → {}", range.from(), range.to());
+        return start(range.from(), range.to());
+    }
 
-        CatchUpAdvisor.SyncPlan plan = CatchUpAdvisor.resolveSyncRange(
-                today,
-                maxInDb,
-                lastPollAt,
-                Instant.now(),
-                dssProperties.getStartupFullSyncDays()
-        );
-        log.info(">>> [SYNC] Données manquantes — {} ({})", plan.message(), plan.kind());
-        return start(plan.from(), plan.to());
+    public HistorySyncStatus startMissingDataSync() {
+        return startCursorCatchUp();
+    }
+
+    public HistorySyncStatus reloadIngestWindow() {
+        return startCursorCatchUp();
+    }
+
+    public HistorySyncStatus startStartupCatchUp() {
+        return startCursorCatchUp();
     }
 
     public CatchUpAdvisor.SyncPlan pendingSyncPlan() {
-        LocalDate today = LocalDate.now(GABON);
-        LocalDate maxInDb = hourlyRepository.findMaxSlotDate().orElse(null);
-        SyncMetaEntity meta = syncMetaRepository.findById(META_ID).orElse(null);
-        Instant lastPollAt = moreRecent(
-                meta != null ? meta.getLastPollAt() : null,
-                null
+        VerifiedCursor.Range range = pendingRange();
+        if (range.isEmpty()) {
+            return new CatchUpAdvisor.SyncPlan(null, null, "OK", "Curseur à jour");
+        }
+        long days = ChronoUnit.DAYS.between(range.from(), range.to()) + 1;
+        return new CatchUpAdvisor.SyncPlan(
+                range.from(),
+                range.to(),
+                "GAP",
+                days + " jour(s) clos à aligner (" + range.from() + " → " + range.to() + ")"
         );
-        return CatchUpAdvisor.resolveSyncRange(
-                today,
-                maxInDb,
-                lastPollAt,
-                Instant.now(),
+    }
+
+    public boolean isCatchUpNeeded() {
+        return !pendingRange().isEmpty();
+    }
+
+    private VerifiedCursor.Range pendingRange() {
+        return VerifiedCursor.pending(
+                LocalDate.now(GABON),
+                verifiedThrough(),
                 dssProperties.getStartupFullSyncDays()
         );
+    }
+
+    public LocalDate verifiedThrough() {
+        return syncMetaRepository.findById(META_ID)
+                .map(SyncMetaEntity::getVerifiedThrough)
+                .orElse(null);
     }
 
     public HistorySyncStatus status() {
@@ -155,13 +176,8 @@ public class HistorySyncService {
                 meta != null ? meta.getLastPollAt() : null,
                 poll != null ? poll.lastAt() : null
         );
-        CatchUpAdvisor.SyncPlan pending = CatchUpAdvisor.resolveSyncRange(
-                LocalDate.now(GABON),
-                maxInDb,
-                lastPollAt,
-                Instant.now(),
-                dssProperties.getStartupFullSyncDays()
-        );
+        CatchUpAdvisor.SyncPlan pending = pendingSyncPlan();
+        LocalDate verified = meta != null ? meta.getVerifiedThrough() : null;
 
         return new HistorySyncStatus(
                 live.running(),
@@ -195,19 +211,19 @@ public class HistorySyncService {
                 poll != null ? poll.lastRowsUpserted() : 0,
                 poll != null ? poll.lastActiveSlots() : 0,
                 poll != null ? poll.lastDate() : (meta != null ? meta.getLastPollDate() : null),
-                !"TODAY".equals(pending.kind()) || isStalePoll(lastPollAt),
+                isCatchUpNeeded(),
                 pending.kind(),
                 pending.from(),
                 pending.to(),
-                pending.message()
+                pending.message(),
+                verified
         );
     }
 
-    private static boolean isStalePoll(Instant lastPollAt) {
-        if (lastPollAt == null) {
-            return false;
-        }
-        return java.time.Duration.between(lastPollAt, Instant.now()).compareTo(CatchUpAdvisor.STALE_AFTER) > 0;
+    public LocalDate lastPollDate() {
+        return syncMetaRepository.findById(META_ID)
+                .map(SyncMetaEntity::getLastPollDate)
+                .orElse(null);
     }
 
     public void rememberPollSuccess(Instant at, LocalDate date) {
@@ -257,6 +273,7 @@ public class HistorySyncService {
                 int saved = syncService.upsertRows(rows);
                 rowsTotal += saved;
                 daysDone++;
+                markDayVerified(current);
 
                 log.info(">>> [SYNC] {} — upsert={} — caméras={} (total lignes={})",
                         current, saved, channelIds.size(), rowsTotal);
@@ -408,11 +425,18 @@ public class HistorySyncService {
         meta.setLastMessage(message);
         meta.setLastDaysProcessed(daysDone);
         meta.setLastRowsUpserted(rows);
-        if ("SUCCESS".equals(status)) {
-            meta.setLastPollAt(finishedAt);
-            meta.setLastPollDate(to);
-        }
         syncMetaRepository.save(meta);
+    }
+
+    private void markDayVerified(LocalDate syncedDay) {
+        SyncMetaEntity meta = syncMetaRepository.findById(META_ID).orElseGet(SyncMetaEntity::new);
+        meta.setId(META_ID);
+        LocalDate next = VerifiedCursor.advance(meta.getVerifiedThrough(), syncedDay, LocalDate.now(GABON));
+        if (next != null && (meta.getVerifiedThrough() == null || !next.equals(meta.getVerifiedThrough()))) {
+            meta.setVerifiedThrough(next);
+            syncMetaRepository.save(meta);
+            log.info(">>> [SYNC] Curseur verifiedThrough={}", next);
+        }
     }
 
     @PreDestroy

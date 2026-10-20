@@ -27,8 +27,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Poll périodique People Counting → logs + upsert SQL pour le rapport personnalisé.
- * Suspendu pendant une sync historique pour éviter le rate-limit DSS (HTTP 429).
+ * Source automatique des données du jour : à la connexion DSS, puis toutes les
+ * {@code dss.passenger-flow-poll-interval}. Aucune action manuelle requise.
+ * <p>
+ * Une sync historique (bouton Config) suspend temporairement le poll pour éviter le HTTP 429.
  */
 @Slf4j
 @Component
@@ -50,7 +52,7 @@ public class PassengerFlowPollScheduler {
     private final AtomicReference<String> lastFingerprint = new AtomicReference<>("");
     private final AtomicBoolean inProgress = new AtomicBoolean(false);
     private final AtomicReference<PassengerFlowPollStatus> lastStatus =
-            new AtomicReference<>(PassengerFlowPollStatus.idle(true, "60s"));
+            new AtomicReference<>(PassengerFlowPollStatus.idle(true, "5s"));
 
     public PassengerFlowPollStatus status() {
         boolean enabled = dssProperties.isPassengerFlowPollEnabled();
@@ -70,7 +72,7 @@ public class PassengerFlowPollScheduler {
         );
     }
 
-    @Scheduled(fixedDelayString = "${dss.passenger-flow-poll-interval:60s}")
+    @Scheduled(fixedRateString = "${dss.passenger-flow-poll-interval:5s}")
     public void pollAndLog() {
         if (!dssProperties.isPassengerFlowPollEnabled()) {
             return;
@@ -104,27 +106,24 @@ public class PassengerFlowPollScheduler {
                 return;
             }
 
-            LocalDate date = passengerFlowClient.todayInGabon();
-            
+            LocalDate today = passengerFlowClient.todayInGabon();
 
-            List<Map<String, Object>> rows = passengerFlowClient.fetchHistoryForDate(date, ids);
+            List<Map<String, Object>> rows = passengerFlowClient.fetchHistoryForDate(today, ids);
             int activeSlots = (int) rows.stream()
                     .filter(r -> ((Number) r.getOrDefault("total", 0)).intValue() > 0)
                     .count();
 
-            // Upsert complet : met à jour les créneaux existants si DSS a changé (via rowHash)
             int saved = syncService.upsertRows(rows);
             if (saved == 0) {
                 log.debug(">>> [FLOW] Poll OK — date={}, créneaux={}, aucune modification DSS",
-                        date, rows.size());
-                remember("OK", "Poll OK — données alignées DSS", 0, activeSlots, date);
-                return;
+                        today, rows.size());
+                remember("OK", "Poll OK — données du jour à jour", 0, activeSlots, today);
+            } else {
+                log.info(">>> [FLOW] Poll OK — date={} — DSS={} ligne(s) — écrites={} — actifs={}",
+                        today, rows.size(), saved, activeSlots);
+                remember("OK", "Poll OK — " + saved + " ligne(s) mise(s) à jour, " + activeSlots + " créneau(x) actif(s)",
+                        saved, activeSlots, today);
             }
-
-            log.info(">>> [FLOW] Poll OK — date={} — DSS={} ligne(s) — écrites={} — actifs={}",
-                    date, rows.size(), saved, activeSlots);
-            remember("OK", "Poll OK — " + saved + " ligne(s) mise(s) à jour, " + activeSlots + " créneau(x) actif(s)",
-                    saved, activeSlots, date);
         } catch (Exception ex) {
             log.warn(">>> [FLOW] Échec poll : {}", ex.getMessage());
             remember("FAILED", "Échec : " + ex.getMessage(), 0, 0, null);
@@ -176,7 +175,7 @@ public class PassengerFlowPollScheduler {
 
     private static String formatInterval(Duration interval) {
         if (interval == null) {
-            return "60s";
+            return "5s";
         }
         long seconds = interval.toSeconds();
         if (seconds > 0 && seconds % 60 == 0) {

@@ -55,7 +55,7 @@ public class SecurityConfig {
                         ).permitAll()
                         .requestMatchers("/api/sync/status").authenticated()
                         .requestMatchers("/api/app/users/**").hasRole("SUPERADMIN")
-                        .requestMatchers("/api/cameras/**", "/api/sync/**").hasRole("SUPERADMIN")
+                        .requestMatchers("/api/cameras/**", "/api/sites/**", "/api/sync/**").hasRole("SUPERADMIN")
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().permitAll()
                 )

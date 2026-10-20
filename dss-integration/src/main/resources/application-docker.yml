@@ -1,4 +1,8 @@
 # Profil Docker : health probes + réglages conteneur
+server:
+  # Nginx (service web) termine le HTTP ; Spring doit voir le proto et l'hôte d'origine.
+  forward-headers-strategy: framework
+
 management:
   endpoint:
     health:

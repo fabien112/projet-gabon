@@ -12,10 +12,13 @@ WORKDIR /app
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/* \
-    && useradd -r -u 10001 appuser
-COPY --from=build /build/app.jar /app/app.jar
-USER appuser
+    && useradd -r -u 10001 appuser \
+    && mkdir -p /app/data \
+    && chown -R appuser:appuser /app
+COPY --from=build --chown=appuser:appuser /build/app.jar /app/app.jar
+COPY docker-entrypoint.sh /app/docker-entrypoint.sh
+RUN sed -i 's/\r$//' /app/docker-entrypoint.sh && chmod 755 /app/docker-entrypoint.sh
 EXPOSE 8080
 HEALTHCHECK --interval=15s --timeout=5s --start-period=90s --retries=8 \
     CMD curl -fsS http://localhost:8080/actuator/health/readiness || exit 1
-ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+ENTRYPOINT ["/app/docker-entrypoint.sh"]

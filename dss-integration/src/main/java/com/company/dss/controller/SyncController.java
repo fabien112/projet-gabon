@@ -51,12 +51,23 @@ public class SyncController {
     }
 
     /**
-     * Récupère tout ce qui manque en base (jours passés + créneaux du jour en cours).
+     * Recharge depuis DSS toute la fenêtre d'ingestion (jours entiers) → base locale complète.
      */
     @PostMapping("/missing")
     public ResponseEntity<?> startMissing() {
         try {
             historySyncService.startMissingDataSync();
+            return ResponseEntity.accepted().body(historySyncService.status(passengerFlowPollScheduler.status()));
+        } catch (IllegalStateException | IllegalArgumentException ex) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", ex.getMessage()));
+        }
+    }
+
+    /** Alias explicite : même comportement que {@code /missing}. */
+    @PostMapping("/ingest-window")
+    public ResponseEntity<?> reloadIngestWindow() {
+        try {
+            historySyncService.reloadIngestWindow();
             return ResponseEntity.accepted().body(historySyncService.status(passengerFlowPollScheduler.status()));
         } catch (IllegalStateException | IllegalArgumentException ex) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", ex.getMessage()));

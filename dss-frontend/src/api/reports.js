@@ -1,7 +1,8 @@
 import { api } from './http'
 
-export async function fetchCameras() {
-  const { data } = await api.get('/reports/cameras')
+/** Sites sélectionnables (au moins une caméra active) : [{ id, name, cameras: [noms] }] */
+export async function fetchReportSites() {
+  const { data } = await api.get('/reports/sites')
   return data
 }
 
@@ -11,23 +12,23 @@ export async function fetchReportStatus() {
 }
 
 export async function fetchPersonalizedReport(params) {
-  const { camera, cameras, ...rest } = params
-  // channelIds sélectionnés : CSV unique pour un filtre IN exact côté backend
-  const selected = Array.isArray(cameras)
-    ? cameras
-    : Array.isArray(camera)
-      ? camera
-      : typeof camera === 'string' && camera
-        ? camera.split(',')
+  const { site, sites, ...rest } = params
+  // ids de sites sélectionnés : CSV unique ; chaque site agrège toutes ses caméras côté backend
+  const selected = Array.isArray(sites)
+    ? sites
+    : Array.isArray(site)
+      ? site
+      : site != null && site !== ''
+        ? String(site).split(',')
         : []
   const cleaned = [...new Set(selected.map((id) => String(id).trim()).filter(Boolean))]
-  const cameraParam =
+  const siteParam =
     cleaned.length === 0 || cleaned.includes('all')
       ? 'all'
       : cleaned.join(',')
 
   const { data } = await api.get('/reports/personalized', {
-    params: { ...rest, camera: cameraParam },
+    params: { ...rest, site: siteParam },
   })
   return data
 }

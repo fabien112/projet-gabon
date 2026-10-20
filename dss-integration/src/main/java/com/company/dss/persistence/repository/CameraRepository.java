@@ -15,4 +15,6 @@ public interface CameraRepository extends JpaRepository<CameraEntity, Long> {
     List<CameraEntity> findByChannelIdIn(Collection<String> channelIds);
 
     List<CameraEntity> findByActiveTrueOrderByNameAsc();
+
+    List<CameraEntity> findBySiteId(Long siteId);
 }

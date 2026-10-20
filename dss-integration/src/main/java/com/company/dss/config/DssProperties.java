@@ -34,7 +34,7 @@ public class DssProperties {
     private boolean autoLogin = true;
     /** Poll HTTP périodique des stats People Counting (comme l'UI/Excel DSS). */
     private boolean passengerFlowPollEnabled = true;
-    private Duration passengerFlowPollInterval = Duration.ofSeconds(60);
+    private Duration passengerFlowPollInterval = Duration.ofSeconds(5);
 
     /** Intervalle d'exécution du job qui finalise les créneaux (ex : 60s). */
     private Duration slotFinalizerInterval = Duration.ofSeconds(60);
@@ -43,8 +43,15 @@ public class DssProperties {
 
     /** Exécute une sync complète au démarrage (une seule fois) pour peupler la base. */
     private boolean startupFullSyncEnabled = false;
-    /** Nombre de jours à synchroniser au démarrage si enabled=true. */
+    /** Au démarrage, lance {@code startMissingDataSync} si des jours manquent (recommandé). */
+    private boolean autoMissingSyncOnStartup = true;
+    /** Fenêtre de rattrapage : jours calendaires analysés (trous + import initial). */
     private int startupFullSyncDays = 30;
+    /** Au rattrapage / démarrage : re-sync DSS sur N derniers jours calendaires. */
+    private int recentRefreshDays = 7;
+    /** Chaque nuit (Gabon) : re-télécharge la veille entière depuis DSS. */
+    private boolean closedDaySyncEnabled = true;
+    private String closedDaySyncCron = "0 5 0 * * *";
 
     public String getBaseUrl() {
         return protocol + "://" + host + ":" + port;

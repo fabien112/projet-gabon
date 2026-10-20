@@ -57,7 +57,9 @@ chmod +x scripts/migrate-h2-to-postgres.sh
 [2/3]        H2ToPostgresMigrator (Java)
              — crée le schéma V1 si absent
              — vide les tables PG
-             — copie camera, app_user, people_counting_hourly, sync_meta
+             — copie site (si V2 déjà appliquée), camera, app_user, people_counting_hourly, sync_meta
+             — sinon écrit le nom du site dans camera.site : Flyway V2__sites.sql
+               crée la table site et relie les caméras au démarrage de l'API
              — réinitialise les séquences
      ↓
 [3/3]        Vérification SQL + docker compose up -d --build
@@ -84,6 +86,7 @@ Options : `--dry-run`, `--help`
 ```sql
 SELECT COUNT(*), MIN(slot_date), MAX(slot_date) FROM people_counting_hourly;
 SELECT COUNT(*) FROM camera;
+SELECT s.name, COUNT(c.id) FROM site s LEFT JOIN camera c ON c.site_id = s.id GROUP BY s.name;
 SELECT * FROM sync_meta;
 ```
 
@@ -99,10 +102,10 @@ curl http://localhost/api/reports/status
 | Problème | Solution |
 |----------|----------|
 | `Base H2 introuvable` | `-H2BasePath` vers le dossier contenant `dss.mv.db` |
-| Connexion PG refusée | Vérifier `docker compose ps db` et port `127.0.0.1:5432` |
+| Connexion PG refusée | Normal si port 5432 fermé — utiliser `docker-compose.migrate-local.yml` pour migration |
 | Fichier H2 verrouillé | Arrêter le JAR / toute instance Java DataExpert |
 | Counts différents H2/PG | Relancer sans `-DryRun` ; vérifier logs migrator |
-
+ 
 ---
 
 ## Archive

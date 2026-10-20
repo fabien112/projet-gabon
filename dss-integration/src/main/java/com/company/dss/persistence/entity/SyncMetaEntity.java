@@ -40,4 +40,7 @@ public class SyncMetaEntity {
     /** Dernier poll automatique réussi (survit à un arrêt du logiciel). */
     private Instant lastPollAt;
     private LocalDate lastPollDate;
+
+    /** Dernier jour calendaire clos aligné sur DSS. Les jours suivants restent à rattraper. */
+    private LocalDate verifiedThrough;
 }

@@ -38,6 +38,7 @@ public record HistorySyncStatus(
         String catchUpKind,
         LocalDate catchUpFrom,
         LocalDate catchUpTo,
-        String catchUpMessage
+        String catchUpMessage,
+        LocalDate verifiedThrough
 ) {
 }

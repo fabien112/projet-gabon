@@ -42,7 +42,7 @@ public class CameraController {
             throw new IllegalArgumentException("Corps de requête manquant");
         }
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(CameraService.toDto(cameraService.add(body.channelId(), body.name(), body.site())));
+                .body(CameraService.toDto(cameraService.add(body.channelId(), body.name(), body.siteId())));
     }
 
     @PatchMapping("/{id}")
@@ -51,7 +51,7 @@ public class CameraController {
             throw new IllegalArgumentException("Corps de requête manquant");
         }
         return ResponseEntity.ok(CameraService.toDto(
-                cameraService.update(id, body.name(), body.site(), body.active())
+                cameraService.update(id, body.name(), body.siteId(), body.active())
         ));
     }
 
@@ -61,9 +61,9 @@ public class CameraController {
         return ResponseEntity.ok(Map.of("ok", true));
     }
 
-    public record CameraUpsertRequest(String channelId, String name, String site) {
+    public record CameraUpsertRequest(String channelId, String name, Long siteId) {
     }
 
-    public record CameraPatchRequest(String name, String site, Boolean active) {
+    public record CameraPatchRequest(String name, Long siteId, Boolean active) {
     }
 }

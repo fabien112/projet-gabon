@@ -2,28 +2,29 @@
   <div class="page">
     <header class="topbar">
       <div class="title-wrap">
-        <span class="logo" aria-hidden="true">👥</span>
-        <h1>DataExpert – Rapport personnalisé</h1>
+        <AppBrand subtitle="Rapport personnalisé" />
       </div>
       <div class="top-actions">
-        <button
-          type="button"
-          class="btn-outline excel"
-          :disabled="!report || exporting"
-          @click="exportExcelReport"
-        >
-          ⤓ Exporter Excel
-        </button>
-        <button
-          type="button"
-          class="btn-outline pdf"
-          :disabled="!report || exporting"
-          @click="exportPdfReport"
-        >
-          ⤓ Exporter PDF
-        </button>
-        <RouterLink v-if="session.superAdmin" class="btn-outline" to="/config">⚙ Config</RouterLink>
-        <button type="button" class="btn-outline" @click="doLogout">Déconnexion</button>
+        <div class="export-group">
+          <button
+            type="button"
+            class="btn-export"
+            :disabled="!report || exporting"
+            @click="exportExcelReport"
+          >
+            Excel
+          </button>
+          <button
+            type="button"
+            class="btn-export"
+            :disabled="!report || exporting"
+            @click="exportPdfReport"
+          >
+            PDF
+          </button>
+        </div>
+        <RouterLink v-if="session.superAdmin" class="text-link" to="/config">Configuration</RouterLink>
+        <button type="button" class="text-link logout" @click="doLogout">Déconnexion</button>
       </div>
     </header>
 
@@ -31,7 +32,6 @@
       <label class="filter-item period-item">
         <span class="label">Période</span>
         <div class="combo">
-          <span class="combo-ico">📅</span>
           <input v-model="filters.from" type="date" :max="filters.to" @change="onPeriodChange" />
           <span class="arrow">→</span>
           <input v-model="filters.to" type="date" :min="filters.from" @change="onPeriodChange" />
@@ -55,7 +55,6 @@
       <label class="filter-item">
         <span class="label">Tranche horaire</span>
         <div class="combo">
-          <span class="combo-ico">🕒</span>
           <select v-model="filters.timeFrom" @change="onTimeChange">
             <option v-for="h in hourOptionsStart" :key="'from-' + h" :value="h">{{ h }}</option>
           </select>
@@ -74,12 +73,12 @@
       </label>
 
       <label class="filter-item">
-        <span class="label">Caméra</span>
-        <CameraMultiSelect
-          v-model="selectedCameras"
-          :options="cameras"
-          :max="MAX_CAMERAS"
-          :invalid="!cameraSelectionValid"
+        <span class="label">Site</span>
+        <SiteMultiSelect
+          v-model="selectedSites"
+          :options="sites"
+          :max="MAX_SITES"
+          :invalid="!siteSelectionValid"
         />
       </label>
 
@@ -100,17 +99,34 @@
       Recherche des données en cours…
     </div>
 
+    <nav v-if="report" class="report-tabs" aria-label="Vues du rapport">
+      <button
+        type="button"
+        class="tab"
+        :class="{ active: reportTab === 'summary' }"
+        @click="reportTab = 'summary'"
+      >
+        Synthèse
+      </button>
+      <button
+        type="button"
+        class="tab"
+        :class="{ active: reportTab === 'detail' }"
+        @click="reportTab = 'detail'"
+      >
+        Détail par jour et tranches
+      </button>
+    </nav>
+
     <p v-if="report" class="result-banner">
-      <span class="info-ico">ℹ</span>
       Résultat de {{ formatDate(filters.from) }} à {{ formatDate(filters.to) }}
       pour la tranche horaire {{ filters.timeFrom }} - {{ displayTimeTo }}
-      · {{ selectedCameraLabel }}
+      · {{ selectedSiteLabel }}
       <span v-if="liveUpdating" class="live-badge">Mise à jour…</span>
     </p>
 
     <section v-if="report" class="kpis">
       <article class="kpi entries">
-        <div class="kpi-ico">🚪↑</div>
         <div>
           <p class="kpi-title">Total Entrées</p>
           <strong>{{ formatNumber(report.kpis.totalEntries) }}</strong>
@@ -118,7 +134,6 @@
         </div>
       </article>
       <article class="kpi exits">
-        <div class="kpi-ico">🚪↓</div>
         <div>
           <p class="kpi-title">Total Sorties</p>
           <strong>{{ formatNumber(report.kpis.totalExits) }}</strong>
@@ -126,7 +141,6 @@
         </div>
       </article>
       <article class="kpi presence">
-        <div class="kpi-ico">👥</div>
         <div>
           <p class="kpi-title">Présence moyenne</p>
           <strong>{{ formatNumber(report.kpis.averageDailyPresence) }}</strong>
@@ -140,40 +154,7 @@
       </article>
     </section>
 
-    <section v-if="report" class="grid">
-      <div class="panel table-panel">
-        <h2>Détail par jour ({{ filters.timeFrom }} - {{ displayTimeTo }})</h2>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Entrées</th>
-                <th>Sorties</th>
-                <th>Présence (fin tranche)</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="row in report.dailyDetails" :key="row.date">
-                <td>{{ formatDate(row.date) }}</td>
-                <td class="c-entries">{{ formatNumber(row.entries) }}</td>
-                <td class="c-exits">{{ formatNumber(row.exits) }}</td>
-                <td class="c-presence">{{ formatSigned(row.presenceEndOfSlot) }}</td>
-              </tr>
-            </tbody>
-            <tfoot>
-              <tr>
-                <td>Total période</td>
-                <td class="c-entries">{{ formatNumber(report.kpis.totalEntries) }}</td>
-                <td class="c-exits">{{ formatNumber(report.kpis.totalExits) }}</td>
-                <td class="c-presence">{{ formatSigned(report.kpis.netPresence) }}</td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-        <p class="footnote">Nombre de jours : {{ report.kpis.dayCount }}</p>
-      </div>
-
+    <section v-if="report && reportTab === 'summary'" class="summary">
       <div class="charts">
         <div class="panel chart-panel">
           <h2>Évolution quotidienne ({{ filters.timeFrom }} - {{ displayTimeTo }})</h2>
@@ -184,9 +165,63 @@
           <WeekdayBarChart :rows="report.weekdayDistribution" />
         </div>
       </div>
+
+      <div class="panel details-collapse" :class="{ open: summaryDetailsOpen }">
+        <button
+          type="button"
+          class="details-head"
+          :aria-expanded="summaryDetailsOpen"
+          @click="summaryDetailsOpen = !summaryDetailsOpen"
+        >
+          <span class="details-chevron" aria-hidden="true"></span>
+          <span>
+            Détail par jour ({{ filters.timeFrom }} - {{ displayTimeTo }})
+            <small>{{ report.kpis.dayCount }} jour(s)</small>
+          </span>
+        </button>
+        <div v-show="summaryDetailsOpen" class="details-body">
+          <div class="table-wrap table-wrap-full">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Entrées</th>
+                  <th>Sorties</th>
+                  <th>Présence (fin tranche)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="row in dailyDetailsSorted" :key="row.date">
+                  <td>{{ formatDate(row.date) }}</td>
+                  <td class="c-entries">{{ formatNumber(row.entries) }}</td>
+                  <td class="c-exits">{{ formatNumber(row.exits) }}</td>
+                  <td class="c-presence">{{ formatSigned(row.presenceEndOfSlot) }}</td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td>Total période</td>
+                  <td class="c-entries">{{ formatNumber(report.kpis.totalEntries) }}</td>
+                  <td class="c-exits">{{ formatNumber(report.kpis.totalExits) }}</td>
+                  <td class="c-presence">{{ formatSigned(report.kpis.netPresence) }}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
     </section>
 
-    <p v-else-if="!loading && !error" class="empty">
+    <section v-else-if="report && reportTab === 'detail'" class="detail-section">
+      <ReportDailyBreakdown
+        :daily-breakdown="report.dailyBreakdown || []"
+        :hourly-slot-averages="report.hourlySlotAverages || []"
+        :kpis="report.kpis"
+        :time-label="`${filters.timeFrom} - ${displayTimeTo}`"
+      />
+    </section>
+
+    <p v-if="!report && !loading && !error" class="empty">
       Choisissez une période puis cliquez sur « Explorer ».
     </p>
 
@@ -204,14 +239,17 @@
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { logoutApp } from '../api/auth'
-import { fetchCameras, fetchPersonalizedReport, fetchReportStatus, subscribeReportDataChanges } from '../api/reports'
+import { fetchPersonalizedReport, fetchReportSites, fetchReportStatus, subscribeReportDataChanges } from '../api/reports'
 import DailyLineChart from '../components/DailyLineChart.vue'
 import WeekdayBarChart from '../components/WeekdayBarChart.vue'
-import CameraMultiSelect from '../components/CameraMultiSelect.vue'
-import { exportExcel, exportPdf } from '../utils/exportReport'
+import SiteMultiSelect from '../components/SiteMultiSelect.vue'
+import ReportDailyBreakdown from '../components/ReportDailyBreakdown.vue'
+import AppBrand from '../components/AppBrand.vue'
+import { exportExcel, exportExcelDetail, exportPdf, exportPdfDetail } from '../utils/exportReport'
+import { sortDaysNewestFirst } from '../utils/sortReportDays'
 import { clearSession, session } from '../auth/session'
 
-const MAX_CAMERAS = 20
+const MAX_SITES = 20
 
 const today = new Date()
 const router = useRouter()
@@ -230,7 +268,7 @@ const filters = reactive({
   groupBy: 'Jour',
 })
 
-const selectedCameras = ref([])
+const selectedSites = ref([])
 
 const hourOptionsStart = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`)
 const hourOptionsEnd = [
@@ -238,21 +276,27 @@ const hourOptionsEnd = [
   '24:00',
 ]
 
-const cameras = ref([])
+const sites = ref([])
 const report = ref(null)
+const reportTab = ref('summary')
+const summaryDetailsOpen = ref(false)
+
+const dailyDetailsSorted = computed(() =>
+  report.value?.dailyDetails ? sortDaysNewestFirst(report.value.dailyDetails) : [],
+)
 const loading = ref(false)
 const liveUpdating = ref(false)
 const exporting = ref(false)
 const error = ref('')
 const filterError = ref('')
-const dbStatus = reactive({ cameras: 0, hourlySlots: 0 })
+const dbStatus = reactive({ sites: 0, cameras: 0, hourlySlots: 0 })
 
 let unsubscribeReportEvents = null
 
 const displayTimeTo = computed(() => (filters.timeTo === '24:00' ? '00:00' : filters.timeTo))
 
-const cameraSelectionValid = computed(
-  () => selectedCameras.value.length >= 1 && selectedCameras.value.length <= MAX_CAMERAS,
+const siteSelectionValid = computed(
+  () => selectedSites.value.length >= 1 && selectedSites.value.length <= MAX_SITES,
 )
 
 const isToday = computed(() => {
@@ -284,27 +328,27 @@ const isThisWeek = computed(() => {
   return filters.from === fromIso && filters.to === toIso
 })
 
-const allCamerasSelected = computed(
+const allSitesSelected = computed(
   () =>
-    cameras.value.length > 0 &&
-    selectedCameras.value.length === cameras.value.length &&
-    cameras.value.every((c) => selectedCameras.value.includes(c.channelId)),
+    sites.value.length > 0 &&
+    selectedSites.value.length === sites.value.length &&
+    sites.value.every((s) => selectedSites.value.includes(s.id)),
 )
 
-const selectedCameraLabel = computed(() => {
-  const names = selectedCameras.value.map(
-    (id) => cameras.value.find((c) => c.channelId === id)?.name || id,
+const selectedSiteLabel = computed(() => {
+  const names = selectedSites.value.map(
+    (id) => sites.value.find((s) => s.id === id)?.name || id,
   )
-  if (names.length === 0) return 'Aucune caméra'
-  if (allCamerasSelected.value) return `Toutes les caméras (${names.length})`
-  if (names.length === 1) return `Caméra : ${names[0]}`
-  return `${names.length} caméras : ${names.join(', ')}`
+  if (names.length === 0) return 'Aucun site'
+  if (allSitesSelected.value) return `Tous les sites (${names.length})`
+  if (names.length === 1) return `Site : ${names[0]}`
+  return `${names.length} sites : ${names.join(', ')}`
 })
 
 const filtersValid = computed(() => {
   if (!filters.from || !filters.to || !filters.timeFrom || !filters.timeTo) return false
   if (filters.to < filters.from) return false
-  if (!cameraSelectionValid.value) return false
+  if (!siteSelectionValid.value) return false
   return timeToMinutes(filters.timeTo) > timeToMinutes(filters.timeFrom)
 })
 
@@ -318,9 +362,9 @@ function isTimeToAllowed(value) {
   return timeToMinutes(value) > timeToMinutes(filters.timeFrom)
 }
 
-function defaultCameraSelection(cams) {
-  if (!cams?.length) return []
-  return cams.slice(0, MAX_CAMERAS).map((c) => c.channelId)
+function defaultSiteSelection(list) {
+  if (!list?.length) return []
+  return list.slice(0, MAX_SITES).map((s) => s.id)
 }
 
 function onPeriodChange() {
@@ -403,8 +447,8 @@ async function runExport(kind, exporter) {
   try {
     await exporter({
       report: report.value,
-      filters: { ...filters, cameras: [...selectedCameras.value] },
-      cameras: cameras.value,
+      filters: { ...filters, sites: [...selectedSites.value] },
+      sites: sites.value,
     })
   } catch (e) {
     error.value = e?.message || `Échec de l'export ${kind}.`
@@ -414,11 +458,11 @@ async function runExport(kind, exporter) {
 }
 
 function exportExcelReport() {
-  return runExport('Excel', exportExcel)
+  return runExport('Excel', reportTab.value === 'detail' ? exportExcelDetail : exportExcel)
 }
 
 function exportPdfReport() {
-  return runExport('PDF', exportPdf)
+  return runExport('PDF', reportTab.value === 'detail' ? exportPdfDetail : exportPdf)
 }
 
 function formatNumber(n) {
@@ -438,32 +482,33 @@ function formatDate(isoDate) {
 
 async function refreshMeta() {
   try {
-    const [cams, status] = await Promise.all([
-      fetchCameras(),
+    const [siteList, status] = await Promise.all([
+      fetchReportSites(),
       fetchReportStatus(),
     ])
-    cameras.value = cams
+    sites.value = siteList
+    dbStatus.sites = status.sites
     dbStatus.cameras = status.cameras
     dbStatus.hourlySlots = status.hourlySlots
-    const known = new Set(cams.map((c) => c.channelId))
-    const kept = selectedCameras.value.filter((id) => known.has(id)).slice(0, MAX_CAMERAS)
-    selectedCameras.value = kept.length > 0 ? kept : defaultCameraSelection(cams)
+    const known = new Set(siteList.map((s) => s.id))
+    const kept = selectedSites.value.filter((id) => known.has(id)).slice(0, MAX_SITES)
+    selectedSites.value = kept.length > 0 ? kept : defaultSiteSelection(siteList)
   } catch (e) {
     error.value = 'Backend inaccessible. Démarrez dss-integration sur le port 8080.'
   }
 }
 
 async function fetchReportPayload() {
-  const cams =
-    allCamerasSelected.value && cameras.value.length > 0
-      ? 'all'
-      : [...selectedCameras.value]
+  const selection =
+    allSitesSelected.value && sites.value.length > 0
+      ? ['all']
+      : [...selectedSites.value]
   return fetchPersonalizedReport({
     from: filters.from,
     to: filters.to,
     timeFrom: filters.timeFrom,
     timeTo: filters.timeTo === '23:59' ? '24:00' : filters.timeTo,
-    cameras: cams === 'all' ? ['all'] : cams,
+    sites: selection,
     groupBy: 'Jour',
   })
 }
@@ -491,8 +536,8 @@ async function reloadReportSilently(payload) {
 }
 
 async function loadReport() {
-  if (!cameraSelectionValid.value) {
-    filterError.value = 'Sélectionnez entre 1 et 3 caméra(s).'
+  if (!siteSelectionValid.value) {
+    filterError.value = `Sélectionnez entre 1 et ${MAX_SITES} site(s).`
     return
   }
   loading.value = true
@@ -572,17 +617,6 @@ onUnmounted(() => {
 .title-wrap {
   display: flex;
   align-items: center;
-  gap: 10px;
-}
-
-.logo {
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
-  background: var(--blue-soft);
-  display: grid;
-  place-items: center;
-  font-size: 1rem;
 }
 
 h1 {
@@ -594,8 +628,61 @@ h1 {
 
 .top-actions {
   display: flex;
-  gap: 8px;
   align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.export-group {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.btn-export {
+  border: 0;
+  border-right: 1px solid var(--line);
+  background: #fff;
+  padding: 8px 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.btn-export:last-child {
+  border-right: 0;
+}
+
+.btn-export:hover:not(:disabled) {
+  background: #f8fafc;
+}
+
+.btn-export:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.text-link {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: #475569;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.text-link:hover {
+  color: var(--ink);
+}
+
+.text-link.logout {
+  color: #64748b;
 }
 
 .btn-outline,
@@ -611,14 +698,6 @@ h1 {
   color: inherit;
   display: inline-flex;
   align-items: center;
-}
-
-.btn-outline.excel {
-  color: var(--green);
-}
-
-.btn-outline.pdf {
-  color: #dc2626;
 }
 
 .btn-outline:disabled {
@@ -681,7 +760,7 @@ h1 {
 
 .combo {
   display: grid;
-  grid-template-columns: auto 1fr auto 1fr;
+  grid-template-columns: 1fr auto 1fr;
   gap: 6px;
   align-items: center;
   background: #fff;
@@ -690,11 +769,6 @@ h1 {
   padding: 0 8px;
   height: 44px;
   box-sizing: border-box;
-}
-
-.combo-ico {
-  font-size: 0.85rem;
-  opacity: 0.8;
 }
 
 .arrow {
@@ -833,16 +907,40 @@ h1 {
   border-radius: 999px;
 }
 
-.info-ico {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: var(--blue-soft);
-  color: var(--blue);
-  display: grid;
-  place-items: center;
-  font-size: 0.75rem;
+.report-tabs {
+  display: flex;
+  width: 100%;
+  gap: 0;
+  margin-top: 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: var(--shadow);
+}
+
+.report-tabs .tab {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  border-right: 1px solid var(--line);
+  background: #fff;
+  border-radius: 0;
+  padding: 12px 10px;
   font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+  color: var(--muted);
+  text-align: center;
+}
+
+.report-tabs .tab:last-child {
+  border-right: 0;
+}
+
+.report-tabs .tab.active {
+  background: #0f172a;
+  color: #fff;
 }
 
 .kpis {
@@ -853,24 +951,11 @@ h1 {
 }
 
 .kpi {
-  display: flex;
-  gap: 12px;
-  align-items: center;
   border-radius: var(--radius);
   border: 1px solid var(--line);
   padding: 14px 16px;
   background: #fff;
   box-shadow: var(--shadow);
-}
-
-.kpi-ico {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  display: grid;
-  place-items: center;
-  background: #fff;
-  flex-shrink: 0;
 }
 
 .kpi-title {
@@ -932,6 +1017,74 @@ h1 {
   gap: 14px;
 }
 
+.summary {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.summary .charts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.details-collapse {
+  width: 100%;
+  padding: 0;
+  overflow: hidden;
+}
+
+.details-head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 0;
+  background: #f8fafc;
+  cursor: pointer;
+  text-align: left;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--ink);
+}
+
+.details-head small {
+  margin-left: 8px;
+  font-weight: 600;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.details-collapse.open .details-head {
+  border-bottom: 1px solid var(--line);
+}
+
+.details-chevron {
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--muted);
+  border-bottom: 2px solid var(--muted);
+  transform: rotate(-45deg);
+  transition: transform 0.15s ease;
+  flex-shrink: 0;
+  margin-top: -2px;
+}
+
+.details-collapse.open .details-chevron {
+  transform: rotate(45deg);
+  margin-top: 2px;
+}
+
+.details-body {
+  padding: 12px 16px 16px;
+}
+
+.table-wrap-full {
+  max-height: none;
+}
+
 .panel {
   background: #fff;
   border: 1px solid var(--line);
@@ -940,9 +1093,11 @@ h1 {
   padding: 14px 16px;
 }
 
-.panel h2 {
+.panel h2,
+.panel h3 {
   margin: 0 0 12px;
-  font-size: 0.98rem;
+  font-size: 0.95rem;
+  font-weight: 600;
   color: var(--ink);
 }
 
@@ -1023,7 +1178,8 @@ tfoot td {
 @media (max-width: 1100px) {
   .filters,
   .kpis,
-  .grid {
+  .grid,
+  .summary .charts {
     grid-template-columns: 1fr;
   }
 

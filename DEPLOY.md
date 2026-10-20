@@ -34,42 +34,88 @@
 |---------|------|-------------|
 | **web** | Frontend Vue + reverse-proxy nginx | `WEB_PORT` (80) |
 | **api** | Backend Spring Boot + sync DSS | interne uniquement |
-| **db** | PostgreSQL 16 + Flyway | interne (optionnel 5432) |
-| **pgadmin** | Administration PostgreSQL | `PGADMIN_PORT` (5050) |
+| **db** | PostgreSQL 16 + Flyway | **interne uniquement** (pas de port hôte) |
+| **pgadmin** | Administration PostgreSQL | `127.0.0.1:5050` (localhost) |
 
 ### Prérequis
 
-- Docker Engine 24+ ou Docker Desktop
+- Docker Engine 24+ (plugin Compose v2)
+- Environ 2 Go de RAM libres le temps de construire les images
 - Accès réseau au serveur DSS (`DSS_HOST`, ex. `192.168.10.21`)
 
-### Installation
+### Installation sur le VPS
 
-```powershell
-cd DAHUA
-copy .env.example .env
-# Éditer .env : POSTGRES_PASSWORD, PGADMIN_PASSWORD, DSS_*, APP_*
+Prérequis : Docker Engine 24+ et le plugin Compose v2. Le VPS doit joindre le serveur DSS (`DSS_HOST`).
 
-docker compose up -d --build
+```bash
+git clone <url-du-depot> dataexpert
+cd dataexpert
+cp .env.example .env
+nano .env
+bash deploy.sh
 ```
+
+`bash deploy.sh` enchaîne les quatre étapes :
+
+1. **Construction** des images `api` (Spring Boot) et `web` (Vue + nginx)
+2. **Publication** vers `DOCKER_REGISTRY` si la variable est renseignée dans `.env` (sinon les images restent locales)
+3. **Pull** de PostgreSQL, pgAdmin, et des images applicatives si un registre est configuré
+4. **Déploiement** de toute la stack. Les données PostgreSQL sont dans le volume Docker `dss_pg_data` (aucun port publié sur l'hôte)
+
+Avant le build, le script s'arrête si les mots de passe d'exemple sont encore dans `.env`.
+
+Publication vers un registre (Docker Hub, GHCR, registre privé), puis redéploiement par pull :
+
+```bash
+docker login
+# dans .env : DOCKER_REGISTRY=docker.io/votrecompte  et  IMAGE_TAG=1.0.0
+bash deploy.sh
+```
+
+Sur une autre machine qui a déjà les images dans le registre :
+
+```bash
+bash deploy.sh pull
+bash deploy.sh up
+```
+
+Autres commandes : `build`, `publish`, `down`, `status`, `logs`, `backup`.  
+`bash deploy.sh down` arrête les conteneurs et **conserve** le volume PostgreSQL.
+
+Détails : [docker/README.md](docker/README.md)
 
 ### Accès
 
 | URL | Usage |
 |-----|-------|
 | http://IP-SERVEUR/ | Application (rapport, sync, config) |
-| http://IP-SERVEUR:5050/ | pgAdmin (`PGADMIN_EMAIL` / `PGADMIN_PASSWORD`) |
+| http://127.0.0.1:5050/ sur le VPS | pgAdmin (`PGADMIN_EMAIL` / `PGADMIN_PASSWORD`), via tunnel SSH |
 
 Dans pgAdmin, le serveur **DataExpert PostgreSQL** est pré-configuré (`host=db`).  
 Mot de passe Postgres : `POSTGRES_PASSWORD` du `.env`.
 
+### Sécurité réseau
+
+- **PostgreSQL** : aucun port publié sur l'hôte. Seuls `api` et `pgadmin` joignent `db:5432` via le réseau Docker `dss-net`.
+- **pgAdmin** : bind `127.0.0.1` uniquement (administration depuis la machine hôte).
+- **Application** : seul `WEB_PORT` (80) est exposé au réseau client.
+
+Migration H2 ponctuelle : `docker-compose.migrate-local.yml` ouvre temporairement `127.0.0.1:5432`, puis le script referme le port.
+
 ### Commandes utiles
 
-```powershell
-docker compose ps
-docker compose logs -f api
-docker compose restart api
-docker compose down          # arrêt
-docker compose down -v       # arrêt + suppression volumes (⚠ données)
+```bash
+bash deploy.sh                  # build + publish + pull + déploiement
+bash deploy.sh backup           # sauvegarde PostgreSQL -> backups/
+bash deploy.sh status
+bash deploy.sh logs             # logs API (logs web, logs db)
+bash deploy.sh down             # arrêt, volumes conservés
+```
+
+Suppression des données PostgreSQL (irréversible) :
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml down -v
 ```
 
 ### Sync DSS : service séparé ou non ?
@@ -96,7 +142,7 @@ Pour l'instant : **`deploy.replicas: 1`** implicite, sync intégrée à `api`.
 
 **L'API ne joint pas le DSS**  
 Vérifier que l'IP DSS est joignable depuis le conteneur :
-```powershell
+```bash
 docker compose exec api curl -k https://192.168.10.21/
 ```
 
@@ -105,8 +151,8 @@ Au 1er démarrage, Flyway crée le schéma. Optionnel : activer
 `DSS_STARTUP_FULL_SYNC_ENABLED=true` pour importer l'historique DSS.
 
 **Logs API**
-```powershell
-docker compose logs -f api
+```bash
+bash deploy.sh logs
 ```
 
 ---

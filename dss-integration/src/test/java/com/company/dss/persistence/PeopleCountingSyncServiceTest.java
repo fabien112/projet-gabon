@@ -25,6 +25,7 @@ import com.company.dss.persistence.entity.CameraEntity;
 import com.company.dss.persistence.entity.PeopleCountingHourlyEntity;
 import com.company.dss.persistence.repository.CameraRepository;
 import com.company.dss.persistence.repository.PeopleCountingHourlyRepository;
+import com.company.dss.site.SiteService;
 
 @ExtendWith(MockitoExtension.class)
 class PeopleCountingSyncServiceTest {
@@ -38,11 +39,14 @@ class PeopleCountingSyncServiceTest {
     @Mock
     private ApplicationEventPublisher eventPublisher;
 
+    @Mock
+    private SiteService siteService;
+
     private PeopleCountingSyncService service;
 
     @BeforeEach
     void setUp() {
-        service = new PeopleCountingSyncService(cameraRepository, hourlyRepository, eventPublisher);
+        service = new PeopleCountingSyncService(cameraRepository, hourlyRepository, eventPublisher, siteService);
     }
 
     @Test
