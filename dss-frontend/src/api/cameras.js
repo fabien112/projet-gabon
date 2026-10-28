@@ -31,11 +31,6 @@ export async function fetchSites() {
   return data
 }
 
-export async function createSite(name) {
-  const { data } = await api.post('/sites', { name })
-  return data
-}
-
 export async function updateSite(id, name) {
   const { data } = await api.patch(`/sites/${id}`, { name })
   return data

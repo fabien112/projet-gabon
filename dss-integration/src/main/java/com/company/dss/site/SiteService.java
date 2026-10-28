@@ -46,19 +46,6 @@ public class SiteService {
     }
 
     @Transactional
-    public SiteEntity create(String name) {
-        String label = requireName(name);
-        siteRepository.findByNameIgnoreCase(label).ifPresent(existing -> {
-            throw new IllegalArgumentException("Le site « " + existing.getName() + " » existe déjà");
-        });
-        SiteEntity site = new SiteEntity();
-        site.setName(label);
-        SiteEntity saved = siteRepository.save(site);
-        log.info(">>> [SITE] Créé {}", saved.getName());
-        return saved;
-    }
-
-    @Transactional
     public SiteEntity rename(Long id, String name) {
         SiteEntity site = require(id);
         String label = requireName(name);

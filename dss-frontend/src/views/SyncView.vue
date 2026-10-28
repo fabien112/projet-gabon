@@ -81,15 +81,6 @@
         </div>
       </div>
 
-      <form class="cam-form site-form" @submit.prevent="submitAddSite">
-        <label class="field">
-          <span class="label">Nom du site</span>
-          <input v-model="newSiteName" type="text" placeholder="Ex. Akanda" required maxlength="128" />
-        </label>
-        <button class="generate cam-add" type="submit" :disabled="addingSite">
-          {{ addingSite ? 'Ajout…' : 'Ajouter le site' }}
-        </button>
-      </form>
       <p v-if="siteError" class="error">{{ siteError }}</p>
       <p v-if="siteOk" class="ok-msg">{{ siteOk }}</p>
 
@@ -142,7 +133,7 @@
             </tr>
           </tbody>
         </table>
-        <p v-else class="empty-cams">Aucun site pour le moment. Créez-en un pour pouvoir ajouter des caméras.</p>
+        <p v-else class="empty-cams">Aucun site pour le moment.</p>
       </div>
     </section>
 
@@ -180,10 +171,7 @@
           {{ addingCam ? 'Ajout…' : 'Ajouter la caméra' }}
         </button>
       </form>
-      <p v-if="!sites.length" class="hint-msg">
-        Aucun site : créez d’abord un site dans l’onglet
-        <button type="button" class="link-btn" @click="tab = 'sites'">Sites</button>.
-      </p>
+      <p v-if="!sites.length" class="hint-msg">Aucun site pour le moment.</p>
       <p v-if="camError" class="error">{{ camError }}</p>
       <p v-if="camOk" class="ok-msg">{{ camOk }}</p>
 
@@ -585,7 +573,6 @@ import { clearSession, session } from '../auth/session'
 import AppBrand from '../components/AppBrand.vue'
 import {
   addCamera,
-  createSite,
   deleteSite,
   discoverDssCameras,
   fetchConfiguredCameras,
@@ -626,8 +613,6 @@ const newCam = reactive({
 const discoverSiteId = ref(null)
 const savingCamId = ref(null)
 const sites = ref([])
-const newSiteName = ref('')
-const addingSite = ref(false)
 const savingSite = ref(false)
 const siteError = ref('')
 const siteOk = ref('')
@@ -837,22 +822,6 @@ async function refreshSites() {
   if (sites.value.length === 1) {
     newCam.siteId ??= sites.value[0].id
     discoverSiteId.value ??= sites.value[0].id
-  }
-}
-
-async function submitAddSite() {
-  siteError.value = ''
-  siteOk.value = ''
-  addingSite.value = true
-  try {
-    const created = await createSite(newSiteName.value)
-    newSiteName.value = ''
-    siteOk.value = `Site « ${created.name} » ajouté. Vous pouvez y rattacher des caméras.`
-    await refreshSites()
-  } catch (e) {
-    siteError.value = e?.response?.data?.message || e.message || 'Impossible d’ajouter le site'
-  } finally {
-    addingSite.value = false
   }
 }
 
