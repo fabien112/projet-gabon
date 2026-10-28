@@ -220,7 +220,7 @@ backup_db() {
   user="${POSTGRES_USER:-dss_user}"
   out="$dir/dss-backup-${stamp}.sql"
   echo "Sauvegarde $db -> $out"
-  docker exec -T dss-db pg_dump -U "$user" -d "$db" > "$out"
+  docker exec dss-db pg_dump -U "$user" -d "$db" > "$out"
   echo "Terminé : $out"
 }
 
