@@ -43,17 +43,28 @@
 - Environ 2 Go de RAM libres le temps de construire les images
 - Accès réseau au serveur DSS (`DSS_HOST`, ex. `192.168.10.21`)
 
-### Installation sur le VPS
+### Installation sur le VPS (construction locale)
 
-Prérequis : Docker Engine 24+ et le plugin Compose v2. Le VPS doit joindre le serveur DSS (`DSS_HOST`).
+Prérequis : Docker Engine 24+ et Compose v2. Le VPS doit joindre le serveur Dahua (`DSS_HOST`).
+
+L’**IP publique du VPS** ne se met nulle part dans `.env`. Elle sert seulement dans le navigateur : `http://IP_PUBLIQUE_DU_VPS/`.
 
 ```bash
-git clone <url-du-depot> dataexpert
-cd dataexpert
+git clone -b deploy-docker-vps https://github.com/fabien112/projet-gabon.git
+cd projet-gabon
 cp .env.example .env
 nano .env
 bash deploy.sh
 ```
+
+Dans `.env`, vérifie surtout :
+
+| Variable | Où | Quoi |
+|----------|----|------|
+| `DSS_HOST` | `.env` | IP du **serveur Dahua DSS** vue depuis le VPS (ex. `192.168.10.21`). **Pas** l’IP publique du VPS. |
+| `DSS_USERNAME` / `DSS_PASSWORD` | `.env` | Compte DSS Professional |
+| `WEB_PORT` | `.env` | Port HTTP public, `80` par défaut → `http://IP_PUBLIQUE_DU_VPS/` |
+| App / Postgres / pgAdmin | `.env` | Déjà renseignés en production (copiés depuis `.env.example`) |
 
 `bash deploy.sh` enchaîne les quatre étapes :
 
